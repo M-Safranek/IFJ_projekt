@@ -7,12 +7,16 @@
 FILE* file;
 int current_token_attr_size = 0;
 char current_token_attr[1000];
-int is_running = 0;
+//TODO choose a max_token_attr_size or dynamically allocate memory
+
+int is_running = 0; // used to stop the token reader when a token is created(in create token)
 Token current_token;
-bool has_newline = false;
+
+bool has_newline = false;// used in multi-line comments based on specification
 int block_comment_depth = 0;
-bool after_block_comment_check_flag = false;
-bool count_indent_flag = true;
+
+bool after_block_comment_check_flag = false; // used to check that after a multi-line comment there is a OEL preceded bty whitespaces
+bool count_indent_flag = true; // used to read the indent at the start of the line state is set to L_START instead of start
 
 const char *keywords[] = {
     "def",
@@ -39,6 +43,7 @@ void scanner_init(FILE *source)
     file = source;
 }
 
+//checks if the current identifier is a keywords only works because of the keywords being at the start of the enum and in the same order as in the array 
 bool keyword_check(){
     current_token_attr[current_token_attr_size] = '\0';
     for (int i = T_DEF; i <= T_WHILE; i++) {
@@ -56,18 +61,17 @@ bool keyword_check(){
  */
 Token get_next_token(void)
 {
+
     State state = START;
     current_token_attr_size = 0 ;
     is_running = 1;
 
-    
-
-    /* TODO */
 
     while (is_running)
     {
         int c = getc(file);
 
+        //ignore
         if (state == START &&
         c != EOF &&
         c != '\n' &&
@@ -77,12 +81,15 @@ Token get_next_token(void)
                 continue;
             }
         
+
+        //stop
         if (c == EOF)
         {
             create_token(T_EOF);
             break;
         }
 
+        //add to the string 
         if (current_token_attr_size < sizeof(current_token_attr) - 1)
         {
             current_token_attr[current_token_attr_size++] = (char)c;
@@ -249,7 +256,6 @@ Token get_next_token(void)
 
 
             case DECIMAL_START:
-                /* TODO */
                 if (isdigit(c))
                     state = FLOAT;
 
@@ -259,7 +265,6 @@ Token get_next_token(void)
                 break;
 
             case FLOAT:
-                /* TODO */
                 if (isdigit(c))
                     state = FLOAT;
 
@@ -298,7 +303,6 @@ Token get_next_token(void)
                 break;
 
             case FLOAT_SIGNED_EXPONENT_START:
-                /* TODO */
                 if (isdigit(c))
                     state = FLOAT_EXPONENT;
 
@@ -308,7 +312,6 @@ Token get_next_token(void)
                 break;
 
             case FLOAT_EXPONENT:
-                /* TODO */
                 if isdigit(c)
                     state = FLOAT_EXPONENT;
 
@@ -327,7 +330,6 @@ Token get_next_token(void)
                 break;
 
             case FLOAT_EXPONENT_LAST_UNDERSCORE:
-                /* TODO */
                 if isdigit(c)
                     state = FLOAT_EXPONENT;
                 else
@@ -485,6 +487,11 @@ Token get_next_token(void)
                 break;
 
 
+            /* ==========================
+             * Strings
+             * ========================== */
+
+
             case L_COMMENT:
                 if (c == '\n') {
                 create_token(T_EOL);
@@ -553,14 +560,17 @@ Token get_next_token(void)
                break;
                             
 
+            //--------------------------//
+
+            //line start(indent check)
             case L_START:
                 if(c != ' '){
                     forget_char(c);
                     create_token(T_IDENT);
                 }
                 break;
-                
-   
+
+            // false state keeps reading until end of line or EOF
             case FALSE:
                 if (c != EOF && c!= '\n')
                     {state = FALSE;}
@@ -578,6 +588,7 @@ Token get_next_token(void)
     return current_token;
 }
 
+// creates a token using current_token_attr and current_token_attr_size and sets is_running = 0
 void create_token(TokenType new_type){
     Token new_token;
     current_token_attr[current_token_attr_size] = '\0';
@@ -596,7 +607,7 @@ void forget_char(char c){
 
 
 
-
+/* main is not going to be in the lexer this is just for testing purposes
 int main()
 {
     FILE* test_file = fopen("test.txt","r");
@@ -615,3 +626,4 @@ int main()
     fclose(test_file);
     return 0;
 }
+*/
