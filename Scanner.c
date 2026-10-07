@@ -494,7 +494,8 @@ Token get_next_token(void)
 
             case L_COMMENT:
                 if (c == '\n') {
-                create_token(T_EOL);
+                    forget_char(c);
+                    state = START;
                  }
             break;
 
@@ -546,7 +547,8 @@ Token get_next_token(void)
 
             case ML_COMMENT_END_CHECK:
                 if (c == '\n'){
-                    create_token(T_EOL);
+                    forget_char(c);
+                    state = START;
                 }
 
                 else if(isspace(c)){
@@ -607,7 +609,7 @@ void forget_char(char c){
 
 
 
-/* main is not going to be in the lexer this is just for testing purposes
+
 int main()
 {
     FILE* test_file = fopen("test.txt","r");
@@ -626,4 +628,3 @@ int main()
     fclose(test_file);
     return 0;
 }
-*/
