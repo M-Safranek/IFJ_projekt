@@ -1,20 +1,17 @@
 #include <stdio.h>
+#include <string.h>
 #include "symtable.h"
 
-int init_table(){
-
-};
-
-struct symbol search(char what, struct symbol where){
-//    if(where == NULL){ //existuje to, kam jsme se dostali?
-//        return NULL;
-//    }elseif(what < where){ //menší hodnota, domluv která
-//        where = where.left;
-//    }elseif(what > where){ //vetší hodnota
-//        where = what.right;
-//    }else{ //našli jsme
-//        return where;
-//    }
+struct symbol *search(char what, struct symbol *where){
+    if(where == NULL){
+        return NULL;
+    }else if(strcmp(where->name, what) == 0){
+        return where;
+    }else if(where->name > what){
+        return search(what, where->left);
+    }else{
+        return search(what, where->right);
+    }
 };
 
 struct symbol rotate_left(struct symbol top){
@@ -31,16 +28,27 @@ struct symbol rotate_right(struct symbol top){
     //return leftsymbol
 };
 
-int insert(struct symbol what){
-    //je hodnota menší? jdi doleva
-    //je větší? jdi doprava
-    //opakuj dokud nenarazíme na konec stromu (možná použij search)
-    //pak to dáme nejspíše doleva a otočíme dle potřeby
-    //asi by bylo ideální použít malloc
-};
+struct symbol *create_symbol(char name[]){
+    struct symbol *new_symbol = malloc(sizeof(struct symbol));
+    if(new_symbol == NULL){
+        return NULL;
+    }
+    *new_symbol->name = name;
+    new_symbol->type = NULL;
+    new_symbol->left = NULL;
+    new_symbol->right = NULL;
+    return new_symbol;
+}
 
-struct symbol getdata(struct symbol what){
-    
+struct symbol *insert(struct symbol *where, char name[]){
+    if(where == NULL){
+        return create_symbol(name);
+    }else if(where->name > name){
+        where->left = insert(where->left, name);
+    }else if(where->name < name){
+        where->right = insert(where->right, name);
+    }
+    return where;
 };
 
 int delete(struct symbol what){
