@@ -10,14 +10,11 @@ typedef struct symbol{
     enum token_type type;
     struct symbol* left;
     struct symbol* right;
+    int height;
 };
 
 struct symbol *search(char what, struct symbol *where);
-struct symbol *rotate_left(struct symbol *top);
-struct symbol *rotate_right(struct symbol *top);
-struct symbol *create_symbol(char name[]);
-struct symbol *insert(struct symbol *where, char name[]);
-struct symbol getdata(struct symbol what);
-int delete(struct symbol what);
+struct symbol *insert(struct symbol *where, char name[], enum token_type type);
+struct symbol *delete(struct symbol *what);
 
 #endif //SYMTABLE_STRUCT

@@ -2,6 +2,22 @@
 #include <string.h>
 #include "symtable.h"
 
+int max(int a, int b){
+    if(a < b){
+        return b;
+    }else{
+        return a;
+    }
+};
+
+int get_height(struct symbol *where){
+    if(where == NULL){
+        return -1;
+    }else{
+        return max(get_height(where->left), get_height(where->right)) + 1;
+    }
+};
+
 struct symbol *search(char what, struct symbol *where){
     if(where == NULL){
         return NULL;
@@ -28,32 +44,36 @@ struct symbol *rotate_right(struct symbol *top){
     return left_symbol;
 };
 
-struct symbol *create_symbol(char name[]){
+struct symbol *create_symbol(char name[], enum token_type type){
     struct symbol *new_symbol = malloc(sizeof(struct symbol));
     if(new_symbol == NULL){
         return NULL;
     }
     *new_symbol->name = name;
-    new_symbol->type = NULL;
+    new_symbol->type = type;
     new_symbol->left = NULL;
     new_symbol->right = NULL;
+    new_symbol->height = 0;
     return new_symbol;
 }
 
-struct symbol *insert(struct symbol *where, char name[]){
+struct symbol *insert(struct symbol *where, char name[], enum token_type type){
     if(where == NULL){
-        return create_symbol(name);
+        return create_symbol(name, type);
+    }else if(strcmp(where->name, name) == 0 & where->type == type){
+        return where;
     }else if(where->name > name){
-        where->left = insert(where->left, name);
+        where->left = insert(where->left, name, type);
     }else if(where->name < name){
-        where->right = insert(where->right, name);
+        where->right = insert(where->right, name, type);
     }
+    //sem vlož výšku a rotace
     return where;
 };
 
-int delete(struct symbol what){
-    //(možná použij search)
+struct symbol *delete(struct symbol *what){
     //najdi symbol který má odkaz na what
     //jestli má what děti, přiřaď je někde jinde
     //odeber odkaz z rodiče
+    //free
 };
