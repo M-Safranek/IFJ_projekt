@@ -13,8 +13,8 @@ typedef struct symbol{
 };
 
 struct symbol *search(char what, struct symbol *where);
-struct symbol rotate_left(struct symbol top);
-struct symbol rotate_right(struct symbol top);
+struct symbol *rotate_left(struct symbol *top);
+struct symbol *rotate_right(struct symbol *top);
 struct symbol *create_symbol(char name[]);
 struct symbol *insert(struct symbol *where, char name[]);
 struct symbol getdata(struct symbol what);
