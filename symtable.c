@@ -59,15 +59,15 @@ struct symbol *create_symbol(char name[], enum token_type type){
 
 struct symbol *insert(struct symbol *where, char name[], enum token_type type){
     if(where == NULL){
-        return create_symbol(name, type);
-    }else if(strcmp(where->name, name) == 0 & where->type == type){
-        return where;
+        struct symbol *new_symbol = create_symbol(name, type);
+        //výška
+        //rotace
+        where = new_symbol;
     }else if(where->name > name){
         where->left = insert(where->left, name, type);
     }else if(where->name < name){
         where->right = insert(where->right, name, type);
     }
-    //sem vlož výšku a rotace
     return where;
 };
 
