@@ -607,24 +607,3 @@ void forget_char(char c){
     current_token_attr_size -= 1;
 }
 
-
-
-
-int main()
-{
-    FILE* test_file = fopen("test.txt","r");
-    if (test_file == NULL){
-        return -1;
-    }
-    file = test_file;
-
-    Token i = get_next_token();
-    while  (i.type != T_EOF){
-        printf("type=%d, attr=[%s]\n", i.type, i.attr);
-        i = get_next_token();
-    }
-    printf("type=%d, attr=[%s]\n", i.type, i.attr);
-
-    fclose(test_file);
-    return 0;
-}
