@@ -138,4 +138,7 @@ typedef struct {
 
 void create_token(TokenType new_type);
 void forget_char(char c);
+
+Token get_next_token(void);
+void scanner_init(FILE *source);
 #endif
