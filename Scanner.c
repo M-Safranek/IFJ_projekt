@@ -11,6 +11,7 @@ char current_token_attr[1000];
 
 int is_running = 0; // used to stop the token reader when a token is created(in create token)
 Token current_token;
+int line_number = 0;
 
 bool has_newline = false;// used in multi-line comments based on specification
 int block_comment_depth = 0;
@@ -152,6 +153,7 @@ Token get_next_token(void)
                 else if(c == '@')
                     create_token(T_AT);
                 else if(c == '\n'){
+                    line_number += 1;
                     create_token(T_EOL);
                     count_indent_flag = true;
                 }
@@ -510,6 +512,7 @@ Token get_next_token(void)
                 }
                 else if (c == '\n') {
                     has_newline = true;
+                    line_number += 1;
                 }
                 break;
 
@@ -568,7 +571,7 @@ Token get_next_token(void)
             case L_START:
                 if(c != ' '){
                     forget_char(c);
-                    create_token(T_IDENT);
+                    create_token(T_INDENT);
                 }
                 break;
 
@@ -578,7 +581,12 @@ Token get_next_token(void)
                     {state = FALSE;}
                 
                 else
+                    {
+                        if( c== '\n'){
+                            line_number += 1;
+                        }
                     create_token(T_ERROR);
+                    }
                 break;
 
 
@@ -596,6 +604,7 @@ void create_token(TokenType new_type){
     current_token_attr[current_token_attr_size] = '\0';
     new_token.type = new_type;
     new_token.attr = malloc(sizeof(char)*(current_token_attr_size+1));
+    new_token.line = line_number;
     strcpy(new_token.attr,current_token_attr);
     is_running = 0;
     current_token = new_token;
@@ -620,7 +629,7 @@ int main()
 
     Token i = get_next_token();
     while  (i.type != T_EOF){
-        printf("type=%d, attr=[%s]\n", i.type, i.attr);
+        printf("type=%d, attr=[%s]\n line: %d", i.type, i.attr, i.line);
         i = get_next_token();
     }
     printf("type=%d, attr=[%s]\n", i.type, i.attr);
