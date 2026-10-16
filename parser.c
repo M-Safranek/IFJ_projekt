@@ -137,6 +137,78 @@ void print_token(){
     printf("Type: %d aka %s, Attr:[%s], NUMBER:%d\n", tok.type, token_names[tok.type], tok.attr, token_count);
 }
 
+// AST tree structs
+
+typedef enum {
+    E_INT,
+    E_DOUBLE,
+    E_STRING,
+    E_UNIT,
+    E_VAR,
+    E_CALL,
+    E_UNARY,
+    E_BINARY
+}StatementKind;
+
+typedef enum {
+    O_PLUS,
+    O_MINUS,
+    O_MULTIPLY,
+    O_DIVIDE,
+    O_LESS,
+    O_LESS_EQUAL,
+    O_GREATER,
+    O_GREATER_EQUAL,
+    O_EQUAL,
+    O_EQUAL_EQUAL,
+}Operators;
+
+typedef struct {
+    ExpressionKind kind;
+    TokenType type;
+    Operators op;
+    char* name;
+    int int_val;
+    double double_val;
+    char* string_val;
+    struct Expression* left;
+    struct Expression* right;
+    struct Expression* args;
+    struct Expression* next;
+}Expression;
+
+typedef enum {
+    S_VAR_DEF,
+    S_ASSIGN,
+    S_RETURN,
+    S_EXPR,
+    S_IF,
+    S_WHILE
+}StatementKind;
+
+typedef struct {
+    StatementKind kind;
+    char* name;
+    bool is_var;
+    TokenType type;
+    Expression* expr;
+    struct Statement* body;
+    struct Statement* else_body;
+    struct Statement* next;
+}Statement;
+
+typedef struct {
+    char* func_name;
+    bool is_main;
+    char** param_names;
+    TokenType type;
+    int param_count;
+    TokenType return_type;
+    Statement* body;
+    struct Func* next;
+}Func;
+
+// end of AST tree structs
 
 void next_token(){
     tok = get_next_token();
