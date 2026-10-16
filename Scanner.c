@@ -83,17 +83,11 @@ Token get_next_token(void)
             }
         
 
-        //stop
-        if (c == EOF)
-        {
-            create_token(T_EOF);
-            break;
-        }
-
         //add to the string 
         if (current_token_attr_size < sizeof(current_token_attr) - 1)
         {
-            current_token_attr[current_token_attr_size++] = (char)c;
+            if(c != EOF)
+                current_token_attr[current_token_attr_size++] = (char)c;
         }
 
         if (after_block_comment_check_flag){
@@ -180,15 +174,12 @@ Token get_next_token(void)
             case IDENTIFIER:
                 if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_') || isdigit(c))
                     state = IDENTIFIER;
-
-                else if (isascii(c)){
+                    
+                else {
                     forget_char(c);
                     if (!keyword_check())
                         create_token(T_IDENTIFIER);}
 
-                else
-                    {state = FALSE;
-                    forget_char(c);}
                 break;
 
 
@@ -209,7 +200,7 @@ Token get_next_token(void)
                 else if (c == 'e' || c =='E')
                     state = FLOAT_EXPONENT_START;
 
-                else if (isascii(c)){
+                else {
                     forget_char(c);
                     create_token(T_INT);
                 }
@@ -234,13 +225,16 @@ Token get_next_token(void)
                     state = ZERO;
                 else if (c =='.')
                     state = DECIMAL_START;
-                else if (isascii(c)){
+        
+                else if (isdigit(c))
+                    {state = FALSE;
+                    forget_char(c);}
+
+
+                else{
                     forget_char(c);
                     create_token(T_INT);
                 }
-                else
-                    {state = FALSE;
-                    forget_char(c);}
 
                 break;
 
@@ -248,12 +242,9 @@ Token get_next_token(void)
             case DOT:
                 if(isdigit(c))
                     state = FLOAT;
-                else if (isascii(c)){
+                else {
                     forget_char(c);
                     create_token(T_DOT);}
-                else
-                    {state = FALSE;
-                    forget_char(c);}
                 break;
 
 
@@ -276,15 +267,13 @@ Token get_next_token(void)
                 else if (c == 'e' || c =='E')
                     state = FLOAT_EXPONENT_START;
 
-                else if (isascii(c)){
-                    if (!((c == 'd') || (c == 'D')))
-                        forget_char(c);
+                else if (((c == 'd') || (c == 'D'))){
                     create_token(T_FLOAT);
                 }
-                
-                else
-                    {state = FALSE;
-                    forget_char(c);}
+                else{
+                    forget_char(c);
+                    create_token(T_FLOAT);
+                }
                 break;
 
             case FLOAT_LAST_UNDERSCORE:
@@ -302,6 +291,11 @@ Token get_next_token(void)
 
                 else if (isdigit(c))
                     state = FLOAT_EXPONENT;
+
+                else{
+                    state = FALSE;
+                    forget_char(c);
+                }
                 break;
 
             case FLOAT_SIGNED_EXPONENT_START:
@@ -314,25 +308,25 @@ Token get_next_token(void)
                 break;
 
             case FLOAT_EXPONENT:
-                if isdigit(c)
+                if (isdigit(c))
                     state = FLOAT_EXPONENT;
 
                 else if (c == '_')
                     state = FLOAT_EXPONENT_LAST_UNDERSCORE;
 
                 
-                else if (isascii(c)){
-                    if (!((c == 'd') || (c == 'D')))
-                        forget_char(c);
+                else if (((c == 'd') || (c == 'D'))){
                     create_token(T_FLOAT);
                 }
-                    
-                else {state = FALSE;
-                     forget_char(c);}
+                else{
+                    forget_char(c);
+                    create_token(T_FLOAT);
+                }
+                
                 break;
 
             case FLOAT_EXPONENT_LAST_UNDERSCORE:
-                if isdigit(c)
+                if (isdigit(c))
                     state = FLOAT_EXPONENT;
                 else
                     {state = FALSE;
@@ -347,7 +341,7 @@ Token get_next_token(void)
             case  STRING_START:
                 if (c =='"')
                     state = DOUBLE_DOUBLE_QUOTE;
-                else if (isascii(c))
+                else if (c >= 0 && c <= 127)
                     state = STRING;
                 else
                     {state = FALSE;
@@ -365,7 +359,7 @@ Token get_next_token(void)
                 break;
 
             case STRING:
-                if (isascii(c) && (c != '\n' && c!= '\\' && c!= '"'))
+                if ((c >= 0 && c <= 127) && (c != '\n' && c!= '\\' && c!= '"'))
                     state = STRING;
 
                 else if (c == '\\')
@@ -382,6 +376,8 @@ Token get_next_token(void)
                 break;
 
            case ESCAPE_SEQUENCE:
+           
+                state = STRING;
                 if (c == 'n') {
                     current_token_attr[current_token_attr_size - 2] = '\n';
                     current_token_attr_size -= 1;
@@ -406,31 +402,38 @@ Token get_next_token(void)
                     {state = FALSE;
                     forget_char(c);}
                 }
-
-                state = STRING;
                 break;
     
 
             case MULTILINE_STRING:
-               if (isascii(c) && c!= '"')
-                    state = MULTILINE_STRING;
-
                 if (c == '"')
                     state = MULTILINE_STRING_END_1;
+
+                else if((c >= 0 && c <= 127) && c!= '"')
+                    state = MULTILINE_STRING;
+
+                else{
+                    state = FALSE;
+                }
                 break;
 
             case MULTILINE_STRING_END_1:
                 if (c == '"')
                     state = MULTILINE_STRING_END_FINAL;
-                else if (isascii(c))
-                    state = MULTILINE_STRING;        
+                else if (c >= 0 && c <= 127)
+                    state = MULTILINE_STRING;    
+
+                else
+                    state = FALSE;      
                 break;
         
             case MULTILINE_STRING_END_FINAL:
                 if (c == '"')
                    create_token(T_STRING);
-                else if (isascii(c))
-                    state = MULTILINE_STRING;        
+                else if (c >= 0 && c <= 127)
+                    state = MULTILINE_STRING;      
+                else 
+                    state = FALSE;  
                 break;
 
 
@@ -499,35 +502,54 @@ Token get_next_token(void)
                     forget_char(c);
                     state = START;
                  }
-            break;
+
+                else if (c == EOF) {
+                    create_token(T_EOF); 
+                }
+                break;
 
                  
                  
             case ML_COMMENT:
-                if (c == '/') {
+                if (c == EOF) {
+                    create_token(T_ERROR);
+                }
+
+                else if (c == '/') {
                     state = ML_COMMENT_SLASH;
                 }
+
                 else if (c == '*') {
                     state = ML_COMMENT_STAR;
                 }
+
                 else if (c == '\n') {
                     has_newline = true;
-                    line_number += 1;
+                    line_number++;
                 }
                 break;
 
             case ML_COMMENT_SLASH:
-                if (c == '*') {
+                 if (c == EOF) {
+                    create_token(T_ERROR);
+                    }
+
+                else if (c == '*') {
                     block_comment_depth++;
                     state = ML_COMMENT;
                 }
                 else {
                     state = ML_COMMENT;
+                    forget_char(c);
                 }
                 break;
 
             case ML_COMMENT_STAR:
-                if (c == '/') {
+                if (c == EOF) {
+                 create_token(T_ERROR);
+                }
+
+                else if (c == '/') {
                     block_comment_depth--;
                     if (block_comment_depth == 0) {
                         if (has_newline) {
@@ -545,11 +567,16 @@ Token get_next_token(void)
                 }
                 else {
                     state = ML_COMMENT;
+                    forget_char(c);
                 }
                 break;
 
             case ML_COMMENT_END_CHECK:
-                if (c == '\n'){
+                if (c == EOF) {
+                    create_token(T_EOF); 
+                }
+                
+                else if (c == '\n'){
                     forget_char(c);
                     state = START;
                 }
@@ -569,10 +596,18 @@ Token get_next_token(void)
 
             //line start(indent check)
             case L_START:
-                if(c != ' '){
+                if (c == '\n') {
+                    line_number++;
+                    count_indent_flag = true;
+                    current_token_attr_size = 0;
+                    state = START;
+                }
+
+                else if(c != ' '){
                     forget_char(c);
                     create_token(T_INDENT);
                 }
+
                 break;
 
             // false state keeps reading until end of line or EOF
@@ -629,7 +664,7 @@ int main()
 
     Token i = get_next_token();
     while  (i.type != T_EOF){
-        printf("type=%d, attr=[%s]\n line: %d", i.type, i.attr, i.line);
+        printf("type=%d, attr=[%s] line: %d \n", i.type, i.attr, i.line);
         i = get_next_token();
     }
     printf("type=%d, attr=[%s]\n", i.type, i.attr);
