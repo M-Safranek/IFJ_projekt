@@ -44,7 +44,7 @@ struct symbol *rotate_right(struct symbol *top){
     return left_symbol;
 };
 
-struct symbol *create_symbol(char name[], enum token_type type){
+struct symbol *create_symbol(char name[], TokenType type){
     struct symbol *new_symbol = malloc(sizeof(struct symbol));
     if(new_symbol == NULL){
         return NULL;
@@ -57,7 +57,7 @@ struct symbol *create_symbol(char name[], enum token_type type){
     return new_symbol;
 }
 
-struct symbol *insert(struct symbol *where, char name[], enum token_type type){
+struct symbol *insert(struct symbol *where, char name[], TokenType type){
     if(where == NULL){
         struct symbol *new_symbol = create_symbol(name, type);
         //výška
@@ -68,7 +68,7 @@ struct symbol *insert(struct symbol *where, char name[], enum token_type type){
     }else if(where->name < name){
         where->right = insert(where->right, name, type);
     }
-    return where;
+    return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };
 
 struct symbol *delete(struct symbol *what){
