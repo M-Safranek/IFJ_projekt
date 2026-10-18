@@ -44,29 +44,30 @@ struct symbol *rotate_right(struct symbol *top){
     return left_symbol;
 };
 
-struct symbol *create_symbol(char name[], TokenType type){
+struct symbol *create_symbol(char name[], TokenType type, char scope[]){
     struct symbol *new_symbol = malloc(sizeof(struct symbol));
     if(new_symbol == NULL){
         return NULL;
     }
     *new_symbol->name = name;
     new_symbol->type = type;
+    *new_symbol->scope = scope;
     new_symbol->left = NULL;
     new_symbol->right = NULL;
     new_symbol->height = 0;
     return new_symbol;
 }
 
-struct symbol *insert(struct symbol *where, char name[], TokenType type){
+struct symbol *insert(struct symbol *where, char name[], TokenType type, char scope[]){
     if(where == NULL){
-        struct symbol *new_symbol = create_symbol(name, type);
+        struct symbol *new_symbol = create_symbol(name, type, scope);
         //výška
         //rotace
         where = new_symbol;
     }else if(where->name > name){
-        where->left = insert(where->left, name, type);
+        where->left = insert(where->left, name, type, scope);
     }else if(where->name < name){
-        where->right = insert(where->right, name, type);
+        where->right = insert(where->right, name, type, scope);
     }
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };

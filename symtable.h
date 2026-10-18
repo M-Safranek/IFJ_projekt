@@ -62,13 +62,14 @@ typedef enum {
 typedef struct symbol{
     char name[21];
     TokenType type;
+    char scope[101];
     struct symbol* left;
     struct symbol* right;
     int height;
 };
 
 struct symbol *search(char what, struct symbol *where);
-struct symbol *insert(struct symbol *where, char name[], TokenType type);
+struct symbol *insert(struct symbol *where, char name[], TokenType type, char scope[]);
 struct symbol *delete(struct symbol *what);
 
 #endif //SYMTABLE_STRUCT
