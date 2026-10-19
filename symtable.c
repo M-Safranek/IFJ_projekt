@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "symtable.h"
 
 int max(int a, int b){
@@ -18,12 +19,18 @@ int get_height(struct symbol *where){
     }
 };
 
-struct symbol *search(char what, struct symbol *where){
+char *lower_string(char *string[]){
+    for(int i = 0; string[i]; i++){
+        string[i] = tolower(string[i]);
+    }
+};
+
+struct symbol *search(char *what[], struct symbol *where){
     if(where == NULL){
         return NULL;
-    }else if(strcmp(where->name, what) == 0){
+    }else if(strcmp(lower_string(where->name), lower_string(what)) == 0){
         return where;
-    }else if(where->name > what){
+    }else if(strcmp(lower_string(where->name), lower_string(what)) > 0){
         return search(what, where->left);
     }else{
         return search(what, where->right);
@@ -44,7 +51,7 @@ struct symbol *rotate_right(struct symbol *top){
     return left_symbol;
 };
 
-struct symbol *create_symbol(char name[], TokenType type, char scope[]){
+struct symbol *create_symbol(char *name[], TokenType type, char *scope[]){
     struct symbol *new_symbol = malloc(sizeof(struct symbol));
     if(new_symbol == NULL){
         return NULL;
@@ -58,25 +65,27 @@ struct symbol *create_symbol(char name[], TokenType type, char scope[]){
     return new_symbol;
 }
 
-struct symbol *insert(struct symbol *where, char name[], TokenType type, char scope[]){
+struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[]){
     if(where == NULL){
         struct symbol *new_symbol = create_symbol(name, type, scope);
         //výška
         //rotace
         where = new_symbol;
-    }else if(where->name > name){
+    }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
         where->left = insert(where->left, name, type, scope);
-    }else if(where->name < name){
+    }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){
         where->right = insert(where->right, name, type, scope);
     }
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };
 
-struct symbol *delete_symbol(struct symbol *what){
-    //najdi symbol který má odkaz na what
-    //jestli má what děti, přiřaď je někde jinde
-    //odeber odkaz z rodiče
-    free(what);
+struct symbol *delete_symbol(struct symbol *what, struct symbol *top){
+    if(search(what, top) != NULL){
+        //najdi symbol který má odkaz na what
+        //jestli má what děti, přiřaď je někde jinde
+        //odeber odkaz z rodiče
+        free(what);
+    }
 };
 
 struct symbol *delete_tree(struct symbol *top){
