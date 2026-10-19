@@ -72,9 +72,17 @@ struct symbol *insert(struct symbol *where, char name[], TokenType type, char sc
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };
 
-struct symbol *delete(struct symbol *what){
+struct symbol *delete_symbol(struct symbol *what){
     //najdi symbol který má odkaz na what
     //jestli má what děti, přiřaď je někde jinde
     //odeber odkaz z rodiče
-    //free
+    free(what);
+};
+
+struct symbol *delete_tree(struct symbol *top){
+    if(top != NULL){
+        delete_tree(top->left);
+        delete_tree(top->right);
+        free(top);
+    }
 };

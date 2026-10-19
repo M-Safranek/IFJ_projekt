@@ -36,7 +36,6 @@ typedef enum {
     T_FLOAT,
     T_UNIT,
     
-
     //operators
     T_PLUS,
     T_MINUS,
@@ -49,15 +48,13 @@ typedef enum {
     T_EQUAL,
     T_EQUAL_EQUAL,
 
-
     T_IDENTIFIER,
 
- 
     T_IDENT,
     T_EOL,
     T_ERROR,
     T_EOF
-} TokenType;
+}TokenType;
 
 typedef struct symbol{
     char name[21];
@@ -70,6 +67,7 @@ typedef struct symbol{
 
 struct symbol *search(char what, struct symbol *where);
 struct symbol *insert(struct symbol *where, char name[], TokenType type, char scope[]);
-struct symbol *delete(struct symbol *what);
+struct symbol *delete_symbol(struct symbol *what);
+struct symbol *delete_tree(struct symbol *top);
 
 #endif //SYMTABLE_STRUCT
