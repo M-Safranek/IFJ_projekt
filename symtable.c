@@ -37,18 +37,28 @@ struct symbol *search(char *what[], struct symbol *where){
     }
 };
 
-struct symbol *rotate_left(struct symbol *top){
+struct symbol *ll_rotate(struct symbol *top){ //right_rotate
+    struct symbol *left_symbol = top->left;
+    top->left = left_symbol->right;
+    left_symbol->right = top;
+    return left_symbol;
+};
+
+struct symbol *rr_rotate(struct symbol *top){ //left_rotate
     struct symbol *right_symbol = top->right;
     top->right = right_symbol->left;
     right_symbol->left = top;
     return right_symbol;
 };
 
-struct symbol *rotate_right(struct symbol *top){
-    struct symbol *left_symbol = top->left;
-    top->left = left_symbol->right;
-    left_symbol->right = top;
-    return left_symbol;
+struct symbol *lr_rotate(struct symbol *top){
+    top->left = ll_rotate(top->left);
+    return rr_rotate(top); 
+};
+
+struct symbol *rl_rotate(struct symbol *top){
+    top->right = ll_rotate(top->right);
+    return rr_rotate(top);
 };
 
 struct symbol *create_symbol(char *name[], TokenType type, char *scope[]){
