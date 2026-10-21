@@ -5,7 +5,7 @@
 #include "Scanner.h"
 #include <stdbool.h>
 FILE* file;
-int current_token_attr_size = 0;
+unsigned long current_token_attr_size = 0;
 char current_token_attr[1000];
 //TODO choose a max_token_attr_size or dynamically allocate memory
 
@@ -13,11 +13,14 @@ int is_running = 0; // used to stop the token reader when a token is created(in 
 Token current_token;
 int line_number = 0;
 
+
 bool has_newline = false;// used in multi-line comments based on specification
 int block_comment_depth = 0;
 
 bool after_block_comment_check_flag = false; // used to check that after a multi-line comment there is a OEL preceded bty whitespaces
 bool count_indent_flag = true; // used to read the indent at the start of the line state is set to L_START instead of start
+
+bool is_between_parantheses = false;
 
 const char *keywords[] = {
     "def",
@@ -130,10 +133,18 @@ Token get_next_token(void)
                     state = LESS;
                 else if(c == '>')
                      state = GREATER;
+
                 else if(c == '(')
+                    {
                     create_token(T_LPAREN);
-                else if(c == ')')
+                    is_between_parantheses = true;
+                    }
+
+                else if(c == ')'){
                     create_token(T_RPAREN);
+                    is_between_parantheses = false;
+                    }
+
                 else if(c == '[')
                    create_token(T_LBRACKET);
                 else if(c == ']')
@@ -148,7 +159,8 @@ Token get_next_token(void)
                     create_token(T_AT);
                 else if(c == '\n'){
                     line_number += 1;
-                    create_token(T_EOL);
+                    if (!is_between_parantheses)
+                        create_token(T_EOL);
                     count_indent_flag = true;
                 }
                 else if(c == EOF)
@@ -553,7 +565,8 @@ Token get_next_token(void)
                     block_comment_depth--;
                     if (block_comment_depth == 0) {
                         if (has_newline) {
-                            create_token(T_EOL);
+                            if(!is_between_parantheses)
+                                create_token(T_EOL);
                             after_block_comment_check_flag = true;
                         }
                         else {
