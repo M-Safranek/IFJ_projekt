@@ -7,7 +7,7 @@
 FILE* file;
 unsigned long current_token_attr_size = 0;
 char current_token_attr[1000];
-//TODO choose a max_token_attr_size or dynamically allocate memory
+//TODO dynamically allocate memory for attribute
 
 int is_running = 0; // used to stop the token reader when a token is created(in create token)
 Token current_token;
@@ -20,7 +20,57 @@ int block_comment_depth = 0;
 bool after_block_comment_check_flag = false; // used to check that after a multi-line comment there is a OEL preceded bty whitespaces
 bool count_indent_flag = true; // used to read the indent at the start of the line state is set to L_START instead of start
 
-bool is_between_parantheses = false;
+int paren_depth = 0;
+
+
+// remembers pending dedent count
+int pending_dedents = 0;
+
+
+//indents
+//TODO dynamically allocate memory for stack
+#define MAX_INDENT_LEVELS 1024
+
+int indentStack[MAX_INDENT_LEVELS] = {0};
+int indentTop = 0;
+
+void pushIndent(int indent) {
+    if (indentTop + 1 >= MAX_INDENT_LEVELS) {
+        return; 
+    }
+    indentTop++;
+    indentStack[indentTop] = indent;
+}
+
+void popIndent() {
+    if (indentTop > 0) {
+        indentTop--;
+    }
+}
+
+
+
+// returns false on indentation error
+bool new_indent(int current_indent) {
+    int previous_indent = indentStack[indentTop];
+    if (current_indent > previous_indent) {
+        pushIndent(current_indent);
+        create_token(T_INDENT);
+    }
+    else if (current_indent < previous_indent) {
+        while (current_indent < indentStack[indentTop]) {
+            popIndent();
+            create_token(T_DEDENT);
+        }
+
+        if (current_indent != indentStack[indentTop]) {
+            is_running = 0;
+            return false;
+        }
+    }
+    return true;
+}
+
 
 const char *keywords[] = {
     "def",
@@ -65,6 +115,14 @@ bool keyword_check(){
  */
 Token get_next_token(void)
 {
+
+      if (pending_dedents > 0) {
+        current_token_attr_size = 0;
+        popIndent();
+        pending_dedents--;
+        create_token(T_DEDENT);
+        return current_token;
+    }
 
     State state = START;
     current_token_attr_size = 0 ;
@@ -137,12 +195,12 @@ Token get_next_token(void)
                 else if(c == '(')
                     {
                     create_token(T_LPAREN);
-                    is_between_parantheses = true;
+                    paren_depth ++;
                     }
 
                 else if(c == ')'){
                     create_token(T_RPAREN);
-                    is_between_parantheses = false;
+                    paren_depth --;
                     }
 
                 else if(c == '[')
@@ -159,7 +217,7 @@ Token get_next_token(void)
                     create_token(T_AT);
                 else if(c == '\n'){
                     line_number += 1;
-                    if (!is_between_parantheses)
+                    if (paren_depth == 0)
                         create_token(T_EOL);
                     count_indent_flag = true;
                 }
@@ -565,7 +623,7 @@ Token get_next_token(void)
                     block_comment_depth--;
                     if (block_comment_depth == 0) {
                         if (has_newline) {
-                            if(!is_between_parantheses)
+                            if(paren_depth == 0)
                                 create_token(T_EOL);
                             after_block_comment_check_flag = true;
                         }
@@ -609,19 +667,36 @@ Token get_next_token(void)
 
             //line start(indent check)
             case L_START:
-                if (c == '\n') {
+                if (c == EOF) {
+                    if(indentTop > 0){
+                    pending_dedents = indentTop -1;
+                    popIndent();
+                    create_token(T_DEDENT);
+                    }
+
+                    else{
+                        create_token(T_EOF);
+                    }
+                }
+
+                else if (c == '\n') {
                     line_number++;
                     count_indent_flag = true;
                     current_token_attr_size = 0;
                     state = START;
-                }
+                    }
 
-                else if(c != ' '){
+                else if (c != ' '){
                     forget_char(c);
-                    create_token(T_INDENT);
-                }
+                    if (!new_indent(current_token_attr_size)) {
+                        create_token(T_ERROR);
+                    }
+                    current_token_attr_size = 0;
 
-                break;
+                    state = START;
+                    }
+    
+            break;
 
             // false state keeps reading until end of line or EOF
             case FALSE:
@@ -644,6 +719,7 @@ Token get_next_token(void)
         }
     }
     return current_token;
+    
 }
 
 // creates a token using current_token_attr and current_token_attr_size and sets is_running = 0
