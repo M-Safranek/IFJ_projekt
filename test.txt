@@ -1,14 +1,24 @@
-import ifj26.*
+import ifj26.* 
+
+
 def factorial(n: Int): Int =
 var result = 1
 var i: Int = n // uvedení typu je nepovinné
 while i > 1 do
-result = result * i
-i = i - 1
+            result = result * i
+            i = i - 1 + .2 + 2.2 + 2e+3 + 2e2 - 2.2 + 2.2E1_0d
+dsadssad
+
+
 result // poslední výraz v těle funkce určí návratovou hodnotu
 @main def runFoo(): Unit =
 /*hello
 */
+
+
 val n = readInt()
-val result = factorial(n)
+val result = factorial(n
+                        djsadiasdjsaodsajdjdisa
+                        djsadiosajdosidsajdosa
+                        dsjdoiadjasiodsjdioajdsoa)
 print(result)

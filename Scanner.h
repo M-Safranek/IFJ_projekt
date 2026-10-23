@@ -53,7 +53,8 @@ typedef enum {
     T_IDENTIFIER,
 
  
-    T_IDENT,
+    T_INDENT,
+    T_DEDENT,
     T_EOL,
     T_ERROR,
     T_EOF
@@ -133,6 +134,7 @@ typedef enum {
 typedef struct {
     TokenType type;
     char* attr;
+    int line;
 
 } Token;
 
