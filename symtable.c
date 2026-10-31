@@ -13,9 +13,21 @@ int max(int a, int b){
 
 int get_height(struct symbol *where){
     if(where == NULL){
-        return -1;
+        return 0;
     }else{
-        return max(get_height(where->left), get_height(where->right)) + 1;
+        return where->height;
+    }
+};
+
+int compare_height(struct symbol *one, struct symbol *two){
+    return max(get_height(one), get_height(two)) + 1;
+};
+
+int get_balance(struct symbol *where){
+    if(where == NULL){
+        return 0;
+    }else{
+        return get_height(where->left) - get_height(where->right);
     }
 };
 
@@ -41,6 +53,8 @@ struct symbol *ll_rotate(struct symbol *top){ //right_rotate
     struct symbol *left_symbol = top->left;
     top->left = left_symbol->right;
     left_symbol->right = top;
+    top->height = compare_height(top->left, top->right);
+    left_symbol->height = compare_height(left_symbol->left, top);
     return left_symbol;
 };
 
@@ -48,12 +62,14 @@ struct symbol *rr_rotate(struct symbol *top){ //left_rotate
     struct symbol *right_symbol = top->right;
     top->right = right_symbol->left;
     right_symbol->left = top;
+    top->height = compare_height(top->left, top->right);
+    right_symbol = compare_height(right_symbol->right, top);
     return right_symbol;
 };
 
 struct symbol *lr_rotate(struct symbol *top){
-    top->left = ll_rotate(top->left);
-    return rr_rotate(top); 
+    top->left = rr_rotate(top->left);
+    return ll_rotate(top); 
 };
 
 struct symbol *rl_rotate(struct symbol *top){
@@ -79,17 +95,30 @@ struct symbol *create_symbol(char *name[], TokenType type, char *scope[], bool d
 struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[], bool defined){
     if(where == NULL){
         struct symbol *new_symbol = create_symbol(name, type, scope, defined);
-        //výška
-        //rotace
         where = new_symbol;
     }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
         where->left = insert(where->left, name, type, scope, defined);
+        if(get_balance(where) == 2){
+            if(strcmp(lower_string(where->left->name), lower_string(name)) > 0){
+                where = ll_rotate(where);
+            }else{
+                where = rl_rotate(where);
+            }
+        }
     }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){
         where->right = insert(where->right, name, type, scope, defined);
+        if(get_balance(where) == -2){
+            if(strcmp(lower_string(where->right->name), lower_string(name)) < 0){
+                where = rr_rotate(where);
+            }else{
+                where = lr_rotate(where);
+            }
+        }
     }else{
         where->type = type;
         where->defined = defined;
     }
+    where->height = compare_height(where->left, where->right);
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };
 
@@ -109,3 +138,5 @@ struct symbol *delete_tree(struct symbol *top){
         free(top);
     }
 };
+
+//udělej zásobník pro scope management?
