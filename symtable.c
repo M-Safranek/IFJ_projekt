@@ -61,7 +61,7 @@ struct symbol *rl_rotate(struct symbol *top){
     return rr_rotate(top);
 };
 
-struct symbol *create_symbol(char *name[], TokenType type, char *scope[]){
+struct symbol *create_symbol(char *name[], TokenType type, char *scope[], bool defined){
     struct symbol *new_symbol = malloc(sizeof(struct symbol));
     if(new_symbol == NULL){
         return NULL;
@@ -69,22 +69,26 @@ struct symbol *create_symbol(char *name[], TokenType type, char *scope[]){
     *new_symbol->name = name;
     new_symbol->type = type;
     *new_symbol->scope = scope;
+    new_symbol->defined = defined;
     new_symbol->left = NULL;
     new_symbol->right = NULL;
     new_symbol->height = 0;
     return new_symbol;
 }
 
-struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[]){
+struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[], bool defined){
     if(where == NULL){
-        struct symbol *new_symbol = create_symbol(name, type, scope);
+        struct symbol *new_symbol = create_symbol(name, type, scope, defined);
         //výška
         //rotace
         where = new_symbol;
     }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
-        where->left = insert(where->left, name, type, scope);
+        where->left = insert(where->left, name, type, scope, defined);
     }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){
-        where->right = insert(where->right, name, type, scope);
+        where->right = insert(where->right, name, type, scope, defined);
+    }else{
+        where->type = type;
+        where->defined = defined;
     }
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };

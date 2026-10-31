@@ -60,6 +60,7 @@ typedef struct symbol{
     char name[21];
     TokenType type;
     char scope[101];
+    bool defined;
     struct symbol* left;
     struct symbol* right;
     int height;
