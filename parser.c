@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "Scanner.h"
+#include "parser.h"
 #include <stdbool.h>
 
 /* TODO
@@ -18,56 +19,9 @@
 */
 Token tok;
 
-void parse_program();
-void parse_prologue();
-void parse_func_list();
-void parse_func_def();
-void parse_annot();
-void parse_annot_n();
-void parse_params();
-void parse_params_n();
-void parse_func_body();
-void parse_n_type();
-void parse_type();
-void parse_block();
-void parse_statement();
-void parse_statement_n();
-void parse_statement_line();
-void parse_simple_statement();
-void parse_simple_n();
-void parse_simple_s();
-void parse_simple_id();
-void parse_if_statement();
-void parse_while_statement();
-void parse_condition();
-void parse_return_statement();
-void parse_return_val();
-void parse_arguments();
-void parse_arguments_n();
-void parse_arguments_nn();
-void parse_term();
-void parse_num_lit();
-void parse_var_def();
-void parse_vax();
-void parse_expression();
-void parse_expression_n();
-void parse_equal();
-void parse_equal_n();
-void parse_equal_op();
-void parse_comparison();
-void parse_comparison_n();
-void parse_comparison_op();
-void parse_addition();
-void parse_addition_n();
-void parse_mult();
-void parse_mult_n();
-void parse_unary();
-void parse_unary_noid();
-void parse_primary_id();
-void parse_primary_n();
 
 // MAIN, DEDENT, INDENT
-// 24     72      73
+// 24     41      40
 
 
 
@@ -124,10 +78,11 @@ const char *token_names[] = {
     "T_IDENTIFIER", // 39
 
 
-    "T_IDENT",      // 40
-    "T_EOL",        // 41
-    "T_ERROR",      // 42
-    "T_EOF"         // 43
+    "T_INDENT",      // 40
+    "T_DEDENT",     // 41
+    "T_EOL",        // 42
+    "T_ERROR",      // 43
+    "T_EOF"         // 44
 };
 // for debug
 int token_count = 1;
@@ -137,86 +92,10 @@ void print_token(){
     printf("Type: %d aka %s, Attr:[%s], NUMBER:%d\n", tok.type, token_names[tok.type], tok.attr, token_count);
 }
 
-// AST tree structs
-
-typedef enum {
-    E_INT,
-    E_DOUBLE,
-    E_STRING,
-    E_UNIT,
-    E_VAR,
-    E_CALL,
-    E_UNARY,
-    E_BINARY
-}StatementKind;
-
-typedef enum {
-    O_PLUS,
-    O_MINUS,
-    O_MULTIPLY,
-    O_DIVIDE,
-    O_LESS,
-    O_LESS_EQUAL,
-    O_GREATER,
-    O_GREATER_EQUAL,
-    O_EQUAL,
-    O_EQUAL_EQUAL,
-}Operators;
-
-typedef struct {
-    ExpressionKind kind;
-    TokenType type;
-    Operators op;
-    char* name;
-    int int_val;
-    double double_val;
-    char* string_val;
-    struct Expression* left;
-    struct Expression* right;
-    struct Expression* args;
-    struct Expression* next;
-}Expression;
-
-typedef enum {
-    S_VAR_DEF,
-    S_ASSIGN,
-    S_RETURN,
-    S_EXPR,
-    S_IF,
-    S_WHILE
-}StatementKind;
-
-typedef struct {
-    StatementKind kind;
-    char* name;
-    bool is_var;
-    TokenType type;
-    Expression* expr;
-    struct Statement* body;
-    struct Statement* else_body;
-    struct Statement* next;
-}Statement;
-
-typedef struct {
-    char* func_name;
-    bool is_main;
-    char** param_names;
-    TokenType type;
-    int param_count;
-    TokenType return_type;
-    Statement* body;
-    struct Func* next;
-}Func;
-
-// end of AST tree structs
 
 void next_token(){
     tok = get_next_token();
     token_count++;
-    if (tok.type == 40){
-        token_count--;
-        next_token();
-    }
 }
 
 
@@ -226,7 +105,7 @@ void syntax_error(TokenType t, char* str){
         print_token();
     }
     else{
-        printf("Syntax error, EXPECTED %d aka %s, got %d aka %s, NUMBER:%d\n", t, token_names[t], tok.type, token_names[tok.type], token_count);
+        printf("Syntax error, EXPECTED %d aka %s, got %d aka %s, NUMBER:%d, LINE:%d\n", t, token_names[t], tok.type, token_names[tok.type], token_count, tok.line);
     }
 }
 
@@ -240,7 +119,7 @@ void expect_type(TokenType t){
 }
 
 /*========================
- * ALL THE RULES
+ * LL TABLE FUNCTIONS
  * =======================
  */
 
@@ -248,9 +127,9 @@ void parse_program(){
     if (tok.type != 5 ) syntax_error(5, "abab");
 
     parse_prologue();
-    expect_type(41);
+    expect_type(42);
     parse_func_list();
-    expect_type(43);
+    expect_type(44);
 }
 
 void parse_prologue(){
@@ -267,7 +146,7 @@ void parse_func_list(){
             parse_func_def();
             parse_func_list();
             break;
-        case 43:
+        case 44:
             break;
         default:
             syntax_error(-1,"func_list");
@@ -308,7 +187,7 @@ void parse_annot(){
 
 void parse_annot_n(){
     switch (tok.type){
-        case 41:
+        case 42:
             next_token();
             break;
         case 0:
@@ -360,9 +239,9 @@ void parse_func_body(){
         case 29:
         case 30:
             parse_expression();
-            expect_type(41);
+            expect_type(42);
             break;
-        case 41:
+        case 42:
             next_token();
             parse_block();
             break;
@@ -399,9 +278,10 @@ void parse_type(){
 
 void parse_block(){
     switch (tok.type){
-        case 73:
+        case 40:
+            next_token();
             parse_statement();
-            expect_type(72);
+            expect_type(41);
             break;
         default:
             syntax_error(-1, "block");
@@ -447,7 +327,7 @@ void parse_statement_n(){
             parse_statement_line();
             parse_statement_n();
             break;
-        case 72:
+        case 41:
             break;
         default:
             syntax_error(-1, "statement_n");
@@ -467,7 +347,7 @@ void parse_statement_line(){
         case 29:
         case 30:
             parse_simple_statement();
-            expect_type(41);
+            expect_type(42);
             break;
         case 4:
             parse_if_statement();
@@ -507,7 +387,7 @@ void parse_simple_n(){
             parse_simple_s();
             parse_simple_n();
             break;
-        case 41:
+        case 42:
             break;
         default:
             syntax_error(-1, "simple_n");
@@ -543,7 +423,7 @@ void parse_simple_s(){
 
 void parse_simple_id(){
     switch (tok.type){
-        case 41:
+        case 42:
         case 31:
         case 21:
         case 14:
@@ -574,10 +454,10 @@ void parse_if_statement(){
             next_token();
             parse_condition();
             expect_type(9);
-            expect_type(41);
+            expect_type(42);
             parse_block();
             expect_type(3);
-            expect_type(41);
+            expect_type(42);
             parse_block();
             break;
         default:
@@ -591,7 +471,7 @@ void parse_while_statement(){
             next_token();
             parse_condition();
             expect_type(1);
-            expect_type(41);
+            expect_type(42);
             parse_block();
             break;
         default:
@@ -636,7 +516,7 @@ void parse_return_val(){
         case 30:
             parse_expression();
             break;
-        case 41:
+        case 42:
         case 21:
             break;
         default:
@@ -767,7 +647,7 @@ void parse_expression(){
 
 void parse_expression_n(){
     switch (tok.type){
-        case 41:
+        case 42:
         case 31:
         case 21:
         case 38:
@@ -808,7 +688,7 @@ void parse_equal(){
 
 void parse_equal_n(){
     switch (tok.type){
-        case 41:
+        case 42:
         case 21:
         case 9:
         case 1:
@@ -854,7 +734,7 @@ void parse_comparison(){
 
 void parse_comparison_n(){
     switch (tok.type){
-        case 41:
+        case 42:
         case 21:
         case 9:
         case 1:
@@ -906,7 +786,7 @@ void parse_addition(){
 
 void parse_addition_n(){
     switch (tok.type){
-        case 41:
+        case 42:
         case 21:
         case 9:
         case 1:
@@ -952,7 +832,7 @@ void parse_mult(){
 
 void parse_mult_n(){
     switch (tok.type){
-        case 41:
+        case 42:
         case 21:
         case 9:
         case 1:
@@ -1030,7 +910,7 @@ void parse_unary_noid(){
 
 void parse_primary_id(){
     switch (tok.type){
-        case 41:
+        case 42:
         case 31:
         case 21:
         case 9:
@@ -1076,7 +956,7 @@ void parse_primary_n(){
     }
 }
 /* ==================
- * END OF RULES
+ * END OF LL TABLE FUNCTIONS
  * ==================
  */
 
