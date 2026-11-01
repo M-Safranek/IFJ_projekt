@@ -192,6 +192,9 @@ Token get_next_token(void)
                 else if(c == '>')
                      state = GREATER;
 
+                else if(c == '!')
+                     state = T_EXCLAMATION;
+
                 else if(c == '(')
                     {
                     create_token(T_LPAREN);
@@ -239,6 +242,17 @@ Token get_next_token(void)
                     {state = FALSE;
                     forget_char(c);}
 
+            break;
+
+                        
+            case T_EXCLAMATION:
+                if (c == '='){
+                    create_token(T_NOT_EQUAL);
+                }
+                else{
+                    state = FALSE;
+                    forget_char(c);
+                }
             break;
 
             case IDENTIFIER:

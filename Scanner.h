@@ -31,6 +31,7 @@ typedef enum {
     T_DOT,
     T_AT,
 
+
     T_INT,
     T_STRING,
     T_FLOAT,
@@ -48,6 +49,7 @@ typedef enum {
     T_GREATER_EQUAL,
     T_EQUAL,
     T_EQUAL_EQUAL,
+    T_NOT_EQUAL,
 
 
     T_IDENTIFIER,
@@ -107,6 +109,7 @@ typedef enum {
     GREATER_EQUAL,
     EQUAL,
     EQUAL_EQUAL,
+    T_EXCLAMATION,
 
 
     /* Punctuation */
