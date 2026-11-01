@@ -67,7 +67,7 @@ typedef struct symbol{
 };
 
 struct symbol *search(char *what[], struct symbol *where);
-struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[]);
+struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[], bool defined);
 struct symbol *delete_symbol(struct symbol *what, struct symbol *top);
 struct symbol *delete_tree(struct symbol *top);
 
