@@ -13,15 +13,15 @@
  * add comments
  *
  * Vyresit to ze muze byt:
- * var a = (10+
- *         20+
- *         30)
+ * var a = (TK_UNIT+
+ *         T_COMMA+
+ *         T_MINUS)
 */
 Token tok;
 
 
 // MAIN, DEDENT, INDENT
-// 24     41      40
+// T_AT     T_DEDENT      T_INDENT
 
 
 
@@ -85,7 +85,7 @@ const char *token_names[] = {
     "T_EOF"         // 44
 };
 // for debug
-int token_count = 1;
+int token_count = T_DO;
 
 // for debug
 void print_token(){
@@ -124,29 +124,29 @@ void expect_type(TokenType t){
  */
 
 void parse_program(){
-    if (tok.type != 5 ) syntax_error(5, "abab");
+    if (tok.type != T_IMPORT ) syntax_error(T_IMPORT, "abab");
 
     parse_prologue();
-    expect_type(42);
+    expect_type(T_EOL);
     parse_func_list();
-    expect_type(44);
+    expect_type(T_EOF);
 }
 
 void parse_prologue(){
-    expect_type(5);
-    expect_type(39);
-    expect_type(23);
-    expect_type(31);
+    expect_type(T_IMPORT);
+    expect_type(T_IDENTIFIER);
+    expect_type(T_DOT);
+    expect_type(T_MULTIPLY);
 }
 
 void parse_func_list(){
     switch (tok.type){
-        case 0:
-        case 24:
+        case T_DEF:
+        case T_AT:
             parse_func_def();
             parse_func_list();
             break;
-        case 44:
+        case T_EOF:
             break;
         default:
             syntax_error(-1,"func_list");
@@ -154,16 +154,16 @@ void parse_func_list(){
 }
 void parse_func_def(){
     switch (tok.type){
-        case 0:
-        case 24:
+        case T_DEF:
+        case T_AT:
             parse_annot();
-            expect_type(0);
-            expect_type(39);
-            expect_type(14);
+            expect_type(T_DEF);
+            expect_type(T_IDENTIFIER);
+            expect_type(T_LPAREN);
             parse_params();
-            expect_type(15);
+            expect_type(T_RPAREN);
             parse_n_type();
-            expect_type(37);
+            expect_type(T_EQUAL);
             parse_func_body();
             break;
         default:
@@ -173,12 +173,12 @@ void parse_func_def(){
 
 void parse_annot(){
     switch (tok.type){
-        case 24:
+        case T_AT:
             next_token();
-            expect_type(39);
+            expect_type(T_IDENTIFIER);
             parse_annot_n();
             break;
-        case 0:
+        case T_DEF:
             break;
         default:
             syntax_error(-1, "annot");
@@ -187,10 +187,10 @@ void parse_annot(){
 
 void parse_annot_n(){
     switch (tok.type){
-        case 42:
+        case T_EOL:
             next_token();
             break;
-        case 0:
+        case T_DEF:
             break;
         default:
             syntax_error(-1, "annot_n");
@@ -199,11 +199,11 @@ void parse_annot_n(){
 
 void parse_params(){
     switch (tok.type){
-        case 15:
+        case T_RPAREN:
             break;
-        case 39:
+        case T_IDENTIFIER:
             next_token();
-            expect_type(22);
+            expect_type(T_COLON);
             parse_type();
             parse_params_n();
             break;
@@ -214,14 +214,14 @@ void parse_params(){
 
 void parse_params_n(){
     switch (tok.type){
-        case 20:
+        case T_COMMA:
             next_token();
-            expect_type(39);
-            expect_type(22);
+            expect_type(T_IDENTIFIER);
+            expect_type(T_COLON);
             parse_type();
             parse_params_n();
             break;
-        case 15:
+        case T_RPAREN:
             break;
         default:
             syntax_error(-1, "params_n");
@@ -231,17 +231,17 @@ void parse_params_n(){
 
 void parse_func_body(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_expression();
-            expect_type(42);
+            expect_type(T_EOL);
             break;
-        case 42:
+        case T_EOL:
             next_token();
             parse_block();
             break;
@@ -252,9 +252,9 @@ void parse_func_body(){
 
 void parse_n_type(){
     switch (tok.type){
-        case 37:
+        case T_EQUAL:
             break;
-        case 22:
+        case T_COLON:
             next_token();
             parse_type();
             break;
@@ -265,10 +265,10 @@ void parse_n_type(){
 
 void parse_type(){
     switch (tok.type){
-        case 10:
-        case 6:
-        case 2:
-        case 8:
+        case TK_UNIT:
+        case TK_INT:
+        case TK_FLOAT:
+        case TK_STRING:
             next_token();
             break;
         default:
@@ -278,10 +278,10 @@ void parse_type(){
 
 void parse_block(){
     switch (tok.type){
-        case 40:
+        case T_INDENT:
             next_token();
             parse_statement();
-            expect_type(41);
+            expect_type(T_DEDENT);
             break;
         default:
             syntax_error(-1, "block");
@@ -290,18 +290,18 @@ void parse_block(){
 
 void parse_statement(){
     switch (tok.type){
-        case 39:
-        case 4:
-        case 13:
-        case 7:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 11:
-        case 12:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_IF:
+        case T_WHILE:
+        case T_RETURN:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_VAL:
+        case T_VAR:
+        case T_PLUS:
+        case T_MINUS:
             parse_statement_line();
             parse_statement_n();
             break;
@@ -312,22 +312,22 @@ void parse_statement(){
 
 void parse_statement_n(){
     switch (tok.type){
-        case 39:
-        case 4:
-        case 13:
-        case 7:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 11:
-        case 12:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_IF:
+        case T_WHILE:
+        case T_RETURN:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_VAL:
+        case T_VAR:
+        case T_PLUS:
+        case T_MINUS:
             parse_statement_line();
             parse_statement_n();
             break;
-        case 41:
+        case T_DEDENT:
             break;
         default:
             syntax_error(-1, "statement_n");
@@ -336,23 +336,23 @@ void parse_statement_n(){
 
 void parse_statement_line(){
     switch (tok.type){
-        case 39:
-        case 7:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 11:
-        case 12:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_RETURN:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_VAL:
+        case T_VAR:
+        case T_PLUS:
+        case T_MINUS:
             parse_simple_statement();
-            expect_type(42);
+            expect_type(T_EOL);
             break;
-        case 4:
+        case T_IF:
             parse_if_statement();
             break;
-        case 13:
+        case T_WHILE:
             parse_while_statement();
             break;
         default:
@@ -362,16 +362,16 @@ void parse_statement_line(){
 
 void parse_simple_statement(){
     switch (tok.type){
-        case 39:
-        case 7:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 11:
-        case 12:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_RETURN:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_VAL:
+        case T_VAR:
+        case T_PLUS:
+        case T_MINUS:
             parse_simple_s();
             parse_simple_n();
             break;
@@ -382,12 +382,12 @@ void parse_simple_statement(){
 
 void parse_simple_n(){
     switch (tok.type){
-        case 21:
+        case T_SEMICOLON:
             next_token();
             parse_simple_s();
             parse_simple_n();
             break;
-        case 42:
+        case T_EOL:
             break;
         default:
             syntax_error(-1, "simple_n");
@@ -396,24 +396,24 @@ void parse_simple_n(){
 
 void parse_simple_s(){
     switch (tok.type){
-        case 39:
+        case T_IDENTIFIER:
             next_token();
             parse_simple_id();
             break;
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_unary_noid();
             parse_expression_n();
             break;
-        case 11:
-        case 12:
+        case T_VAL:
+        case T_VAR:
             parse_var_def();
             break;
-        case 7:
+        case T_RETURN:
             parse_return_statement();
             break;
         default:
@@ -423,23 +423,23 @@ void parse_simple_s(){
 
 void parse_simple_id(){
     switch (tok.type){
-        case 42:
-        case 31:
-        case 21:
-        case 14:
-        case 38:
+        case T_EOL:
+        case T_MULTIPLY:
+        case T_SEMICOLON:
+        case T_LPAREN:
+        case T_EQUAL_EQUAL:
         //case NEQ:
-        case 35:
-        case 36:
-        case 33:
-        case 34:
-        case 29:
-        case 30:
-        case 32:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+        case T_LESS:
+        case T_LESS_EQUAL:
+        case T_PLUS:
+        case T_MINUS:
+        case T_DIVIDE:
             parse_primary_id();
             parse_expression_n();
             break;
-        case 37:
+        case T_EQUAL:
             next_token();
             parse_expression();
             break;
@@ -450,14 +450,14 @@ void parse_simple_id(){
 
 void parse_if_statement(){
     switch (tok.type){
-        case 4:
+        case T_IF:
             next_token();
             parse_condition();
-            expect_type(9);
-            expect_type(42);
+            expect_type(T_THEN);
+            expect_type(T_EOL);
             parse_block();
-            expect_type(3);
-            expect_type(42);
+            expect_type(T_ELSE);
+            expect_type(T_EOL);
             parse_block();
             break;
         default:
@@ -467,11 +467,11 @@ void parse_if_statement(){
 
 void parse_while_statement(){
     switch (tok.type){
-        case 13:
+        case T_WHILE:
             next_token();
             parse_condition();
-            expect_type(1);
-            expect_type(42);
+            expect_type(T_DO);
+            expect_type(T_EOL);
             parse_block();
             break;
         default:
@@ -481,13 +481,13 @@ void parse_while_statement(){
 /////////////////////////////////////////////////////// CONDITION
 void parse_condition(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             break;
         default:
             syntax_error(-1, "condition");
@@ -496,7 +496,7 @@ void parse_condition(){
 
 void parse_return_statement(){
     switch (tok.type){
-        case 7:
+        case T_RETURN:
             next_token();
             parse_return_val();
             break;
@@ -507,17 +507,17 @@ void parse_return_statement(){
 
 void parse_return_val(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_expression();
             break;
-        case 42:
-        case 21:
+        case T_EOL:
+        case T_SEMICOLON:
             break;
         default:
             syntax_error(-1, "return_val");
@@ -526,16 +526,16 @@ void parse_return_val(){
 
 void parse_arguments(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_MINUS:
             parse_term();
             parse_arguments_n();
             break;
-        case 15:
+        case T_RPAREN:
             break;
         default:
             syntax_error(-1, "arguments");
@@ -544,11 +544,11 @@ void parse_arguments(){
 
 void parse_arguments_n(){
     switch (tok.type){
-        case 20:
+        case T_COMMA:
             next_token();
             parse_arguments_nn();
             break;
-        case 15:
+        case T_RPAREN:
             break;
         default:
             syntax_error(-1, "arguments_n");
@@ -557,12 +557,12 @@ void parse_arguments_n(){
 
 void parse_arguments_nn(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_MINUS:
             parse_term();
             parse_arguments_n();
             break;
@@ -573,17 +573,17 @@ void parse_arguments_nn(){
 
 void parse_term(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
             next_token();
             break;
-        case 14:
+        case T_LPAREN:
             next_token();
-            expect_type(15);
+            expect_type(T_RPAREN);
             break;
-        case 30:
+        case T_MINUS:
             next_token();
             parse_num_lit();
             break;
@@ -594,8 +594,8 @@ void parse_term(){
 
 void parse_num_lit(){
     switch (tok.type){
-        case 25:
-        case 27:
+        case T_INT:
+        case T_FLOAT:
             next_token();
             break;
         default:
@@ -605,12 +605,12 @@ void parse_num_lit(){
 
 void parse_var_def(){
     switch (tok.type){
-        case 11:
-        case 12:
+        case T_VAL:
+        case T_VAR:
             parse_vax();
-            expect_type(39);
+            expect_type(T_IDENTIFIER);
             parse_n_type();
-            expect_type(37);
+            expect_type(T_EQUAL);
             parse_expression();
             break;
         default:
@@ -620,8 +620,8 @@ void parse_var_def(){
 
 void parse_vax(){
     switch (tok.type){
-        case 11:
-        case 12:
+        case T_VAL:
+        case T_VAR:
             next_token();
             break;
         default:
@@ -631,13 +631,13 @@ void parse_vax(){
 
 void parse_expression(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_equal();
             break;
         default:
@@ -647,18 +647,18 @@ void parse_expression(){
 
 void parse_expression_n(){
     switch (tok.type){
-        case 42:
-        case 31:
-        case 21:
-        case 38:
+        case T_EOL:
+        case T_MULTIPLY:
+        case T_SEMICOLON:
+        case T_EQUAL_EQUAL:
         //case NEQ:
-        case 35:
-        case 36:
-        case 33:
-        case 34:
-        case 29:
-        case 30:
-        case 32:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+        case T_LESS:
+        case T_LESS_EQUAL:
+        case T_PLUS:
+        case T_MINUS:
+        case T_DIVIDE:
             parse_mult_n();
             parse_addition_n();
             parse_comparison_n();
@@ -671,13 +671,13 @@ void parse_expression_n(){
 
 void parse_equal(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_comparison();
             parse_equal_n();
             break;
@@ -688,13 +688,13 @@ void parse_equal(){
 
 void parse_equal_n(){
     switch (tok.type){
-        case 42:
-        case 21:
-        case 9:
-        case 1:
-        case 15:
+        case T_EOL:
+        case T_SEMICOLON:
+        case T_THEN:
+        case T_DO:
+        case T_RPAREN:
             break;
-        case 38:
+        case T_EQUAL_EQUAL:
         //case NEQ:
             parse_equal_op();
             parse_comparison();
@@ -706,7 +706,7 @@ void parse_equal_n(){
 
 void parse_equal_op(){
     switch (tok.type){
-        case 38:
+        case T_EQUAL_EQUAL:
         //case NEQ:
             next_token();
             break;
@@ -717,13 +717,13 @@ void parse_equal_op(){
 
 void parse_comparison(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_addition();
             parse_comparison_n();
             break;
@@ -734,18 +734,18 @@ void parse_comparison(){
 
 void parse_comparison_n(){
     switch (tok.type){
-        case 42:
-        case 21:
-        case 9:
-        case 1:
-        case 15:
-        case 38:
+        case T_EOL:
+        case T_SEMICOLON:
+        case T_THEN:
+        case T_DO:
+        case T_RPAREN:
+        case T_EQUAL_EQUAL:
         //case NEQ:
             break;
-        case 35:
-        case 36:
-        case 33:
-        case 34:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+        case T_LESS:
+        case T_LESS_EQUAL:
             parse_comparison_op();
             parse_addition();
             break;
@@ -756,10 +756,10 @@ void parse_comparison_n(){
 
 void parse_comparison_op(){
     switch (tok.type){
-        case 35:
-        case 36:
-        case 33:
-        case 34:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+        case T_LESS:
+        case T_LESS_EQUAL:
             next_token();
             break;
         default:
@@ -769,13 +769,13 @@ void parse_comparison_op(){
 
 void parse_addition(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_mult();
             parse_addition_n();
             break;
@@ -786,24 +786,24 @@ void parse_addition(){
 
 void parse_addition_n(){
     switch (tok.type){
-        case 42:
-        case 21:
-        case 9:
-        case 1:
-        case 15:
-        case 38:
+        case T_EOL:
+        case T_SEMICOLON:
+        case T_THEN:
+        case T_DO:
+        case T_RPAREN:
+        case T_EQUAL_EQUAL:
         //case NEQ:
-        case 35:
-        case 36:
-        case 33:
-        case 34:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+        case T_LESS:
+        case T_LESS_EQUAL:
             break;
-        case 29:
+        case T_PLUS:
             next_token();
             parse_mult();
             parse_addition_n();
             break;
-        case 30:
+        case T_MINUS:
             next_token();
             parse_mult();
             parse_addition_n();
@@ -815,13 +815,13 @@ void parse_addition_n(){
 
 void parse_mult(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_unary();
             parse_mult_n();
             break;
@@ -832,26 +832,26 @@ void parse_mult(){
 
 void parse_mult_n(){
     switch (tok.type){
-        case 42:
-        case 21:
-        case 9:
-        case 1:
-        case 15:
-        case 38:
+        case T_EOL:
+        case T_SEMICOLON:
+        case T_THEN:
+        case T_DO:
+        case T_RPAREN:
+        case T_EQUAL_EQUAL:
         //case NEQ:
-        case 35:
-        case 36:
-        case 33:
-        case 34:
-        case 29:
-        case 30:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+        case T_LESS:
+        case T_LESS_EQUAL:
+        case T_PLUS:
+        case T_MINUS:
             break;
-        case 31:
+        case T_MULTIPLY:
             next_token();
             parse_unary();
             parse_mult_n();
             break;
-        case 32:
+        case T_DIVIDE:
             next_token();
             parse_unary();
             parse_mult_n();
@@ -863,16 +863,16 @@ void parse_mult_n(){
 
 void parse_unary(){
     switch (tok.type){
-        case 39:
+        case T_IDENTIFIER:
             next_token();
             parse_primary_id();
             break;
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_unary_noid();
             break;
         default:
@@ -882,24 +882,24 @@ void parse_unary(){
 
 void parse_unary_noid(){
     switch (tok.type){
-        case 25:
+        case T_INT:
             next_token();
             break;
-        case 27:
+        case T_FLOAT:
             next_token();
             break;
-        case 26:
+        case T_STRING:
             next_token();
             break;
-        case 14:
+        case T_LPAREN:
             next_token();
             parse_primary_n();
             break;
-        case 29:
+        case T_PLUS:
             next_token();
             parse_unary();
             break;
-        case 30:
+        case T_MINUS:
             next_token();
             parse_unary();
             break;
@@ -910,26 +910,26 @@ void parse_unary_noid(){
 
 void parse_primary_id(){
     switch (tok.type){
-        case 42:
-        case 31:
-        case 21:
-        case 9:
-        case 1:
-        case 15:
-        case 38:
+        case T_EOL:
+        case T_MULTIPLY:
+        case T_SEMICOLON:
+        case T_THEN:
+        case T_DO:
+        case T_RPAREN:
+        case T_EQUAL_EQUAL:
         //case NEQ:
-        case 35:
-        case 36:
-        case 33:
-        case 34:
-        case 29:
-        case 30:
-        case 32:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+        case T_LESS:
+        case T_LESS_EQUAL:
+        case T_PLUS:
+        case T_MINUS:
+        case T_DIVIDE:
             break;
-        case 14:
+        case T_LPAREN:
             next_token();
             parse_arguments();
-            expect_type(15);
+            expect_type(T_RPAREN);
             break;
         default:
             syntax_error(-1, "primary_id");
@@ -938,17 +938,17 @@ void parse_primary_id(){
 
 void parse_primary_n(){
     switch (tok.type){
-        case 39:
-        case 25:
-        case 27:
-        case 26:
-        case 14:
-        case 29:
-        case 30:
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+        case T_LPAREN:
+        case T_PLUS:
+        case T_MINUS:
             parse_expression();
-            expect_type(15);
+            expect_type(T_RPAREN);
             break;
-        case 15:
+        case T_RPAREN:
             next_token();
             break;
         default:
@@ -964,7 +964,7 @@ void parse_primary_n(){
 int main (){
     FILE* test_file = fopen("test.txt","r");
     if (test_file == NULL){
-        return -1;
+        return -T_DO;
     }
     scanner_init(test_file);
 
@@ -975,5 +975,5 @@ int main (){
     printf("uz je konec hej\n");
 
     fclose(test_file);
-    return 0;
+    return T_DEF;
 }
