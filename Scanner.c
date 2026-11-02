@@ -9,6 +9,8 @@
 #include <string.h>
 #include <ctype.h>
 #include "Scanner.h"
+#include <errno.h>
+#include <limits.h>
 
 Scanner scanner;
 void forget_char(char c );
@@ -37,11 +39,33 @@ void scanner_init(FILE *source)
 }
 
 
-void token_destroy(Token *token)
-{
-    if (token != NULL) {
-        free(token->attr);
-        token->attr = NULL;
+// gets rid of _ and d/D before conversion
+void normalize_number(char *number) {
+    int read = 0;
+    int write = 0;
+
+    while (number[read] != '\0') {
+        if (number[read] != '_') {
+            number[write] = number[read];
+            write++;
+        }
+        read++;
+    }
+
+    number[write] = '\0';
+
+    // Remove optional Double suffix.
+    if (write > 0 &&
+        (number[write - 1] == 'd' || number[write - 1] == 'D')) {
+        number[write - 1] = '\0';
+    }
+}
+
+
+void token_destroy(Token *token) {
+    if (token->type == T_IDENTIFIER || token->type == T_STRING) {
+        free(token->attr.string_value);
+        token->attr.string_value = NULL;
     }
 }
 
@@ -770,21 +794,73 @@ Token get_next_token(void)
     
 }
 
-// creates a token using scanner.attr and scanner.attr_size and sets scanner.is_running = 0
+// Creates a token from scanner.attr and scanner.attr_size.
 void create_token(TokenType new_type, Token *current_token) {
     scanner.attr[scanner.attr_size] = '\0';
 
     current_token->type = new_type;
     current_token->line = scanner.line_number;
-    current_token->attr = malloc(scanner.attr_size + 1);
 
-    if (current_token->attr == NULL) {
-        current_token->type = T_ERROR;
-        scanner.is_running = 0;
-        return;
+    // Initialize the union.
+    current_token->attr.string_value = NULL;
+
+    switch (new_type) {
+        case T_INT: {
+            errno = 0;
+            char *end = NULL;
+            normalize_number(scanner.attr);
+            long converted_int = strtol(scanner.attr, &end, 10);
+
+            if (errno == ERANGE ||
+                end == scanner.attr ||
+                *end != '\0' ||
+                converted_int < INT32_MIN ||
+                converted_int > INT32_MAX) {
+                current_token->type = T_ERROR;
+                break;
+            }
+
+            current_token->attr.int_value = (int32_t)converted_int;
+            break;
+        }
+
+        case T_FLOAT: {
+            errno = 0;
+            char *end = NULL;
+            normalize_number(scanner.attr);
+            double converted_float = strtod(scanner.attr, &end);
+
+            if (errno == ERANGE ||
+                end == scanner.attr ||
+                *end != '\0') {
+                current_token->type = T_ERROR;
+                break;
+            }
+
+            current_token->attr.double_value = converted_float;
+            break;
+        }
+
+        case T_IDENTIFIER:
+        case T_STRING: {
+            current_token->attr.string_value =
+                malloc(scanner.attr_size + 1);
+
+            if (current_token->attr.string_value == NULL) {
+                current_token->type = T_ERROR;
+                break;
+            }
+
+            strcpy(current_token->attr.string_value, scanner.attr);
+            break;
+        }
+
+        default:
+            // Keywords, punctuation, EOF, INDENT, etc.
+            // Don't need a dynamically allocated value.
+            break;
     }
 
-    strcpy(current_token->attr, scanner.attr);
     scanner.is_running = 0;
 }
 
@@ -799,9 +875,9 @@ void forget_char(char c){
 }
 
 
-/*int main()
+int main()
 {
-    FILE* test_file = fopen("nested_comment_test.txt","r");
+    FILE* test_file = fopen("id_test","r");
 
     if (test_file == NULL){
         return -1;
@@ -810,12 +886,29 @@ void forget_char(char c){
 
     Token i = get_next_token();
     while  (i.type != T_EOF){
-        printf("type=%d, attr=[%s] line: %d \n", i.type, i.attr, i.line);
+        
+        
+        
+        if (i.type == T_IDENTIFIER || i.type == T_STRING) {
+            printf("type=%d, attr=[%s] line: %d\n",
+           i.type, i.attr.string_value, i.line);
+        }
+        else if (i.type == T_INT) {
+            printf("type=%d, attr=[%d] line: %d\n",
+                i.type, i.attr.int_value, i.line);
+        }
+        else if (i.type == T_FLOAT) {
+            printf("type=%d, attr=[%f] line: %d\n",
+                i.type, i.attr.double_value, i.line);
+        }
+        else {
+            printf("type=%d, line: %d\n", i.type, i.line);
+        }
+        
         i = get_next_token();
     }
-    printf("type=%d, attr=[%s]\n", i.type, i.attr);
+    printf("type=%d\n", i.type);
 
     fclose(test_file);
     return 0;
 }
-*/

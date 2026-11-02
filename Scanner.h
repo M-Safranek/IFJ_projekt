@@ -163,14 +163,20 @@ typedef enum {
 
 } State;
 
+#include <stdint.h>
 
+typedef union {
+    int32_t int_value;
+    double double_value;
+    char *string_value;
+} TokenValue;
 
 typedef struct {
     TokenType type;
-    char* attr;
     int line;
-
+    TokenValue attr;
 } Token;
+
 
 void create_token(TokenType new_type,Token *token);
 void scanner_init(FILE *source);
