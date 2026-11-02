@@ -1,75 +1,99 @@
+/*
+ * Scanner for the IFJ26 language.
+ * Reads source code and returns lexical tokens.
+ * Author: Daniel Vrba
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "Scanner.h"
-#include <stdbool.h>
-FILE* file;
-unsigned long current_token_attr_size = 0;
-char current_token_attr[1000];
-//TODO dynamically allocate memory for attribute
 
-int is_running = 0; // used to stop the token reader when a token is created(in create token)
-Token current_token;
-int line_number = 0;
+Scanner scanner;
+void forget_char(char c );
 
 
-bool has_newline = false;// used in multi-line comments based on specification
-int block_comment_depth = 0;
+void scanner_init(FILE *source)
+{
+    scanner.file = source;
 
-bool after_block_comment_check_flag = false; // used to check that after a multi-line comment there is a OEL preceded bty whitespaces
-bool count_indent_flag = true; // used to read the indent at the start of the line state is set to L_START instead of start
+    scanner.attr_size = 0;
+    scanner.attr[0] = '\0';
 
-int paren_depth = 0;
+    scanner.is_running = 0;
+    scanner.line_number = 1;
 
+    scanner.has_newline = false;
+    scanner.block_comment_depth = 0;
+    scanner.after_block_comment_check_flag = false;
+    scanner.count_indent_flag = true;
 
-// remembers pending dedent count
-int pending_dedents = 0;
+    scanner.paren_depth = 0;
+    scanner.pending_dedents = 0;
 
-
-//indents
-//TODO dynamically allocate memory for stack
-#define MAX_INDENT_LEVELS 1024
-
-int indentStack[MAX_INDENT_LEVELS] = {0};
-int indentTop = 0;
-
-void pushIndent(int indent) {
-    if (indentTop + 1 >= MAX_INDENT_LEVELS) {
-        return; 
-    }
-    indentTop++;
-    indentStack[indentTop] = indent;
+    scanner.indent_top = 0;
+    scanner.indent_stack[0] = 0;
 }
 
-void popIndent() {
-    if (indentTop > 0) {
-        indentTop--;
+
+void token_destroy(Token *token)
+{
+    if (token != NULL) {
+        free(token->attr);
+        token->attr = NULL;
     }
 }
 
 
-
-// returns false on indentation error
-bool new_indent(int current_indent) {
-    int previous_indent = indentStack[indentTop];
-    if (current_indent > previous_indent) {
-        pushIndent(current_indent);
-        create_token(T_INDENT);
+bool push_indent(int indent) {
+    if (scanner.indent_top + 1 >= MAX_INDENT_LEVELS) {
+        return false;
     }
-    else if (current_indent < previous_indent) {
-        while (current_indent < indentStack[indentTop]) {
-            popIndent();
-            create_token(T_DEDENT);
-        }
 
-        if (current_indent != indentStack[indentTop]) {
-            is_running = 0;
-            return false;
-        }
-    }
+    scanner.indent_top++;
+    scanner.indent_stack[scanner.indent_top] = indent;
     return true;
 }
+
+void pop_indent(void) {
+    if (scanner.indent_top > 0) {
+        scanner.indent_top--;
+    }
+}
+
+// Returns false on indentation error.
+bool new_indent(int current_indent,Token *current_token) {
+    int previous_indent = scanner.indent_stack[scanner.indent_top];
+
+    if (current_indent > previous_indent) {
+        if (!push_indent(current_indent)) {
+            return false;
+        }
+
+        create_token(T_INDENT, current_token);
+    }
+    else if (current_indent < previous_indent) {
+        while (scanner.indent_top > 0 &&
+               current_indent < scanner.indent_stack[scanner.indent_top]) {
+            pop_indent();
+            scanner.pending_dedents++;
+        }
+
+        if (current_indent != scanner.indent_stack[scanner.indent_top]) {
+            scanner.pending_dedents = 0;
+            return false;
+        }
+
+        if (scanner.pending_dedents > 0) {
+            scanner.pending_dedents--;
+            create_token(T_DEDENT, current_token);
+        }
+    }
+
+    return true;
+}
+
 
 
 const char *keywords[] = {
@@ -89,20 +113,14 @@ const char *keywords[] = {
     "while"
 };
 
-/*
- * Initializes the scanner.
- */
-void scanner_init(FILE *source)
-{
-    file = source;
-}
+
 
 //checks if the current identifier is a keywords only works because of the keywords being at the start of the enum and in the same order as in the array 
-bool keyword_check(){
-    current_token_attr[current_token_attr_size] = '\0';
+bool keyword_check(Token *current_token){
+    scanner.attr[scanner.attr_size] = '\0';
     for (int i = T_DEF; i <= T_WHILE; i++) {
-        if (strcmp(current_token_attr, keywords[i]) == 0) {
-            create_token(i);
+        if (strcmp(scanner.attr, keywords[i]) == 0) {
+            create_token(i, current_token);
             return true;
         }
     }
@@ -115,49 +133,48 @@ bool keyword_check(){
  */
 Token get_next_token(void)
 {
-
-      if (pending_dedents > 0) {
-        current_token_attr_size = 0;
-        popIndent();
-        pending_dedents--;
-        create_token(T_DEDENT);
+    Token current_token;
+      if (scanner.pending_dedents > 0) {
+        scanner.attr_size = 0;
+        scanner.pending_dedents--;
+        create_token(T_DEDENT, &current_token);
         return current_token;
     }
 
     State state = START;
-    current_token_attr_size = 0 ;
-    is_running = 1;
+    scanner.attr_size = 0 ;
+    scanner.is_running = 1;
 
 
-    while (is_running)
+    while (scanner.is_running)
     {
-        int c = getc(file);
+        int c = getc(scanner.file);
 
         //ignore
         if (state == START &&
         c != EOF &&
         c != '\n' &&
         isspace((unsigned char)c)
-        && ! count_indent_flag)
+        && ! scanner.count_indent_flag)
             {
                 continue;
             }
         
 
         //add to the string 
-        if (current_token_attr_size < sizeof(current_token_attr) - 1)
+        if (scanner.attr_size < sizeof(scanner.attr) - 1)
         {
             if(c != EOF)
-                current_token_attr[current_token_attr_size++] = (char)c;
+                scanner.attr[scanner.attr_size++] = (char)c;
         }
 
-        if (after_block_comment_check_flag){
+        if (scanner.after_block_comment_check_flag){
             state =  ML_COMMENT_END_CHECK;
-            after_block_comment_check_flag = false;}
+            scanner.after_block_comment_check_flag = false;}
 
-        if (count_indent_flag){
+        if (scanner.count_indent_flag){
             state = L_START;
-            count_indent_flag = false;
+            scanner.count_indent_flag = false;
         }
 
             
@@ -178,11 +195,11 @@ Token get_next_token(void)
                 else if(c == '"')
                     state = STRING_START;
                 else if(c == '+')
-                    create_token(T_PLUS);
+                    create_token(T_PLUS, &current_token);
                 else if(c == '-')
-                    create_token(T_MINUS);
+                    create_token(T_MINUS, &current_token);
                 else if(c == '*')
-                    create_token(T_MULTIPLY);
+                    create_token(T_MULTIPLY, &current_token);
                 else if(c == '/')
                     state = SLASH;
                 else if(c == '=')
@@ -197,35 +214,45 @@ Token get_next_token(void)
 
                 else if(c == '(')
                     {
-                    create_token(T_LPAREN);
-                    paren_depth ++;
+                    create_token(T_LPAREN, &current_token);
+                    scanner.paren_depth ++;
                     }
 
                 else if(c == ')'){
-                    create_token(T_RPAREN);
-                    paren_depth --;
+                    create_token(T_RPAREN, &current_token);
+                    if (scanner.paren_depth > 0){
+                        scanner.paren_depth --;}
                     }
 
                 else if(c == '[')
-                   create_token(T_LBRACKET);
+                   create_token(T_LBRACKET, &current_token);
                 else if(c == ']')
-                    create_token(T_RBRACKET);
+                    create_token(T_RBRACKET, &current_token);
                 else if(c == ';')
-                    create_token(T_SEMICOLON);
+                    create_token(T_SEMICOLON, &current_token);
                 else if(c == ':')
-                    create_token(T_COLON);
+                    create_token(T_COLON, &current_token);
                 else if(c == ',')
-                    create_token(T_COMMA);
+                    create_token(T_COMMA, &current_token);
                 else if(c == '@')
-                    create_token(T_AT);
+                    create_token(T_AT, &current_token);
                 else if(c == '\n'){
-                    line_number += 1;
-                    if (paren_depth == 0)
-                        create_token(T_EOL);
-                    count_indent_flag = true;
+                    scanner.line_number += 1;
+                    if (scanner.paren_depth == 0)
+                        create_token(T_EOL, &current_token);
+                    scanner.count_indent_flag = true;
                 }
-                else if(c == EOF)
-                    create_token(T_EOF);
+                else if(c == EOF){
+                    if(scanner.indent_top > 0){
+                        scanner.pending_dedents = scanner.indent_top - 1;
+                        scanner.indent_top = 0;
+                        create_token(T_DEDENT, &current_token);
+                        
+                    }
+                    else{
+                    create_token(T_EOF, &current_token);
+                    }
+                    }
 
         
                 else 
@@ -247,7 +274,7 @@ Token get_next_token(void)
                         
             case T_EXCLAMATION:
                 if (c == '='){
-                    create_token(T_NOT_EQUAL);
+                    create_token(T_NOT_EQUAL, &current_token);
                 }
                 else{
                     state = FALSE;
@@ -261,8 +288,8 @@ Token get_next_token(void)
                     
                 else {
                     forget_char(c);
-                    if (!keyword_check())
-                        create_token(T_IDENTIFIER);}
+                    if (!keyword_check(&current_token))
+                        create_token(T_IDENTIFIER, &current_token);}
 
                 break;
 
@@ -286,7 +313,7 @@ Token get_next_token(void)
 
                 else {
                     forget_char(c);
-                    create_token(T_INT);
+                    create_token(T_INT, &current_token);
                 }
                     
                 break;
@@ -317,7 +344,7 @@ Token get_next_token(void)
 
                 else{
                     forget_char(c);
-                    create_token(T_INT);
+                    create_token(T_INT, &current_token);
                 }
 
                 break;
@@ -328,7 +355,7 @@ Token get_next_token(void)
                     state = FLOAT;
                 else {
                     forget_char(c);
-                    create_token(T_DOT);}
+                    create_token(T_DOT, &current_token);}
                 break;
 
 
@@ -352,11 +379,11 @@ Token get_next_token(void)
                     state = FLOAT_EXPONENT_START;
 
                 else if (((c == 'd') || (c == 'D'))){
-                    create_token(T_FLOAT);
+                    create_token(T_FLOAT, &current_token);
                 }
                 else{
                     forget_char(c);
-                    create_token(T_FLOAT);
+                    create_token(T_FLOAT, &current_token);
                 }
                 break;
 
@@ -400,11 +427,11 @@ Token get_next_token(void)
 
                 
                 else if (((c == 'd') || (c == 'D'))){
-                    create_token(T_FLOAT);
+                    create_token(T_FLOAT, &current_token);
                 }
                 else{
                     forget_char(c);
-                    create_token(T_FLOAT);
+                    create_token(T_FLOAT, &current_token);
                 }
                 
                 break;
@@ -438,7 +465,8 @@ Token get_next_token(void)
                     state = MULTILINE_STRING;
                 
                 else
-                    {state = FALSE;
+                    {
+                    create_token(T_STRING, &current_token);
                     forget_char(c);}
                 break;
 
@@ -450,7 +478,7 @@ Token get_next_token(void)
                     state = ESCAPE_SEQUENCE;
 
                 else if (c == '"')
-                    create_token(T_STRING);
+                    create_token(T_STRING, &current_token);
 
                 else
                     {state = FALSE;
@@ -463,24 +491,24 @@ Token get_next_token(void)
            
                 state = STRING;
                 if (c == 'n') {
-                    current_token_attr[current_token_attr_size - 2] = '\n';
-                    current_token_attr_size -= 1;
+                    scanner.attr[scanner.attr_size - 2] = '\n';
+                    scanner.attr_size -= 1;
                 }
                 else if (c == 'r') {
-                    current_token_attr[current_token_attr_size - 2] = '\r';
-                    current_token_attr_size -= 1;
+                    scanner.attr[scanner.attr_size - 2] = '\r';
+                    scanner.attr_size -= 1;
                 }
                 else if (c == 't') {
-                    current_token_attr[current_token_attr_size - 2] = '\t';
-                    current_token_attr_size -= 1;
+                    scanner.attr[scanner.attr_size - 2] = '\t';
+                    scanner.attr_size -= 1;
                 }
                 else if (c == '\\') {
-                    current_token_attr[current_token_attr_size - 2] = '\\';
-                    current_token_attr_size -= 1;
+                    scanner.attr[scanner.attr_size - 2] = '\\';
+                    scanner.attr_size -= 1;
                 }
                 else if (c == '"') {
-                    current_token_attr[current_token_attr_size - 2] = '\"';
-                    current_token_attr_size -= 1;
+                    scanner.attr[scanner.attr_size - 2] = '\"';
+                    scanner.attr_size -= 1;
                 }
                 else {
                     {state = FALSE;
@@ -493,8 +521,14 @@ Token get_next_token(void)
                 if (c == '"')
                     state = MULTILINE_STRING_END_1;
 
-                else if((c >= 0 && c <= 127) && c!= '"')
+                
+
+                else if((c >= 0 && c <= 127) && c!= '"'){
                     state = MULTILINE_STRING;
+                    if(c == '\n'){
+                    scanner.line_number ++;
+                    }
+                }
 
                 else{
                     state = FALSE;
@@ -504,8 +538,14 @@ Token get_next_token(void)
             case MULTILINE_STRING_END_1:
                 if (c == '"')
                     state = MULTILINE_STRING_END_FINAL;
-                else if (c >= 0 && c <= 127)
-                    state = MULTILINE_STRING;    
+
+                else if (c >= 0 && c <= 127){
+
+                    if(c == '\n'){
+                    scanner.line_number ++;
+                     }   
+
+                    state = MULTILINE_STRING;}
 
                 else
                     state = FALSE;      
@@ -513,9 +553,15 @@ Token get_next_token(void)
         
             case MULTILINE_STRING_END_FINAL:
                 if (c == '"')
-                   create_token(T_STRING);
-                else if (c >= 0 && c <= 127)
-                    state = MULTILINE_STRING;      
+                   create_token(T_STRING, &current_token);
+
+                else if (c >= 0 && c <= 127){
+
+                     if(c == '\n'){
+                    scanner.line_number ++;
+                    }
+
+                    state = MULTILINE_STRING;}  
                 else 
                     state = FALSE;  
                 break;
@@ -529,33 +575,33 @@ Token get_next_token(void)
 
             case LESS:
                 if (c == '=')
-                    create_token(T_LESS_EQUAL);
+                    create_token(T_LESS_EQUAL, &current_token);
 
                 else{
                     forget_char(c);
-                    create_token(T_LESS);
+                    create_token(T_LESS, &current_token);
                     }
                 break;
 
 
             case GREATER:
                  if (c == '=')
-                    create_token(T_GREATER_EQUAL);
+                    create_token(T_GREATER_EQUAL, &current_token);
 
                 else{
                     forget_char(c);
-                    create_token(T_GREATER);
+                    create_token(T_GREATER, &current_token);
                     }
                 break;
 
 
             case EQUAL:
                 if (c == '=')
-                    create_token(T_EQUAL_EQUAL);
+                    create_token(T_EQUAL_EQUAL, &current_token);
 
                 else{
                     forget_char(c);
-                    create_token(T_EQUAL);
+                    create_token(T_EQUAL, &current_token);
                     }
                   break;
             
@@ -565,13 +611,13 @@ Token get_next_token(void)
                     state = L_COMMENT;
 
                 else if(c == '*'){
-                    has_newline = false;
-                    block_comment_depth = 1;
+                    scanner.has_newline = false;
+                    scanner.block_comment_depth = 1;
                     state = ML_COMMENT;
                 }
                 else{
                     forget_char(c);
-                    create_token(T_DIVIDE);
+                    create_token(T_DIVIDE, &current_token);
                 }
                 break;
 
@@ -588,7 +634,7 @@ Token get_next_token(void)
                  }
 
                 else if (c == EOF) {
-                    create_token(T_EOF); 
+                    create_token(T_EOF, &current_token); 
                 }
                 break;
 
@@ -596,7 +642,7 @@ Token get_next_token(void)
                  
             case ML_COMMENT:
                 if (c == EOF) {
-                    create_token(T_ERROR);
+                    create_token(T_ERROR, &current_token);
                 }
 
                 else if (c == '/') {
@@ -608,18 +654,18 @@ Token get_next_token(void)
                 }
 
                 else if (c == '\n') {
-                    has_newline = true;
-                    line_number++;
+                    scanner.has_newline = true;
+                    scanner.line_number++;
                 }
                 break;
 
             case ML_COMMENT_SLASH:
                  if (c == EOF) {
-                    create_token(T_ERROR);
+                    create_token(T_ERROR, &current_token);
                     }
 
                 else if (c == '*') {
-                    block_comment_depth++;
+                    scanner.block_comment_depth++;
                     state = ML_COMMENT;
                 }
                 else {
@@ -630,19 +676,19 @@ Token get_next_token(void)
 
             case ML_COMMENT_STAR:
                 if (c == EOF) {
-                 create_token(T_ERROR);
+                 create_token(T_ERROR, &current_token);
                 }
 
                 else if (c == '/') {
-                    block_comment_depth--;
-                    if (block_comment_depth == 0) {
-                        if (has_newline) {
-                            if(paren_depth == 0)
-                                create_token(T_EOL);
-                            after_block_comment_check_flag = true;
+                    scanner.block_comment_depth--;
+                    if (scanner.block_comment_depth == 0) {
+                        if (scanner.has_newline) {
+                            if(scanner.paren_depth == 0)
+                                create_token(T_EOL, &current_token);
+                            scanner.after_block_comment_check_flag = true;
                         }
                         else {
-                        current_token_attr_size = 0;
+                        scanner.attr_size = 0;
                         state = START;
                         }
                     }
@@ -658,7 +704,7 @@ Token get_next_token(void)
 
             case ML_COMMENT_END_CHECK:
                 if (c == EOF) {
-                    create_token(T_EOF); 
+                    create_token(T_EOF, &current_token); 
                 }
                 
                 else if (c == '\n'){
@@ -666,7 +712,7 @@ Token get_next_token(void)
                     state = START;
                 }
 
-                else if(isspace(c)){
+                else if(isspace((unsigned char)c)){
                     state = ML_COMMENT_END_CHECK;
                 }
               
@@ -681,31 +727,19 @@ Token get_next_token(void)
 
             //line start(indent check)
             case L_START:
-                if (c == EOF) {
-                    if(indentTop > 0){
-                    pending_dedents = indentTop -1;
-                    popIndent();
-                    create_token(T_DEDENT);
-                    }
-
-                    else{
-                        create_token(T_EOF);
-                    }
-                }
-
-                else if (c == '\n') {
-                    line_number++;
-                    count_indent_flag = true;
-                    current_token_attr_size = 0;
+                if (c == '\n') {
+                    scanner.line_number++;
+                    scanner.count_indent_flag = true;
+                    scanner.attr_size = 0;
                     state = START;
                     }
 
                 else if (c != ' '){
                     forget_char(c);
-                    if (!new_indent(current_token_attr_size)) {
-                        create_token(T_ERROR);
+                    if (!new_indent(scanner.attr_size,&current_token)) {
+                        create_token(T_ERROR, &current_token);
                     }
-                    current_token_attr_size = 0;
+                    scanner.attr_size = 0;
 
                     state = START;
                     }
@@ -720,9 +754,9 @@ Token get_next_token(void)
                 else
                     {
                         if( c== '\n'){
-                            line_number += 1;
+                            scanner.line_number += 1;
                         }
-                    create_token(T_ERROR);
+                    create_token(T_ERROR, &current_token);
                     }
                 break;
 
@@ -736,34 +770,43 @@ Token get_next_token(void)
     
 }
 
-// creates a token using current_token_attr and current_token_attr_size and sets is_running = 0
-void create_token(TokenType new_type){
-    Token new_token;
-    current_token_attr[current_token_attr_size] = '\0';
-    new_token.type = new_type;
-    new_token.attr = malloc(sizeof(char)*(current_token_attr_size+1));
-    new_token.line = line_number;
-    strcpy(new_token.attr,current_token_attr);
-    is_running = 0;
-    current_token = new_token;
+// creates a token using scanner.attr and scanner.attr_size and sets scanner.is_running = 0
+void create_token(TokenType new_type, Token *current_token) {
+    scanner.attr[scanner.attr_size] = '\0';
+
+    current_token->type = new_type;
+    current_token->line = scanner.line_number;
+    current_token->attr = malloc(scanner.attr_size + 1);
+
+    if (current_token->attr == NULL) {
+        current_token->type = T_ERROR;
+        scanner.is_running = 0;
+        return;
+    }
+
+    strcpy(current_token->attr, scanner.attr);
+    scanner.is_running = 0;
 }
 
 
 void forget_char(char c){
-    ungetc(c,file);
-    current_token_attr_size -= 1;
+    if(c == EOF){
+        return;
+    }
+
+    ungetc(c,scanner.file);
+    scanner.attr_size -= 1;
 }
 
 
-
-
-int main()
+/*int main()
 {
-    FILE* test_file = fopen("test.txt","r");
+    FILE* test_file = fopen("nested_comment_test.txt","r");
+
     if (test_file == NULL){
         return -1;
     }
-    file = test_file;
+    scanner_init(test_file);
 
     Token i = get_next_token();
     while  (i.type != T_EOF){
@@ -775,3 +818,4 @@ int main()
     fclose(test_file);
     return 0;
 }
+*/

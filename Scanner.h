@@ -1,5 +1,36 @@
+/*
+ * Header file for the Scanner for the IFJ26 language.
+ * Author: Daniel Vrba
+ */
+
+
+
 #ifndef SCANNER_H
 #define SCANNER_H
+#include <stdbool.h>
+#define MAX_INDENT_LEVELS 1024
+
+
+typedef struct {
+    FILE *file;
+
+    unsigned long attr_size;
+    char attr[1000];
+
+    int line_number;
+
+    bool has_newline;
+    int block_comment_depth;
+    bool after_block_comment_check_flag;
+    bool count_indent_flag;
+    int paren_depth;
+    int is_running;
+
+    int pending_dedents;
+
+    int indent_stack[MAX_INDENT_LEVELS];
+    int indent_top;
+} Scanner;
 
 typedef enum {
     //keywords
@@ -141,6 +172,7 @@ typedef struct {
 
 } Token;
 
-void create_token(TokenType new_type);
-void forget_char(char c);
+void create_token(TokenType new_type,Token *token);
+void scanner_init(FILE *source);
+void token_destroy(Token *token);
 #endif
