@@ -9,8 +9,6 @@
 /* TODO
  * remove debug things
  *
- * make AST tree generation
- *
  * make memory cleanup
  *
  * fix syntax_error func
@@ -108,6 +106,7 @@ void syntax_error(TokenType t, char* str){
     else{
         printf("Syntax error, EXPECTED %d aka %s, got %d aka %s, NUMBER:%d, LINE:%d\n", t, token_names[t], tok.type, token_names[tok.type], token_count, tok.line);
     }
+    exit(1);///////////////////////
 }
 
 void expect_type(TokenType t){
@@ -136,38 +135,74 @@ char* strdup_and_check(char* s){
     }
     return p;
 }
+/*=========================
+ * AST TREE
+ * ========================
+ */
 
+Expression* new_expr(ExpressionKind k){
+    Expression* e = calloc_and_check(sizeof(Expression));
+    e->kind = k;
+    return e;
+}
+
+Statement* new_stmt(StatementKind k){
+    Statement* s = calloc_and_check(sizeof(Statement));
+    s->kind = k;
+    return s;
+}
+
+Func* new_func(){
+    Func* f = calloc_and_check(sizeof(Func));
+    return f;
+}
+
+void add_param(Func* f, char* name, DataType type){
+    char** names = realloc(f->param_names, (f->param_count + 1) * sizeof(char*));
+    DataType* types = realloc(f->param_types, (f->param_count + 1) * sizeof(DataType));
+    if (names == NULL || types == NULL){
+        printf("Realloc err"); ////////////////////////////C
+        exit(1);
+    }
+    f->param_names = names;
+    f->param_types = types;
+    f->param_names[f->param_count] = name;
+    f->param_types[f->param_count] = type;
+    f->param_count++;
+}
+
+Statement* append_statement(Statement* line, Statement* rest){
+    Statement* s = line;
+    if (s == NULL){
+        return rest;
+    }
+    while (s->next != NULL){
+        s = s->next;
+    }
+    s->next = rest;
+    return s;
+}
+
+Expression* make_ident_expr(char* name){
+    Expression* e = {0};
+    if (tok.type == T_LPAREN){
+        e = new_expr(E_CALL);
+        e->name = name;
+        next_token();
+        e->args = parse_arguments();
+        expect_type(T_RPAREN);
+    }
+    else{
+        e = new_expr(E_VAR);
+        e->name = name;
+    }
+    return e;
+}
 
 /*=========================
  * PRECEDENCE ANALYZATOR
  * ========================
  */
-
-typedef enum PrecSym{
-    P_UNARY,
-    P_MULDIV,
-    P_PLUSMINUS,
-    P_REL,
-    P_EQ,
-    P_LPAREN,
-    P_RPAREN,
-    P_ID,
-    P_DOLLAR
-}PrecSym;
-
-typedef struct PrecItem{
-    PrecSym symbol;
-    bool is_expression;
-    bool has_handle_after;
-    Operators op;
-    Expression* node;
-}PrecItem;
-
-typedef struct Stack{
-    PrecItem* data;
-    int top;
-    int capacity;
-} Stack;
 
 Stack* stack_init() {
     Stack* s = calloc_and_check(sizeof(Stack));
@@ -255,17 +290,46 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
     switch(symbol){
         case P_ID:{
             char* name = strdup_and_check(tok.attr);
+            TokenType prev_type = tok.type;
             next_token();
             if (tok.type == T_LPAREN){ // Will be used for making AST tree - E_CALL
-                next_token();
-                parse_arguments();
-                expect_type(T_RPAREN);
+                if (prev_type == T_IDENTIFIER){
+                    item.node = new_expr(E_CALL);
+                    item.node->name = name;
+                    next_token();
+                    item.node->args = parse_arguments();
+                    expect_type(T_RPAREN);
+                }
+                else{
+                    syntax_error(-1, "Lit and then (");////////////////////////////
+                }
             }
-            /* Will be used for making AST tree - E_VAR
             else{
-
-            }*/
-
+                switch(prev_type){
+                    case T_IDENTIFIER:
+                        item.node = new_expr(E_VAR);
+                        item.node->name = name;
+                        break;
+                    case T_INT:
+                        item.node = new_expr(E_INT);
+                        // item.node->int_val = // Waiting for lexical analyzer update
+                        item.node->type = D_INT;
+                        break;
+                    case T_FLOAT:
+                        item.node = new_expr(E_DOUBLE);
+                        // item.node->double_val = // Waiting for lexical analyzer update
+                        item.node->type = D_DOUBLE;
+                        break;
+                    case T_STRING:
+                        item.node = new_expr(E_STRING);
+                        // item.node->string_val = // Waiting for lexical analyzer update
+                        item.node->type = D_STRING;
+                        break;
+                    default:
+                        printf("Shift error that should never happen.");
+                        exit(1);/////////////////////////////////////////////////
+                }
+            }
             *prev_is_operand = true;
             break;
         }
@@ -280,6 +344,44 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
         case P_DOLLAR:
             break;
         default:// Will be used for making AST tree - operators
+            switch(tok.type){
+                case T_PLUS:
+                    item.op = O_PLUS;
+                    break;
+                case T_MINUS:
+                    item.op = O_MINUS;
+                    break;
+                case T_DIVIDE:
+                    item.op = O_DIVIDE;
+                    break;
+                case T_MULTIPLY:
+                    item.op = O_MULTIPLY;
+                    break;
+                case T_GREATER:
+                    item.op = O_GREATER;
+                    break;
+                case T_GREATER_EQUAL:
+                    item.op = O_GREATER_EQUAL;
+                    break;
+                case T_LESS:
+                    item.op = O_LESS;
+                    break;
+                case T_LESS_EQUAL:
+                    item.op = O_LESS_EQUAL;
+                    break;
+                case T_EQUAL_EQUAL:
+                    item.op = O_EQUAL_EQUAL;
+                    break;
+                /*
+                case T_NEQ:
+                    item.op = O_NEQ;
+                    break;
+                */
+                default:
+                    syntax_error(-1, "Shift err");
+                    exit(1);//////////////////////////////////////
+
+            }
             *prev_is_operand = false;
             break;
     }
@@ -301,7 +403,7 @@ void reduce(Stack* s){
         if (s->data[i].has_handle_after){
             switch (n){
                 case 1: // i -> E
-                    if (!(s->data[i+1].is_expression && s->data[i+1].symbol == P_ID)){
+                    if (!(s->data[i+1].is_expression) && s->data[i+1].symbol == P_ID){
                        s->data[s->top].is_expression = true;
                     }
                     else{
@@ -312,10 +414,13 @@ void reduce(Stack* s){
                 case 2:
                     if (!(s->data[i+1].is_expression) && !(s->data[i+2].is_expression)){
                         if (s->data[i+1].symbol == P_LPAREN && s->data[i+2].symbol == P_RPAREN){ // () -> E
-                            // Will be used for making AST tree - makes E_UNIT
                             PrecItem item = {0};
                             item.is_expression = true;
                             item.has_handle_after = false;
+
+                            item.node = new_expr(E_UNIT);
+                            item.node->type = D_UNIT;
+
                             popx(s, 2);
                             push(s, item);
                         }
@@ -326,10 +431,14 @@ void reduce(Stack* s){
                     }
                     else if (!(s->data[i+1].is_expression) && s->data[i+2].is_expression){
                         if (s->data[i+1].symbol == P_UNARY){// UNARY E -> E
-                            // Will be used for making AST tree - makes E_UNARY
                             PrecItem item = {0};
                             item.is_expression = true;
                             item.has_handle_after = false;
+
+                            item.node = new_expr(E_UNARY);
+                            item.node->op = s->data[i+1].op;
+                            item.node->left = s->data[i+2].node;
+
                             popx(s, 2);
                             push(s, item);
                         }
@@ -349,6 +458,9 @@ void reduce(Stack* s){
                             PrecItem item = {0};
                             item.is_expression = true;
                             item.has_handle_after = false;
+
+                            item.node = s->data[i+2].node;
+
                             popx(s, 3);
                             push(s, item);
                         }
@@ -358,24 +470,29 @@ void reduce(Stack* s){
                         }
                     }
                     else if (s->data[i+1].is_expression && !(s->data[i+2].is_expression) && s->data[i+3].is_expression){
+                        PrecItem item = {0};
+                        item.is_expression = true;
+                        item.has_handle_after = false;
+
+                        item.node = new_expr(E_BINARY);
+
                         switch(s->data[i+2].symbol){// E op E -> E
                             case P_MULDIV:
                             case P_PLUSMINUS:
                             case P_REL:
-                            case P_EQ:{
-                                PrecItem item = {0};
-                                item.is_expression = true;
-                                item.has_handle_after = false;
+                            case P_EQ:
+                                item.node->op = s->data[i+2].op;
+                                item.node->left = s->data[i+1].node;
+                                item.node->right = s->data[i+3].node;
+
                                 popx(s, 3);
                                 push(s, item);
                                 break;
-                            }
                             default:
                                 syntax_error(-1,"Reduce function err - not E op E.");/////////////////////////////
                                 exit(1);
                                 break;
                         }
-
                     }
                     else{
                         syntax_error(-1,"Reduce function err - not (E) or E op E.");/////////////////////////////
@@ -452,13 +569,15 @@ PrecSym tok_to_sym(bool prev_is_operand, int depth){
  * =======================
  */
 
-void parse_program(){
+Func* parse_program(){
     if (tok.type != T_IMPORT ) syntax_error(T_IMPORT, "abab");
 
     parse_prologue();
     expect_type(T_EOL);
-    parse_func_list();
+    Func* f = {0};
+    f = parse_func_list();
     expect_type(T_EOF);
+    return f;
 }
 
 void parse_prologue(){
@@ -468,42 +587,56 @@ void parse_prologue(){
     expect_type(T_MULTIPLY);
 }
 
-void parse_func_list(){
+Func* parse_func_list(){
+    Func* f = {0};
     switch (tok.type){
         case T_DEF:
         case T_AT:
-            parse_func_def();
-            parse_func_list();
+            f = parse_func_def();
+            f->next = parse_func_list();
             break;
         case T_EOF:
-            break;
+            return NULL;
         default:
             syntax_error(-1,"func_list");
     }
+    return f;
 }
-void parse_func_def(){
+
+Func* parse_func_def(){
+    Func* f = new_func();
     switch (tok.type){
         case T_DEF:
         case T_AT:
-            parse_annot();
+            f->is_main = parse_annot();
             expect_type(T_DEF);
+            f->func_name = strdup_and_check(tok.attr);
             expect_type(T_IDENTIFIER);
             expect_type(T_LPAREN);
-            parse_params();
+            parse_params(f);
             expect_type(T_RPAREN);
-            parse_n_type();
+            f->return_type = parse_n_type();
             expect_type(T_EQUAL);
-            parse_func_body();
+            f->body = parse_func_body();
             break;
         default:
             syntax_error(-1, "func_def");
     }
+    return f;
 }
 
-void parse_annot(){
+bool parse_annot(){
+    bool is_main = false;
     switch (tok.type){
         case T_AT:
             next_token();
+            if (strcmp(tok.attr, "main") != 0){
+                printf("At and then not main.\n"); /////////////////////// Change later
+                exit(1);
+            }
+            else{
+                is_main = true;
+            }
             expect_type(T_IDENTIFIER);
             parse_annot_n();
             break;
@@ -512,6 +645,7 @@ void parse_annot(){
         default:
             syntax_error(-1, "annot");
     }
+    return is_main;
 }
 
 void parse_annot_n(){
@@ -526,29 +660,34 @@ void parse_annot_n(){
     }
 }
 
-void parse_params(){
+void parse_params(Func* f){
     switch (tok.type){
         case T_RPAREN:
             break;
-        case T_IDENTIFIER:
+        case T_IDENTIFIER:{ // {} are here because gcc gives a warning when declaring something right after case
+            char* param_name = strdup_and_check(tok.attr);
             next_token();
             expect_type(T_COLON);
-            parse_type();
-            parse_params_n();
+            DataType param_type = parse_type();
+            add_param(f, param_name, param_type);
+            parse_params_n(f);
             break;
+        }
         default:
             syntax_error(-1, "params");
     }
 }
 
-void parse_params_n(){
+void parse_params_n(Func* f){
     switch (tok.type){
         case T_COMMA:
             next_token();
+            char* param_name = strdup_and_check(tok.attr);
             expect_type(T_IDENTIFIER);
             expect_type(T_COLON);
-            parse_type();
-            parse_params_n();
+            DataType param_type = parse_type();
+            add_param(f, param_name, param_type);
+            parse_params_n(f);
             break;
         case T_RPAREN:
             break;
@@ -557,8 +696,7 @@ void parse_params_n(){
     }
 }
 
-
-void parse_func_body(){
+Statement* parse_func_body(){
     switch (tok.type){
         case T_IDENTIFIER:
         case T_INT:
@@ -566,58 +704,77 @@ void parse_func_body(){
         case T_STRING:
         case T_LPAREN:
         case T_PLUS:
-        case T_MINUS:
-            parse_expression();
+        case T_MINUS:{
+            Expression* e = parse_expression();
+            Statement* s = new_stmt(S_EXPR);
+            s->expr = e;
             expect_type(T_EOL);
+            return s;
             break;
+        }
         case T_EOL:
             next_token();
-            parse_block();
-            break;
+            return parse_block();
         default:
             syntax_error(-1, "func_body");
     }
+    return NULL;
 }
 
-void parse_n_type(){
+DataType parse_n_type(){
+    DataType d;
     switch (tok.type){
         case T_EQUAL:
+            d = D_UNKNOWN;
             break;
         case T_COLON:
             next_token();
-            parse_type();
+            d = parse_type();
             break;
         default:
             syntax_error(-1, "n_type");
     }
+    return d;
 }
 
-void parse_type(){
+DataType parse_type(){
+    DataType d;
     switch (tok.type){
         case TK_UNIT:
+            d = D_UNIT;
+            break;
         case TK_INT:
+            d = D_INT;
+            break;
         case TK_FLOAT:
+            d = D_DOUBLE;
+            break;
         case TK_STRING:
-            next_token();
+            d = D_STRING;
             break;
         default:
             syntax_error(-1, "type");
     }
+    next_token();
+    return d;
 }
 
-void parse_block(){
+Statement* parse_block(){
+    Statement* s = {0};
     switch (tok.type){
         case T_INDENT:
             next_token();
-            parse_statement();
+            s = parse_statement();
             expect_type(T_DEDENT);
             break;
         default:
             syntax_error(-1, "block");
     }
+    return s;
 }
 
-void parse_statement(){
+Statement* parse_statement(){
+    Statement* s = {0};
     switch (tok.type){
         case T_IDENTIFIER:
         case T_IF:
@@ -630,16 +787,20 @@ void parse_statement(){
         case T_VAL:
         case T_VAR:
         case T_PLUS:
-        case T_MINUS:
-            parse_statement_line();
-            parse_statement_n();
+        case T_MINUS:{
+            Statement* line = parse_statement_line();
+            Statement* rest = parse_statement_n();
+            s = append_statement(line, rest);
             break;
+        }
         default:
             syntax_error(-1, "statement");
     }
+    return s;
 }
 
-void parse_statement_n(){
+Statement* parse_statement_n(){
+    Statement* s = {0};
     switch (tok.type){
         case T_IDENTIFIER:
         case T_IF:
@@ -652,18 +813,23 @@ void parse_statement_n(){
         case T_VAL:
         case T_VAR:
         case T_PLUS:
-        case T_MINUS:
-            parse_statement_line();
-            parse_statement_n();
+        case T_MINUS:{
+            Statement* line = parse_statement_line();
+            Statement* rest = parse_statement_n();
+            s = append_statement(line, rest);
             break;
+        }
         case T_DEDENT:
+            s = NULL;
             break;
         default:
             syntax_error(-1, "statement_n");
     }
+    return s;
 }
 
-void parse_statement_line(){
+Statement* parse_statement_line(){
+    Statement* s = {0};
     switch (tok.type){
         case T_IDENTIFIER:
         case T_RETURN:
@@ -675,21 +841,23 @@ void parse_statement_line(){
         case T_VAR:
         case T_PLUS:
         case T_MINUS:
-            parse_simple_statement();
+            s = parse_simple_statement();
             expect_type(T_EOL);
             break;
         case T_IF:
-            parse_if_statement();
+            s = parse_if_statement();
             break;
         case T_WHILE:
-            parse_while_statement();
+            s = parse_while_statement();
             break;
         default:
             syntax_error(-1, "statement_line");
     }
+    return s;
 }
 
-void parse_simple_statement(){
+Statement* parse_simple_statement(){
+    Statement* s = {0};
     switch (tok.type){
         case T_IDENTIFIER:
         case T_RETURN:
@@ -701,114 +869,110 @@ void parse_simple_statement(){
         case T_VAR:
         case T_PLUS:
         case T_MINUS:
-            parse_simple_s();
-            parse_simple_n();
+            s = parse_simple_s();
+            s->next = parse_simple_n();
             break;
         default:
             syntax_error(-1, "simple_statement");
     }
+    return s;
 }
 
-void parse_simple_n(){
+Statement* parse_simple_n(){
+    Statement* s = {0};
     switch (tok.type){
         case T_SEMICOLON:
             next_token();
-            parse_simple_s();
-            parse_simple_n();
+            s = parse_simple_s();
+            s->next = parse_simple_n();
             break;
         case T_EOL:
+            s = NULL;
             break;
         default:
             syntax_error(-1, "simple_n");
     }
+    return s;
 }
 
-void parse_simple_s(){
+Statement* parse_simple_s(){
+    Statement* s = {0};
     switch (tok.type){
-        case T_IDENTIFIER:
+        case T_IDENTIFIER:{
+            char* name = strdup_and_check(tok.attr);
             next_token();
-            parse_simple_id();
+            if (tok.type == T_EQUAL){
+                next_token();
+                s = new_stmt(S_ASSIGN);
+                s->name = name;
+                s->expr = parse_expression();
+            }
+            else{
+                Expression* e = make_ident_expr(name);
+                s = new_stmt(S_EXPR);
+                s->expr = parse_expression_from(e);
+            }
             break;
+        }
         case T_INT:
         case T_FLOAT:
         case T_STRING:
         case T_LPAREN:
         case T_PLUS:
         case T_MINUS:
-            parse_unary_noid();
-            parse_expression_n();
+            s = new_stmt(S_EXPR);
+            s->expr = parse_expression();
             break;
         case T_VAL:
         case T_VAR:
-            parse_var_def();
+            s = parse_var_def();
             break;
         case T_RETURN:
-            parse_return_statement();
+            s = parse_return_statement();
             break;
         default:
             syntax_error(-1, "simple_s");
     }
+    return s;
 }
 
-void parse_simple_id(){
-    switch (tok.type){
-        case T_EOL:
-        case T_MULTIPLY:
-        case T_SEMICOLON:
-        case T_LPAREN:
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-        case T_LESS:
-        case T_LESS_EQUAL:
-        case T_PLUS:
-        case T_MINUS:
-        case T_DIVIDE:
-            parse_primary_id();
-            parse_expression_n();
-            break;
-        case T_EQUAL:
-            next_token();
-            parse_expression();
-            break;
-        default:
-            syntax_error(-1, "simple_id");
-    }
-}
-
-void parse_if_statement(){
+Statement* parse_if_statement(){
+    Statement* s = new_stmt(S_IF);
     switch (tok.type){
         case T_IF:
             next_token();
-            parse_condition();
+            s->expr = parse_condition();
             expect_type(T_THEN);
             expect_type(T_EOL);
-            parse_block();
+            s->body = parse_block();
             expect_type(T_ELSE);
             expect_type(T_EOL);
-            parse_block();
+            s->else_body = parse_block();
             break;
         default:
             syntax_error(-1, "if_statement");
     }
+    return s;
 }
 
-void parse_while_statement(){
+Statement* parse_while_statement(){
+    Statement* s = new_stmt(S_WHILE);
     switch (tok.type){
         case T_WHILE:
             next_token();
-            parse_condition();
+            s->expr = parse_condition();
             expect_type(T_DO);
             expect_type(T_EOL);
-            parse_block();
+            s->body = parse_block();
             break;
         default:
             syntax_error(-1, "while_statement");
     }
+    return s;
 }
-/////////////////////////////////////////////////////// CONDITION
-void parse_condition(){
+
+Expression* parse_condition(){
+    Expression* e = {0};
     switch (tok.type){
         case T_IDENTIFIER:
         case T_INT:
@@ -817,24 +981,29 @@ void parse_condition(){
         case T_LPAREN:
         case T_PLUS:
         case T_MINUS:
+            e = parse_expression();
             break;
         default:
             syntax_error(-1, "condition");
     }
+    return e;
 }
 
-void parse_return_statement(){
+Statement* parse_return_statement(){
+    Statement* s = {0};
     switch (tok.type){
         case T_RETURN:
             next_token();
-            parse_return_val();
+            s = parse_return_val();
             break;
         default:
             syntax_error(-1, "return_statement");
     }
+    return s;
 }
 
-void parse_return_val(){
+Statement* parse_return_val(){
+    Statement* s = new_stmt(S_RETURN);
     switch (tok.type){
         case T_IDENTIFIER:
         case T_INT:
@@ -843,17 +1012,20 @@ void parse_return_val(){
         case T_LPAREN:
         case T_PLUS:
         case T_MINUS:
-            parse_expression();
+            s->expr = parse_expression();
             break;
         case T_EOL:
         case T_SEMICOLON:
+            s->type = D_UNKNOWN;
             break;
         default:
             syntax_error(-1, "return_val");
     }
+    return s;
 }
 
-void parse_arguments(){
+Expression* parse_arguments(){
+    Expression* e = {0};
     switch (tok.type){
         case T_IDENTIFIER:
         case T_INT:
@@ -861,30 +1033,36 @@ void parse_arguments(){
         case T_STRING:
         case T_LPAREN:
         case T_MINUS:
-            parse_term();
-            parse_arguments_n();
+            e = parse_term();
+            e->next = parse_arguments_n();
             break;
         case T_RPAREN:
+            e = NULL;
             break;
         default:
             syntax_error(-1, "arguments");
     }
+    return e;
 }
 
-void parse_arguments_n(){
+Expression* parse_arguments_n(){
+    Expression* e = {0};
     switch (tok.type){
         case T_COMMA:
             next_token();
-            parse_arguments_nn();
+            e = parse_arguments_nn();
             break;
         case T_RPAREN:
+            e = NULL;
             break;
         default:
             syntax_error(-1, "arguments_n");
     }
+    return e;
 }
 
-void parse_arguments_nn(){
+Expression* parse_arguments_nn(){
+    Expression* e = {0};
     switch (tok.type){
         case T_IDENTIFIER:
         case T_INT:
@@ -892,83 +1070,133 @@ void parse_arguments_nn(){
         case T_STRING:
         case T_LPAREN:
         case T_MINUS:
-            parse_term();
-            parse_arguments_n();
+            e = parse_term();
+            e->next = parse_arguments_n();
             break;
         default:
             syntax_error(-1, "arguments_nn");
     }
+    return e;
 }
 
-void parse_term(){
+Expression* parse_term(){
+    Expression* e = {0};
     switch (tok.type){
         case T_IDENTIFIER:
+            e = new_expr(E_VAR);
+            //e->name = tok
+            next_token();
+            break;
         case T_INT:
+            e = new_expr(E_INT);
+            //e->int_val = tok
+            next_token();
+            break;
         case T_FLOAT:
+            e = new_expr(E_DOUBLE);
+            //e->double_val = tok
+            next_token();
+            break;
         case T_STRING:
+            e = new_expr(E_STRING);
+            //e->string_val = tok
             next_token();
             break;
         case T_LPAREN:
             next_token();
             expect_type(T_RPAREN);
+            e = new_expr(E_UNIT);
             break;
         case T_MINUS:
             next_token();
-            parse_num_lit();
+            e = parse_num_lit();
             break;
         default:
             syntax_error(-1, "term");
     }
+    return e;
 }
 
-void parse_num_lit(){
+Expression* parse_num_lit(){
+    Expression* e = {0};
     switch (tok.type){
         case T_INT:
+            e = new_expr(E_INT);
+            //e->int_val = tok
+            next_token();
+            break;
         case T_FLOAT:
+            e = new_expr(E_DOUBLE);
+            //e->double_val = tok
             next_token();
             break;
         default:
             syntax_error(-1, "num_lit");
     }
+    return e;
 }
 
-void parse_var_def(){
+Statement* parse_var_def(){
+    Statement* s = new_stmt(S_VAR_DEF);
     switch (tok.type){
         case T_VAL:
         case T_VAR:
-            parse_vax();
+            s->is_var = parse_vax();
+            s->name = strdup_and_check(tok.attr);
             expect_type(T_IDENTIFIER);
-            parse_n_type();
+            s->type = parse_n_type();
             expect_type(T_EQUAL);
-            parse_expression();
+            s->expr = parse_expression();
             break;
         default:
             syntax_error(-1, "var_def");
     }
+    return s;
 }
 
-void parse_vax(){
+bool parse_vax(){
+    bool is_var = false;
     switch (tok.type){
         case T_VAL:
+            next_token();
+            break;
         case T_VAR:
+            is_var = true;
             next_token();
             break;
         default:
             syntax_error(-1, "vax");
     }
+    return is_var;
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-void parse_expression(){
+
+Expression* parse_expression(){
+    return parse_expression_from(NULL);
+}
+
+Expression* parse_expression_from(Expression* first){
     Stack* s = stack_init();
 
     PrecItem item = {0};
     item.symbol = P_DOLLAR;
     item.is_expression = false;
     item.has_handle_after = false;
-
     push(s,item);
+
+    bool prev_is_operand;
+    if (first != NULL){
+        PrecItem item2 = {0};
+        item2.is_expression = true;
+        item2.has_handle_after = false;
+        item2.node = first;
+        push(s,item2);
+
+        prev_is_operand = true;
+    }
+    else{
+        prev_is_operand = false;
+    }
     int depth = 0;
-    bool prev_is_operand = false;
 
     while(true){
         PrecSym b = tok_to_sym(prev_is_operand, depth);
@@ -987,7 +1215,7 @@ void parse_expression(){
                 break;
             case 'A':
                 if (s->top == 1 && s->data[1].is_expression){
-                    return; // Will return s->data[1].node
+                    return s->data[1].node;
                 }
                 else{
                     syntax_error(-1, "Prec table - ACCEPT but stack is not $E");
@@ -1002,316 +1230,6 @@ void parse_expression(){
 
 }
 
-void parse_expression_n(){
-    switch (tok.type){
-        case T_EOL:
-        case T_MULTIPLY:
-        case T_SEMICOLON:
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-        case T_LESS:
-        case T_LESS_EQUAL:
-        case T_PLUS:
-        case T_MINUS:
-        case T_DIVIDE:
-            parse_mult_n();
-            parse_addition_n();
-            parse_comparison_n();
-            parse_equal_n();
-            break;
-        default:
-            syntax_error(-1, "expression_n");
-    }
-}
-
-void parse_equal(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            parse_comparison();
-            parse_equal_n();
-            break;
-        default:
-            syntax_error(-1, "equal");
-    }
-}
-
-void parse_equal_n(){
-    switch (tok.type){
-        case T_EOL:
-        case T_SEMICOLON:
-        case T_THEN:
-        case T_DO:
-        case T_RPAREN:
-            break;
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-            parse_equal_op();
-            parse_comparison();
-            break;
-        default:
-            syntax_error(-1, "equal_n");
-    }
-}
-
-void parse_equal_op(){
-    switch (tok.type){
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-            next_token();
-            break;
-        default:
-            syntax_error(-1, "equal_op");
-    }
-}
-
-void parse_comparison(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            parse_addition();
-            parse_comparison_n();
-            break;
-        default:
-            syntax_error(-1, "comparison");
-    }
-}
-
-void parse_comparison_n(){
-    switch (tok.type){
-        case T_EOL:
-        case T_SEMICOLON:
-        case T_THEN:
-        case T_DO:
-        case T_RPAREN:
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-            break;
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-        case T_LESS:
-        case T_LESS_EQUAL:
-            parse_comparison_op();
-            parse_addition();
-            break;
-        default:
-            syntax_error(-1, "comparison_n");
-    }
-}
-
-void parse_comparison_op(){
-    switch (tok.type){
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-        case T_LESS:
-        case T_LESS_EQUAL:
-            next_token();
-            break;
-        default:
-            syntax_error(-1, "comparison_op");
-    }
-}
-
-void parse_addition(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            parse_mult();
-            parse_addition_n();
-            break;
-        default:
-            syntax_error(-1, "addition");
-    }
-}
-
-void parse_addition_n(){
-    switch (tok.type){
-        case T_EOL:
-        case T_SEMICOLON:
-        case T_THEN:
-        case T_DO:
-        case T_RPAREN:
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-        case T_LESS:
-        case T_LESS_EQUAL:
-            break;
-        case T_PLUS:
-            next_token();
-            parse_mult();
-            parse_addition_n();
-            break;
-        case T_MINUS:
-            next_token();
-            parse_mult();
-            parse_addition_n();
-            break;
-        default:
-            syntax_error(-1, "addition_n");
-    }
-}
-
-void parse_mult(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            parse_unary();
-            parse_mult_n();
-            break;
-        default:
-            syntax_error(-1, "mult");
-    }
-}
-
-void parse_mult_n(){
-    switch (tok.type){
-        case T_EOL:
-        case T_SEMICOLON:
-        case T_THEN:
-        case T_DO:
-        case T_RPAREN:
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-        case T_LESS:
-        case T_LESS_EQUAL:
-        case T_PLUS:
-        case T_MINUS:
-            break;
-        case T_MULTIPLY:
-            next_token();
-            parse_unary();
-            parse_mult_n();
-            break;
-        case T_DIVIDE:
-            next_token();
-            parse_unary();
-            parse_mult_n();
-            break;
-        default:
-            syntax_error(-1, "mult_n");
-    }
-}
-
-void parse_unary(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-            next_token();
-            parse_primary_id();
-            break;
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            parse_unary_noid();
-            break;
-        default:
-            syntax_error(-1, "unary");
-    }
-}
-
-void parse_unary_noid(){
-    switch (tok.type){
-        case T_INT:
-            next_token();
-            break;
-        case T_FLOAT:
-            next_token();
-            break;
-        case T_STRING:
-            next_token();
-            break;
-        case T_LPAREN:
-            next_token();
-            parse_primary_n();
-            break;
-        case T_PLUS:
-            next_token();
-            parse_unary();
-            break;
-        case T_MINUS:
-            next_token();
-            parse_unary();
-            break;
-        default:
-            syntax_error(-1, "unary_noid");
-    }
-}
-
-void parse_primary_id(){
-    switch (tok.type){
-        case T_EOL:
-        case T_MULTIPLY:
-        case T_SEMICOLON:
-        case T_THEN:
-        case T_DO:
-        case T_RPAREN:
-        case T_EQUAL_EQUAL:
-        //case NEQ:
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-        case T_LESS:
-        case T_LESS_EQUAL:
-        case T_PLUS:
-        case T_MINUS:
-        case T_DIVIDE:
-            break;
-        case T_LPAREN:
-            next_token();
-            parse_arguments();
-            expect_type(T_RPAREN);
-            break;
-        default:
-            syntax_error(-1, "primary_id");
-    }
-}
-
-void parse_primary_n(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            parse_expression();
-            expect_type(T_RPAREN);
-            break;
-        case T_RPAREN:
-            next_token();
-            break;
-        default:
-            syntax_error(-1, "primary_n");
-    }
-}
 /* ==================
  * END OF LL TABLE FUNCTIONS
  * ==================
@@ -1321,16 +1239,16 @@ void parse_primary_n(){
 int main (){
     FILE* test_file = fopen("test.txt","r");
     if (test_file == NULL){
-        return -T_DO;
+        return -1;
     }
     scanner_init(test_file);
 
     next_token();
 
-
-    parse_program();
+    Func* f = {0};
+    f = parse_program();
     printf("uz je konec hej\n");
 
     fclose(test_file);
-    return T_DEF;
+    return 0;
 }
