@@ -9,20 +9,21 @@
 /* TODO
  * remove debug things
  *
+ * make AST tree generation
+ *
+ * make memory cleanup
+ *
  * fix syntax_error func
+ * fix error handling (so far it is just exit(1))
+ *
  * add comments
  *
- * Vyresit to ze muze byt:
- * var a = (TK_UNIT+
- *         T_COMMA+
- *         T_MINUS)
+ * Make it so this is valid:
+ * var a = (10+
+ *         4+
+ *         25)
 */
 Token tok;
-
-
-// MAIN, DEDENT, INDENT
-// T_AT     T_DEDENT      T_INDENT
-
 
 
 // for debug
@@ -117,6 +118,334 @@ void expect_type(TokenType t){
         syntax_error(t, "abab");
     }
 }
+
+void* calloc_and_check(size_t n){
+    void* p = calloc(1, n);
+    if (p == NULL){
+        printf("Calloc err.\n"); //////////////////////C
+        exit(1);
+    }
+    return p;
+}
+
+char* strdup_and_check(char* s){
+    char* p = strdup(s);
+    if (p == NULL){
+        printf("Strdup err.\n"); //////////////////////C
+        exit(1);
+    }
+    return p;
+}
+
+
+/*=========================
+ * PRECEDENCE ANALYZATOR
+ * ========================
+ */
+
+typedef enum PrecSym{
+    P_UNARY,
+    P_MULDIV,
+    P_PLUSMINUS,
+    P_REL,
+    P_EQ,
+    P_LPAREN,
+    P_RPAREN,
+    P_ID,
+    P_DOLLAR
+}PrecSym;
+
+typedef struct PrecItem{
+    PrecSym symbol;
+    bool is_expression;
+    bool has_handle_after;
+    Operators op;
+    Expression* node;
+}PrecItem;
+
+typedef struct Stack{
+    PrecItem* data;
+    int top;
+    int capacity;
+} Stack;
+
+Stack* stack_init() {
+    Stack* s = calloc_and_check(sizeof(Stack));
+    s->data = malloc(4 * sizeof(PrecItem));
+
+    if (s->data == NULL) {
+        printf("Malloc err"); ////////////////////////////C
+        exit(1);
+    }
+
+    s->top = -1;
+    s->capacity = 4;
+    return s;
+}
+
+void resize_stack(Stack* s) {
+    int new_capacity = s->capacity * 2;
+
+    PrecItem* temp = realloc(s->data, new_capacity * sizeof(PrecItem));
+
+    if (temp == NULL) {
+        printf("Realloc err"); ////////////////////////////C
+        exit(1);
+    }
+
+    s->data = temp;
+    s->capacity = new_capacity;
+}
+
+
+void push(Stack* s, PrecItem item) {
+
+    if (s->top + 1 == s->capacity) {
+        resize_stack(s);
+    }
+    s->top++;
+    s->data[s->top] = item;
+}
+
+// does not yet check if there is something to pop
+void popx(Stack* s, int x) {
+    for (int i = x; i > 0; i--){
+        ///////////// mby free item
+        s->top--;
+    }
+}
+
+
+void destroy_stack(Stack *s) {
+    free(s->data);
+
+    s->data = NULL;
+    s->top = -1;
+    s->capacity = 0;
+}
+
+int top_terminal_idx(Stack* s){
+    for (int i = s->top; i>-1; i--){
+        if (!(s->data[i].is_expression)){
+            return i;
+        }
+    }
+    printf("Top terminal idx - stack is empty\n"); // Should not ever happen, I hope
+    exit(1);///////need to free//////////////////////////////////////////////////////////////
+}
+
+char prec_table[9][9] = {
+    //U   M/D  P/M  REL  EQ   L_P  R_P  ID   DOLL
+    {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // UNARY
+    {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // MUL/DIV
+    {'<', '<', '>', '>', '>', '<', '>', '<', '>'}, // PLUS/MINUS
+    {'<', '<', '<', 'B', '>', '<', '>', '<', '>'}, // REL
+    {'<', '<', '<', '<', 'B', '<', '>', '<', '>'}, // EQ
+    {'<', '<', '<', '<', '<', '<', '=', '<', 'B'}, // L_PAREN
+    {'B', '>', '>', '>', '>', 'B', '>', 'B', '>'}, // R_PAREN
+    {'B', '>', '>', '>', '>', 'B', '>', 'B', '>'}, // ID
+    {'<', '<', '<', '<', '<', '<', 'B', '<', 'A'}  // DOLLAR
+};
+
+void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
+    PrecItem item = {0};
+    item.symbol = symbol;
+    item.is_expression = false;
+    item.has_handle_after = false;
+    switch(symbol){
+        case P_ID:{
+            char* name = strdup_and_check(tok.attr);
+            next_token();
+            if (tok.type == T_LPAREN){ // Will be used for making AST tree - E_CALL
+                next_token();
+                parse_arguments();
+                expect_type(T_RPAREN);
+            }
+            /* Will be used for making AST tree - E_VAR
+            else{
+
+            }*/
+
+            *prev_is_operand = true;
+            break;
+        }
+        case P_RPAREN:
+            *prev_is_operand = true;
+            (*depth)--;
+            break;
+        case P_LPAREN:
+            *prev_is_operand = false;
+            (*depth)++;
+            break;
+        case P_DOLLAR:
+            break;
+        default:// Will be used for making AST tree - operators
+            *prev_is_operand = false;
+            break;
+    }
+    push(s,item);
+    if (symbol != P_ID){
+        next_token();
+    }
+
+}
+
+void insert_handle(Stack* s, int idx){
+    s->data[idx].has_handle_after = true;
+}
+
+// TODO Check if E is E_CALL because function call has to be a whole expression (not func(a) + 4)
+void reduce(Stack* s){
+    int n = 0;
+    for (int i = s->top; i>-1; i--){
+        if (s->data[i].has_handle_after){
+            switch (n){
+                case 1: // i -> E
+                    if (!(s->data[i+1].is_expression && s->data[i+1].symbol == P_ID)){
+                       s->data[s->top].is_expression = true;
+                    }
+                    else{
+                        syntax_error(-1,"Reduce function err - not <i.");//////////////////////////////
+                        exit(1);
+                    }
+                    break;
+                case 2:
+                    if (!(s->data[i+1].is_expression) && !(s->data[i+2].is_expression)){
+                        if (s->data[i+1].symbol == P_LPAREN && s->data[i+2].symbol == P_RPAREN){ // () -> E
+                            // Will be used for making AST tree - makes E_UNIT
+                            PrecItem item = {0};
+                            item.is_expression = true;
+                            item.has_handle_after = false;
+                            popx(s, 2);
+                            push(s, item);
+                        }
+                        else{
+                            syntax_error(-1,"Reduce function err - not ().");/////////////////////////////
+                            exit(1);
+                        }
+                    }
+                    else if (!(s->data[i+1].is_expression) && s->data[i+2].is_expression){
+                        if (s->data[i+1].symbol == P_UNARY){// UNARY E -> E
+                            // Will be used for making AST tree - makes E_UNARY
+                            PrecItem item = {0};
+                            item.is_expression = true;
+                            item.has_handle_after = false;
+                            popx(s, 2);
+                            push(s, item);
+                        }
+                        else{
+                            syntax_error(-1,"Reduce function err - not UNARY E.");/////////////////////////////
+                            exit(1);
+                        }
+                    }
+                    else{
+                        syntax_error(-1,"Reduce function err - not () or UNARY E.");/////////////////////////////
+                        exit(1);
+                    }
+                    break;
+                case 3:
+                    if (!(s->data[i+1].is_expression) && s->data[i+2].is_expression && !(s->data[i+3].is_expression)){
+                        if (s->data[i+1].symbol == P_LPAREN && s->data[i+3].symbol == P_RPAREN){ // (E) -> E
+                            PrecItem item = {0};
+                            item.is_expression = true;
+                            item.has_handle_after = false;
+                            popx(s, 3);
+                            push(s, item);
+                        }
+                        else{
+                            syntax_error(-1,"Reduce function err - not (E).");/////////////////////////////
+                            exit(1);
+                        }
+                    }
+                    else if (s->data[i+1].is_expression && !(s->data[i+2].is_expression) && s->data[i+3].is_expression){
+                        switch(s->data[i+2].symbol){// E op E -> E
+                            case P_MULDIV:
+                            case P_PLUSMINUS:
+                            case P_REL:
+                            case P_EQ:{
+                                PrecItem item = {0};
+                                item.is_expression = true;
+                                item.has_handle_after = false;
+                                popx(s, 3);
+                                push(s, item);
+                                break;
+                            }
+                            default:
+                                syntax_error(-1,"Reduce function err - not E op E.");/////////////////////////////
+                                exit(1);
+                                break;
+                        }
+
+                    }
+                    else{
+                        syntax_error(-1,"Reduce function err - not (E) or E op E.");/////////////////////////////
+                        exit(1);
+                    }
+                    break;
+                default:
+                    syntax_error(-1,"Reduce function err.");
+                    exit(1);////need to free////////////////////////////////////////////
+            }
+            s->data[i].has_handle_after = false;
+            return;
+        }
+        n++;
+    }
+    printf("Did not find any HANDLE.\n"); // Should not ever happen, I hope
+    exit(1);
+}
+
+
+
+PrecSym tok_to_sym(bool prev_is_operand, int depth){
+    PrecSym symbol;
+    switch (tok.type){
+        case T_MULTIPLY:
+        case T_DIVIDE:
+            symbol = P_MULDIV;
+            break;
+        case T_LESS:
+        case T_LESS_EQUAL:
+        case T_GREATER:
+        case T_GREATER_EQUAL:
+            symbol = P_REL;
+            break;
+        case T_EQUAL_EQUAL:
+        //case T_NEQ
+            symbol = P_EQ;
+            break;
+        case T_IDENTIFIER:
+        case T_INT:
+        case T_FLOAT:
+        case T_STRING:
+            symbol = P_ID;
+            break;
+        case T_PLUS:
+        case T_MINUS:
+            if (prev_is_operand){
+                symbol = P_PLUSMINUS;
+            }
+            else{
+                symbol = P_UNARY;
+            }
+            break;
+        case T_LPAREN:
+            symbol = P_LPAREN;
+            break;
+        case T_RPAREN:
+            if (depth > 0){
+                symbol = P_RPAREN;
+            }
+            else{
+                symbol = P_DOLLAR;
+            }
+            break;
+        default:
+            symbol = P_DOLLAR;
+    }
+    return symbol;
+}
+
 
 /*========================
  * LL TABLE FUNCTIONS
@@ -628,21 +957,49 @@ void parse_vax(){
             syntax_error(-1, "vax");
     }
 }
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 void parse_expression(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            parse_equal();
-            break;
-        default:
-            syntax_error(-1, "expression");
+    Stack* s = stack_init();
+
+    PrecItem item = {0};
+    item.symbol = P_DOLLAR;
+    item.is_expression = false;
+    item.has_handle_after = false;
+
+    push(s,item);
+    int depth = 0;
+    bool prev_is_operand = false;
+
+    while(true){
+        PrecSym b = tok_to_sym(prev_is_operand, depth);
+        PrecSym a = s->data[top_terminal_idx(s)].symbol;
+
+        switch (prec_table[a][b]){
+            case '=':
+                shift(s, b, &prev_is_operand, &depth);
+                break;
+            case '<':
+                insert_handle(s, top_terminal_idx(s));
+                shift(s, b, &prev_is_operand, &depth);
+                break;
+            case '>':
+                reduce(s);
+                break;
+            case 'A':
+                if (s->top == 1 && s->data[1].is_expression){
+                    return; // Will return s->data[1].node
+                }
+                else{
+                    syntax_error(-1, "Prec table - ACCEPT but stack is not $E");
+                    exit(1);/////////////////////////////////////////
+                }
+                break;
+            default:
+                syntax_error(-1,"Prec Table.");
+                exit(1);/////////////////////////////////////////
+        }
     }
+
 }
 
 void parse_expression_n(){
