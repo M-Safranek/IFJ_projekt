@@ -88,7 +88,7 @@ int token_count = T_DO;
 
 // for debug
 void print_token(){
-    printf("Type: %d aka %s, Attr:[%s], NUMBER:%d\n", tok.type, token_names[tok.type], tok.attr, token_count);
+    printf("Type: %d aka %s, NUMBER:%d\n", tok.type, token_names[tok.type], token_count);
 }
 
 
@@ -289,10 +289,30 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
     item.has_handle_after = false;
     switch(symbol){
         case P_ID:{
-            char* name = strdup_and_check(tok.attr);
+            char* name;
+            if (tok.type == T_STRING || tok.type == T_IDENTIFIER){
+                name = strdup_and_check(tok.attr.string_value);
+            }
             TokenType prev_type = tok.type;
+            int prev_int_value;
+            double prev_double_value;
+            char* prev_string_value;
+
+            switch(prev_type){
+                case T_INT:
+                    prev_int_value = tok.attr.int_value;
+                    break;
+                case T_FLOAT:
+                    prev_double_value = tok.attr.double_value;
+                    break;
+                case T_STRING:
+                    prev_string_value = name;
+                    break;
+                default:
+                    break;
+            }
             next_token();
-            if (tok.type == T_LPAREN){ // Will be used for making AST tree - E_CALL
+            if (tok.type == T_LPAREN){
                 if (prev_type == T_IDENTIFIER){
                     item.node = new_expr(E_CALL);
                     item.node->name = name;
@@ -312,17 +332,17 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
                         break;
                     case T_INT:
                         item.node = new_expr(E_INT);
-                        // item.node->int_val = // Waiting for lexical analyzer update
+                        item.node->int_val = prev_int_value;
                         item.node->type = D_INT;
                         break;
                     case T_FLOAT:
                         item.node = new_expr(E_DOUBLE);
-                        // item.node->double_val = // Waiting for lexical analyzer update
+                        item.node->double_val = prev_double_value;
                         item.node->type = D_DOUBLE;
                         break;
                     case T_STRING:
                         item.node = new_expr(E_STRING);
-                        // item.node->string_val = // Waiting for lexical analyzer update
+                        item.node->string_val = prev_string_value;
                         item.node->type = D_STRING;
                         break;
                     default:
@@ -343,7 +363,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
             break;
         case P_DOLLAR:
             break;
-        default:// Will be used for making AST tree - operators
+        default:
             switch(tok.type){
                 case T_PLUS:
                     item.op = O_PLUS;
@@ -372,11 +392,9 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
                 case T_EQUAL_EQUAL:
                     item.op = O_EQUAL_EQUAL;
                     break;
-                /*
-                case T_NEQ:
-                    item.op = O_NEQ;
+                case T_NOT_EQUAL:
+                    item.op = O_NOT_EQUAL;
                     break;
-                */
                 default:
                     syntax_error(-1, "Shift err");
                     exit(1);//////////////////////////////////////
@@ -528,7 +546,7 @@ PrecSym tok_to_sym(bool prev_is_operand, int depth){
             symbol = P_REL;
             break;
         case T_EQUAL_EQUAL:
-        //case T_NEQ
+        case T_NOT_EQUAL:
             symbol = P_EQ;
             break;
         case T_IDENTIFIER:
@@ -610,7 +628,7 @@ Func* parse_func_def(){
         case T_AT:
             f->is_main = parse_annot();
             expect_type(T_DEF);
-            f->func_name = strdup_and_check(tok.attr);
+            f->func_name = strdup_and_check(tok.attr.string_value);
             expect_type(T_IDENTIFIER);
             expect_type(T_LPAREN);
             parse_params(f);
@@ -630,7 +648,7 @@ bool parse_annot(){
     switch (tok.type){
         case T_AT:
             next_token();
-            if (strcmp(tok.attr, "main") != 0){
+            if (strcmp(tok.attr.string_value, "main") != 0){
                 printf("At and then not main.\n"); /////////////////////// Change later
                 exit(1);
             }
@@ -665,7 +683,7 @@ void parse_params(Func* f){
         case T_RPAREN:
             break;
         case T_IDENTIFIER:{ // {} are here because gcc gives a warning when declaring something right after case
-            char* param_name = strdup_and_check(tok.attr);
+            char* param_name = strdup_and_check(tok.attr.string_value);
             next_token();
             expect_type(T_COLON);
             DataType param_type = parse_type();
@@ -682,7 +700,7 @@ void parse_params_n(Func* f){
     switch (tok.type){
         case T_COMMA:
             next_token();
-            char* param_name = strdup_and_check(tok.attr);
+            char* param_name = strdup_and_check(tok.attr.string_value);
             expect_type(T_IDENTIFIER);
             expect_type(T_COLON);
             DataType param_type = parse_type();
@@ -899,7 +917,7 @@ Statement* parse_simple_s(){
     Statement* s = {0};
     switch (tok.type){
         case T_IDENTIFIER:{
-            char* name = strdup_and_check(tok.attr);
+            char* name = strdup_and_check(tok.attr.string_value);
             next_token();
             if (tok.type == T_EQUAL){
                 next_token();
@@ -1084,32 +1102,35 @@ Expression* parse_term(){
     switch (tok.type){
         case T_IDENTIFIER:
             e = new_expr(E_VAR);
-            //e->name = tok
+            e->name = strdup_and_check(tok.attr.string_value);
             next_token();
             break;
         case T_INT:
             e = new_expr(E_INT);
-            //e->int_val = tok
+            e->int_val = tok.attr.int_value;
             next_token();
             break;
         case T_FLOAT:
             e = new_expr(E_DOUBLE);
-            //e->double_val = tok
+            e->double_val = tok.attr.double_value;
             next_token();
             break;
         case T_STRING:
             e = new_expr(E_STRING);
-            //e->string_val = tok
+            e->string_val = strdup_and_check(tok.attr.string_value);
             next_token();
             break;
         case T_LPAREN:
             next_token();
             expect_type(T_RPAREN);
             e = new_expr(E_UNIT);
+            e->type = D_UNIT;
             break;
         case T_MINUS:
+            e = new_expr(E_UNARY);
+            e->op = O_MINUS;
             next_token();
-            e = parse_num_lit();
+            e->left = parse_num_lit();
             break;
         default:
             syntax_error(-1, "term");
@@ -1122,12 +1143,12 @@ Expression* parse_num_lit(){
     switch (tok.type){
         case T_INT:
             e = new_expr(E_INT);
-            //e->int_val = tok
+            e->int_val = tok.attr.int_value;
             next_token();
             break;
         case T_FLOAT:
             e = new_expr(E_DOUBLE);
-            //e->double_val = tok
+            e->double_val = tok.attr.double_value;
             next_token();
             break;
         default:
@@ -1142,7 +1163,7 @@ Statement* parse_var_def(){
         case T_VAL:
         case T_VAR:
             s->is_var = parse_vax();
-            s->name = strdup_and_check(tok.attr);
+            s->name = strdup_and_check(tok.attr.string_value);
             expect_type(T_IDENTIFIER);
             s->type = parse_n_type();
             expect_type(T_EQUAL);

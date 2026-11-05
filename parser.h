@@ -37,6 +37,7 @@ typedef enum {
     O_GREATER_EQUAL,
     O_EQUAL,
     O_EQUAL_EQUAL,
+    O_NOT_EQUAL
 }Operators;
 
 typedef struct Expression{
