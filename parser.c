@@ -180,7 +180,7 @@ Statement* append_statement(Statement* line, Statement* rest){
         s = s->next;
     }
     s->next = rest;
-    return s;
+    return line;
 }
 
 Expression* make_ident_expr(char* name){
@@ -628,7 +628,9 @@ Func* parse_func_def(){
         case T_AT:
             f->is_main = parse_annot();
             expect_type(T_DEF);
-            f->func_name = strdup_and_check(tok.attr.string_value);
+            if (tok.type == T_IDENTIFIER){
+               f->func_name = strdup_and_check(tok.attr.string_value);
+            }
             expect_type(T_IDENTIFIER);
             expect_type(T_LPAREN);
             parse_params(f);
@@ -648,12 +650,14 @@ bool parse_annot(){
     switch (tok.type){
         case T_AT:
             next_token();
-            if (strcmp(tok.attr.string_value, "main") != 0){
-                printf("At and then not main.\n"); /////////////////////// Change later
-                exit(1);
-            }
-            else{
-                is_main = true;
+            if (tok.type == T_IDENTIFIER){
+                if (strcmp(tok.attr.string_value, "main") != 0){
+                    printf("At and then not main.\n"); /////////////////////// Change later
+                    exit(1);
+                }
+                else{
+                    is_main = true;
+                }
             }
             expect_type(T_IDENTIFIER);
             parse_annot_n();
@@ -682,7 +686,7 @@ void parse_params(Func* f){
     switch (tok.type){
         case T_RPAREN:
             break;
-        case T_IDENTIFIER:{ // {} are here because gcc gives a warning when declaring something right after case
+        case T_IDENTIFIER:{
             char* param_name = strdup_and_check(tok.attr.string_value);
             next_token();
             expect_type(T_COLON);
@@ -700,7 +704,9 @@ void parse_params_n(Func* f){
     switch (tok.type){
         case T_COMMA:
             next_token();
-            char* param_name = strdup_and_check(tok.attr.string_value);
+            if (tok.type == T_IDENTIFIER){
+                char* param_name = strdup_and_check(tok.attr.string_value);
+            }
             expect_type(T_IDENTIFIER);
             expect_type(T_COLON);
             DataType param_type = parse_type();
@@ -1163,7 +1169,9 @@ Statement* parse_var_def(){
         case T_VAL:
         case T_VAR:
             s->is_var = parse_vax();
-            s->name = strdup_and_check(tok.attr.string_value);
+            if (tok.type == T_IDENTIFIER){
+                s->name = strdup_and_check(tok.attr.string_value);
+            }
             expect_type(T_IDENTIFIER);
             s->type = parse_n_type();
             expect_type(T_EQUAL);
