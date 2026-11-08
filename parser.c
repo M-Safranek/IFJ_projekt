@@ -72,23 +72,24 @@ const char *token_names[] = {
     "T_GREATER_EQUAL",// 36
     "T_EQUAL",      // 37
     "T_EQUAL_EQUAL",// 38
+    "T_NOT_EQUAL", // 39
 
 
-    "T_IDENTIFIER", // 39
+    "T_IDENTIFIER", // 40
 
 
-    "T_INDENT",      // 40
-    "T_DEDENT",     // 41
-    "T_EOL",        // 42
-    "T_ERROR",      // 43
-    "T_EOF"         // 44
+    "T_INDENT",      // 41
+    "T_DEDENT",     // 42
+    "T_EOL",        // 43
+    "T_ERROR",      // 44
+    "T_EOF"         // 45
 };
 // for debug
 int token_count = T_DO;
 
 // for debug
 void print_token(){
-    printf("Type: %d aka %s, NUMBER:%d\n", tok.type, token_names[tok.type], token_count);
+    printf("Type: %d aka %s, LINE:%d NUMBER:%d\n", tok.type, token_names[tok.type], tok.line, token_count);
 }
 
 
@@ -704,8 +705,9 @@ void parse_params_n(Func* f){
     switch (tok.type){
         case T_COMMA:
             next_token();
+            char* param_name;
             if (tok.type == T_IDENTIFIER){
-                char* param_name = strdup_and_check(tok.attr.string_value);
+                param_name = strdup_and_check(tok.attr.string_value);
             }
             expect_type(T_IDENTIFIER);
             expect_type(T_COLON);
