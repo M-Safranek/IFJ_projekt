@@ -61,14 +61,14 @@ typedef struct symbol{
     TokenType type;
     char scope[101];
     bool defined;
-    struct symbol* left;
-    struct symbol* right;
+    TableSymbol* left;
+    TableSymbol* right;
     int height;
-};
+}TableSymbol;
 
-struct symbol *search(char *what[], struct symbol *where);
-struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[], bool defined);
-struct symbol *delete_symbol(struct symbol *what, struct symbol *top);
-struct symbol *delete_tree(struct symbol *top);
+TableSymbol *search(char *what[], TableSymbol *where);
+TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, char *scope[], bool defined);
+TableSymbol *delete_symbol(TableSymbol *what, TableSymbol *top);
+TableSymbol *delete_tree(TableSymbol *top);
 
 #endif //SYMTABLE_STRUCT

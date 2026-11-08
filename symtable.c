@@ -11,7 +11,7 @@ int max(int a, int b){
     }
 };
 
-int get_height(struct symbol *where){
+int get_height(TableSymbol *where){
     if(where == NULL){
         return 0;
     }else{
@@ -19,11 +19,11 @@ int get_height(struct symbol *where){
     }
 };
 
-int compare_height(struct symbol *one, struct symbol *two){
+int compare_height(TableSymbol *one, TableSymbol *two){
     return max(get_height(one), get_height(two)) + 1;
 };
 
-int get_balance(struct symbol *where){
+int get_balance(TableSymbol *where){
     if(where == NULL){
         return 0;
     }else{
@@ -37,7 +37,7 @@ char *lower_string(char *string[]){
     }
 };
 
-struct symbol *search(char *what[], struct symbol *where){
+TableSymbol *search(char *what[], TableSymbol *where){
     if(where == NULL){
         return NULL;
     }else if(strcmp(lower_string(where->name), lower_string(what)) == 0){
@@ -49,8 +49,8 @@ struct symbol *search(char *what[], struct symbol *where){
     }
 };
 
-struct symbol *ll_rotate(struct symbol *top){ //right_rotate
-    struct symbol *left_symbol = top->left;
+TableSymbol *ll_rotate(TableSymbol *top){ //right_rotate
+    TableSymbol *left_symbol = top->left;
     top->left = left_symbol->right;
     left_symbol->right = top;
     top->height = compare_height(top->left, top->right);
@@ -58,8 +58,8 @@ struct symbol *ll_rotate(struct symbol *top){ //right_rotate
     return left_symbol;
 };
 
-struct symbol *rr_rotate(struct symbol *top){ //left_rotate
-    struct symbol *right_symbol = top->right;
+TableSymbol *rr_rotate(TableSymbol *top){ //left_rotate
+    TableSymbol *right_symbol = top->right;
     top->right = right_symbol->left;
     right_symbol->left = top;
     top->height = compare_height(top->left, top->right);
@@ -67,18 +67,18 @@ struct symbol *rr_rotate(struct symbol *top){ //left_rotate
     return right_symbol;
 };
 
-struct symbol *lr_rotate(struct symbol *top){
+TableSymbol *lr_rotate(TableSymbol *top){
     top->left = rr_rotate(top->left);
     return ll_rotate(top); 
 };
 
-struct symbol *rl_rotate(struct symbol *top){
+TableSymbol *rl_rotate(TableSymbol *top){
     top->right = ll_rotate(top->right);
     return rr_rotate(top);
 };
 
-struct symbol *create_symbol(char *name[], TokenType type, char *scope[], bool defined){
-    struct symbol *new_symbol = malloc(sizeof(struct symbol));
+TableSymbol *create_symbol(char *name[], TokenType type, char *scope[], bool defined){
+    TableSymbol *new_symbol = malloc(sizeof(TableSymbol));
     if(new_symbol == NULL){
         return NULL;
     }
@@ -92,9 +92,9 @@ struct symbol *create_symbol(char *name[], TokenType type, char *scope[], bool d
     return new_symbol;
 }
 
-struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *scope[], bool defined){
+TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, char *scope[], bool defined){
     if(where == NULL){
-        struct symbol *new_symbol = create_symbol(name, type, scope, defined);
+        TableSymbol *new_symbol = create_symbol(name, type, scope, defined);
         where = new_symbol;
     }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
         where->left = insert(where->left, name, type, scope, defined);
@@ -122,7 +122,7 @@ struct symbol *insert(struct symbol *where, char *name[], TokenType type, char *
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };
 
-struct symbol *delete_symbol(struct symbol *what, struct symbol *top){
+TableSymbol *delete_symbol(TableSymbol *what, TableSymbol *top){
     if(search(what, top) != NULL){
         //najdi symbol který má odkaz na what
         //jestli má what děti, přiřaď je někde jinde
@@ -131,7 +131,7 @@ struct symbol *delete_symbol(struct symbol *what, struct symbol *top){
     }
 };
 
-struct symbol *delete_tree(struct symbol *top){
+TableSymbol *delete_tree(TableSymbol *top){
     if(top != NULL){
         delete_tree(top->left);
         delete_tree(top->right);
