@@ -24,7 +24,7 @@ void analyze(Func *analyzed_code){
     }
     
     Func *func = analyzed_code;
-    TableSymbol *symbol = insert(NULL, func->func_name, func->return_type, true);
+    table_symbol *symbol = insert(NULL, func->func_name, func->return_type, true);
     stack = sym_push(stack, symbol); //push global scope
 
     while(analyzed_code->next != NULL){

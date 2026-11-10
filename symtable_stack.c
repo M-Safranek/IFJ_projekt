@@ -17,7 +17,7 @@ symtable_stack *sym_is_empty(symtable_stack *stack){
     }
 };
 
-symtable_stack *sym_push(symtable_stack *stack ,TableSymbol *item){
+symtable_stack *sym_push(symtable_stack *stack ,table_symbol *item){
     symtable_stack *pushed = malloc(sizeof(symtable_stack));
     pushed->top_symbol = item;
     pushed->prev = stack;

@@ -11,7 +11,7 @@ int max(int a, int b){
     }
 };
 
-int get_height(TableSymbol *where){
+int get_height(table_symbol *where){
     if(where == NULL){
         return 0;
     }else{
@@ -19,11 +19,11 @@ int get_height(TableSymbol *where){
     }
 };
 
-int compare_height(TableSymbol *one, TableSymbol *two){
+int compare_height(table_symbol *one, table_symbol *two){
     return max(get_height(one), get_height(two)) + 1;
 };
 
-int get_balance(TableSymbol *where){
+int get_balance(table_symbol *where){
     if(where == NULL){
         return 0;
     }else{
@@ -37,7 +37,7 @@ char *lower_string(char *string[]){
     }
 };
 
-TableSymbol *search(char *what[], TableSymbol *where){
+table_symbol *search(char *what[], table_symbol *where){
     if(where == NULL){
         return NULL;
     }else if(strcmp(lower_string(where->name), lower_string(what)) == 0){
@@ -49,8 +49,8 @@ TableSymbol *search(char *what[], TableSymbol *where){
     }
 };
 
-TableSymbol *ll_rotate(TableSymbol *top){ //right_rotate
-    TableSymbol *left_symbol = top->left;
+table_symbol *ll_rotate(table_symbol *top){ //right_rotate
+    table_symbol *left_symbol = top->left;
     top->left = left_symbol->right;
     left_symbol->right = top;
     top->height = compare_height(top->left, top->right);
@@ -58,8 +58,8 @@ TableSymbol *ll_rotate(TableSymbol *top){ //right_rotate
     return left_symbol;
 };
 
-TableSymbol *rr_rotate(TableSymbol *top){ //left_rotate
-    TableSymbol *right_symbol = top->right;
+table_symbol *rr_rotate(table_symbol *top){ //left_rotate
+    table_symbol *right_symbol = top->right;
     top->right = right_symbol->left;
     right_symbol->left = top;
     top->height = compare_height(top->left, top->right);
@@ -67,18 +67,18 @@ TableSymbol *rr_rotate(TableSymbol *top){ //left_rotate
     return right_symbol;
 };
 
-TableSymbol *lr_rotate(TableSymbol *top){
+table_symbol *lr_rotate(table_symbol *top){
     top->left = rr_rotate(top->left);
     return ll_rotate(top); 
 };
 
-TableSymbol *rl_rotate(TableSymbol *top){
+table_symbol *rl_rotate(table_symbol *top){
     top->right = ll_rotate(top->right);
     return rr_rotate(top);
 };
 
-TableSymbol *create_symbol(char *name[], TokenType type, bool defined){
-    TableSymbol *new_symbol = malloc(sizeof(TableSymbol));
+table_symbol *create_symbol(char *name[], TokenType type, bool defined){
+    table_symbol *new_symbol = malloc(sizeof(table_symbol));
     if(new_symbol == NULL){
         return NULL;
     }
@@ -91,9 +91,9 @@ TableSymbol *create_symbol(char *name[], TokenType type, bool defined){
     return new_symbol;
 }
 
-TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, bool defined){
+table_symbol *insert(table_symbol *where, char *name[], TokenType type, bool defined){
     if(where == NULL){
-        TableSymbol *new_symbol = create_symbol(name, type, defined);
+        table_symbol *new_symbol = create_symbol(name, type, defined);
         where = new_symbol;
     }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
         where->left = insert(where->left, name, type, defined);
@@ -121,7 +121,7 @@ TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, bool defin
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };
 
-TableSymbol *delete_tree(TableSymbol *top){
+table_symbol *delete_tree(table_symbol *top){
     if(top != NULL){
         delete_tree(top->left);
         delete_tree(top->right);

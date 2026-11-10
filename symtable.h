@@ -60,13 +60,13 @@ typedef struct symbol{
     char name[21];
     TokenType type;
     bool defined;
-    TableSymbol *left;
-    TableSymbol *right;
+    table_symbol *left;
+    table_symbol *right;
     int height;
-}TableSymbol;
+}table_symbol;
 
-TableSymbol *search(char *what[], TableSymbol *where);
-TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, bool defined);
-TableSymbol *delete_tree(TableSymbol *top);
+table_symbol *search(char *what[], table_symbol *where);
+table_symbol *insert(table_symbol *where, char *name[], TokenType type, bool defined);
+table_symbol *delete_tree(table_symbol *top);
 
 #endif //SYMTABLE_STRUCT
