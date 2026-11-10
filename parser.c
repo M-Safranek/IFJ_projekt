@@ -94,6 +94,7 @@ void print_token(){
 
 
 void next_token(){
+    token_destroy(&tok);
     tok = get_next_token();
     token_count++;
 }
@@ -158,6 +159,7 @@ Func* new_func(){
     return f;
 }
 
+
 void add_param(Func* f, char* name, DataType type){
     char** names = realloc(f->param_names, (f->param_count + 1) * sizeof(char*));
     DataType* types = realloc(f->param_types, (f->param_count + 1) * sizeof(DataType));
@@ -198,6 +200,47 @@ Expression* make_ident_expr(char* name){
         e->name = name;
     }
     return e;
+}
+
+void free_func(Func* f){
+    while (f != NULL){
+        Func* next = f->next;
+        free(f->func_name);
+        for (int i = 0; i < f->param_count; i++){
+            free(f->param_names[i]);
+        }
+
+        free(f->param_names);
+        free(f->param_types);
+        free_statement(f->body);
+        free(f);
+        f = next;
+    }
+}
+
+void free_statement(Statement* s){
+    while (s != NULL){
+        Statement* next = s->next;
+        free(s->name);
+        free_expression(s->expr);
+        free_statement(s->body);
+        free_statement(s->else_body);
+        free(s);
+        s = next;
+    }
+}
+
+void free_expression(Expression* e){
+    while (e != NULL){
+        Expression* next = e->next;
+        free(e->name);
+        free(e->string_val);
+        free_expression(e->left);
+        free_expression(e->right);
+        free_expression(e->args);
+        free(e);
+        e = next;
+    }
 }
 
 /*=========================
@@ -246,18 +289,14 @@ void push(Stack* s, PrecItem item) {
 // does not yet check if there is something to pop
 void popx(Stack* s, int x) {
     for (int i = x; i > 0; i--){
-        ///////////// mby free item
         s->top--;
     }
 }
 
 
-void destroy_stack(Stack *s) {
+void free_stack(Stack *s) {
     free(s->data);
-
-    s->data = NULL;
-    s->top = -1;
-    s->capacity = 0;
+    free(s);
 }
 
 int top_terminal_idx(Stack* s){
@@ -267,7 +306,7 @@ int top_terminal_idx(Stack* s){
         }
     }
     printf("Top terminal idx - stack is empty\n"); // Should not ever happen, I hope
-    exit(1);///////need to free//////////////////////////////////////////////////////////////
+    exit(1);/////////////////////////////////////////////////////////////////////
 }
 
 char prec_table[9][9] = {
@@ -290,7 +329,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
     item.has_handle_after = false;
     switch(symbol){
         case P_ID:{
-            char* name;
+            char* name = NULL;
             if (tok.type == T_STRING || tok.type == T_IDENTIFIER){
                 name = strdup_and_check(tok.attr.string_value);
             }
@@ -520,7 +559,7 @@ void reduce(Stack* s){
                     break;
                 default:
                     syntax_error(-1,"Reduce function err.");
-                    exit(1);////need to free////////////////////////////////////////////
+                    exit(1);////////////////////////////////////////////////
             }
             s->data[i].has_handle_after = false;
             return;
@@ -705,7 +744,7 @@ void parse_params_n(Func* f){
     switch (tok.type){
         case T_COMMA:
             next_token();
-            char* param_name;
+            char* param_name = NULL;
             if (tok.type == T_IDENTIFIER){
                 param_name = strdup_and_check(tok.attr.string_value);
             }
@@ -1246,7 +1285,9 @@ Expression* parse_expression_from(Expression* first){
                 break;
             case 'A':
                 if (s->top == 1 && s->data[1].is_expression){
-                    return s->data[1].node;
+                    Expression* result = s->data[1].node;
+                    free_stack(s);
+                    return result;
                 }
                 else{
                     syntax_error(-1, "Prec table - ACCEPT but stack is not $E");
@@ -1278,6 +1319,10 @@ int main (){
 
     Func* f = {0};
     f = parse_program();
+
+    token_destroy(&tok);
+    free_func(f);
+
     printf("uz je konec hej\n");
 
     fclose(test_file);

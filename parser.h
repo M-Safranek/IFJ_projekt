@@ -92,6 +92,10 @@ void add_param(Func* f, char* name, DataType type);
 Statement* append_statement(Statement* line, Statement* rest);
 Expression* make_ident_expr(char* name);
 
+void free_func(Func* f);
+void free_statement(Statement* s);
+void free_expression(Expression* e);
+
 /*==========================
  * PRECEDENCE ANALYZATOR
  * =========================
