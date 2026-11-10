@@ -59,16 +59,14 @@ typedef enum {
 typedef struct symbol{
     char name[21];
     TokenType type;
-    char scope[101];
     bool defined;
-    TableSymbol* left;
-    TableSymbol* right;
+    TableSymbol *left;
+    TableSymbol *right;
     int height;
 }TableSymbol;
 
 TableSymbol *search(char *what[], TableSymbol *where);
-TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, char *scope[], bool defined);
-TableSymbol *delete_symbol(TableSymbol *what, TableSymbol *top);
+TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, bool defined);
 TableSymbol *delete_tree(TableSymbol *top);
 
 #endif //SYMTABLE_STRUCT

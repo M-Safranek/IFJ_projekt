@@ -77,14 +77,13 @@ TableSymbol *rl_rotate(TableSymbol *top){
     return rr_rotate(top);
 };
 
-TableSymbol *create_symbol(char *name[], TokenType type, char *scope[], bool defined){
+TableSymbol *create_symbol(char *name[], TokenType type, bool defined){
     TableSymbol *new_symbol = malloc(sizeof(TableSymbol));
     if(new_symbol == NULL){
         return NULL;
     }
     *new_symbol->name = name;
     new_symbol->type = type;
-    *new_symbol->scope = scope;
     new_symbol->defined = defined;
     new_symbol->left = NULL;
     new_symbol->right = NULL;
@@ -92,12 +91,12 @@ TableSymbol *create_symbol(char *name[], TokenType type, char *scope[], bool def
     return new_symbol;
 }
 
-TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, char *scope[], bool defined){
+TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, bool defined){
     if(where == NULL){
-        TableSymbol *new_symbol = create_symbol(name, type, scope, defined);
+        TableSymbol *new_symbol = create_symbol(name, type, defined);
         where = new_symbol;
     }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
-        where->left = insert(where->left, name, type, scope, defined);
+        where->left = insert(where->left, name, type, defined);
         if(get_balance(where) == 2){
             if(strcmp(lower_string(where->left->name), lower_string(name)) > 0){
                 where = ll_rotate(where);
@@ -106,7 +105,7 @@ TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, char *scop
             }
         }
     }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){
-        where->right = insert(where->right, name, type, scope, defined);
+        where->right = insert(where->right, name, type, defined);
         if(get_balance(where) == -2){
             if(strcmp(lower_string(where->right->name), lower_string(name)) < 0){
                 where = rr_rotate(where);
@@ -122,15 +121,6 @@ TableSymbol *insert(TableSymbol *where, char *name[], TokenType type, char *scop
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
 };
 
-TableSymbol *delete_symbol(TableSymbol *what, TableSymbol *top){
-    if(search(what, top) != NULL){
-        //najdi symbol který má odkaz na what
-        //jestli má what děti, přiřaď je někde jinde
-        //odeber odkaz z rodiče
-        free(what);
-    }
-};
-
 TableSymbol *delete_tree(TableSymbol *top){
     if(top != NULL){
         delete_tree(top->left);
@@ -138,5 +128,3 @@ TableSymbol *delete_tree(TableSymbol *top){
         free(top);
     }
 };
-
-//udělej zásobník pro scope management?
