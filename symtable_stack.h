@@ -6,11 +6,11 @@ typedef struct symtable_stack_item{
     TableSymbol *prev;
 }symtable_stack;
 
-symtable_stack *init_stack();
-symtable_stack *is_empty(symtable_stack *stack);
-symtable_stack *push(symtable_stack *stack, TableSymbol *item);
-symtable_stack *pop(symtable_stack *stack);
-symtable_stack *top(symtable_stack *stack);
-void delete_stack(symtable_stack *stack);
+symtable_stack *sym_init_stack();
+symtable_stack *sym_is_empty(symtable_stack *stack);
+symtable_stack *sym_push(symtable_stack *stack, TableSymbol *item);
+symtable_stack *sym_pop(symtable_stack *stack);
+symtable_stack *sym_top(symtable_stack *stack);
+void sym_delete_stack(symtable_stack *stack);
 
 #endif //SYMTABLE_STACK
