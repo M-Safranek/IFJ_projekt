@@ -44,4 +44,5 @@ void delete_stack(symtable_stack *stack){
     while(is_empty == false){
         pop(stack);
     }
+    free(stack);
 }
