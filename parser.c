@@ -1,15 +1,13 @@
+#include "parser.h"
+#include "Scanner.h"
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
-#include "Scanner.h"
-#include "parser.h"
-#include <stdbool.h>
 
 /* TODO
  * remove debug things
- *
- * make memory cleanup
  *
  * fix syntax_error func
  * fix error handling (so far it is just exit(1))
@@ -20,118 +18,117 @@
  * var a = (10+
  *         4+
  *         25)
-*/
+ */
 Token tok;
 
-
 // for debug
-const char *token_names[] = {
-    //keywords
-    "T_DEF",        // 0
-    "T_DO",         // 1
-    "TK_FLOAT",     // 2
-    "T_ELSE",       // 3
-    "T_IF",         // 4
-    "T_IMPORT",     // 5
-    "TK_INT",       // 6
-    "T_RETURN",     // 7
-    "TK_STRING",    // 8
-    "T_THEN",       // 9
-    "TK_UNIT",      // 10
-    "T_VAL",        // 11
-    "T_VAR",        // 12
-    "T_WHILE",      // 13
+const char* token_names[] = {
+    // keywords
+    "T_DEF", // 0
+    "T_DO", // 1
+    "TK_FLOAT", // 2
+    "T_ELSE", // 3
+    "T_IF", // 4
+    "T_IMPORT", // 5
+    "TK_INT", // 6
+    "T_RETURN", // 7
+    "TK_STRING", // 8
+    "T_THEN", // 9
+    "TK_UNIT", // 10
+    "T_VAL", // 11
+    "T_VAR", // 12
+    "T_WHILE", // 13
 
-    //special symbols
-    "T_LPAREN",     // 14
-    "T_RPAREN",     // 15
-    "T_LBRACE",     // 16
-    "T_RBRACE",     // 17
-    "T_LBRACKET",   // 18
-    "T_RBRACKET",   // 19
-    "T_COMMA",      // 20
-    "T_SEMICOLON",  // 21
-    "T_COLON",      // 22
-    "T_DOT",        // 23
-    "T_AT",         // 24
+    // special symbols
+    "T_LPAREN", // 14
+    "T_RPAREN", // 15
+    "T_LBRACE", // 16
+    "T_RBRACE", // 17
+    "T_LBRACKET", // 18
+    "T_RBRACKET", // 19
+    "T_COMMA", // 20
+    "T_SEMICOLON", // 21
+    "T_COLON", // 22
+    "T_DOT", // 23
+    "T_AT", // 24
 
-    "T_INT",        // 25
-    "T_STRING",     // 26
-    "T_FLOAT",      // 27
-    "T_UNIT",       // 28
+    "T_INT", // 25
+    "T_STRING", // 26
+    "T_FLOAT", // 27
+    "T_UNIT", // 28
 
-
-    //operators
-    "T_PLUS",       // 29
-    "T_MINUS",      // 30
-    "T_MULTIPLY",   // 31
-    "T_DIVIDE",     // 32
-    "T_LESS",       // 33
+    // operators
+    "T_PLUS", // 29
+    "T_MINUS", // 30
+    "T_MULTIPLY", // 31
+    "T_DIVIDE", // 32
+    "T_LESS", // 33
     "T_LESS_EQUAL", // 34
-    "T_GREATER",    // 35
-    "T_GREATER_EQUAL",// 36
-    "T_EQUAL",      // 37
-    "T_EQUAL_EQUAL",// 38
+    "T_GREATER", // 35
+    "T_GREATER_EQUAL", // 36
+    "T_EQUAL", // 37
+    "T_EQUAL_EQUAL", // 38
     "T_NOT_EQUAL", // 39
-
 
     "T_IDENTIFIER", // 40
 
-
-    "T_INDENT",      // 41
-    "T_DEDENT",     // 42
-    "T_EOL",        // 43
-    "T_ERROR",      // 44
-    "T_EOF"         // 45
+    "T_INDENT", // 41
+    "T_DEDENT", // 42
+    "T_EOL", // 43
+    "T_ERROR", // 44
+    "T_EOF" // 45
 };
 // for debug
 int token_count = T_DO;
 
 // for debug
-void print_token(){
+void print_token()
+{
     printf("Type: %d aka %s, LINE:%d NUMBER:%d\n", tok.type, token_names[tok.type], tok.line, token_count);
 }
 
-
-void next_token(){
+// Gets a new token from lexical analyzer
+void next_token()
+{
     token_destroy(&tok);
     tok = get_next_token();
     token_count++;
 }
 
-
-void syntax_error(TokenType t, char* str){
-    if (t == -1){
+void syntax_error(TokenType t, char* str)
+{
+    if (t == -1) {
         printf("SWITCH FAIL u %s, last token: ", str);
         print_token();
-    }
-    else{
+    } else {
         printf("Syntax error, EXPECTED %d aka %s, got %d aka %s, NUMBER:%d, LINE:%d\n", t, token_names[t], tok.type, token_names[tok.type], token_count, tok.line);
     }
-    exit(1);///////////////////////
+    exit(1); ///////////////////////
 }
 
-void expect_type(TokenType t){
-    if (tok.type == t){
+void expect_type(TokenType t)
+{
+    if (tok.type == t) {
         next_token();
-    }
-    else{
+    } else {
         syntax_error(t, "abab");
     }
 }
-
-void* calloc_and_check(size_t n){
+// Calls calloc and checks if it succeeded
+void* calloc_and_check(size_t n)
+{
     void* p = calloc(1, n);
-    if (p == NULL){
+    if (p == NULL) {
         printf("Calloc err.\n"); //////////////////////C
         exit(1);
     }
     return p;
 }
-
-char* strdup_and_check(char* s){
+// Calls strdup and checks if it succeeded
+char* strdup_and_check(char* s)
+{
     char* p = strdup(s);
-    if (p == NULL){
+    if (p == NULL) {
         printf("Strdup err.\n"); //////////////////////C
         exit(1);
     }
@@ -141,29 +138,33 @@ char* strdup_and_check(char* s){
  * AST TREE
  * ========================
  */
-
-Expression* new_expr(ExpressionKind k){
+// Makes a new Expression of given kind and returns its pointer
+Expression* new_expr(ExpressionKind k)
+{
     Expression* e = calloc_and_check(sizeof(Expression));
     e->kind = k;
     return e;
 }
-
-Statement* new_stmt(StatementKind k){
+// Makes a new Statement of given kind and returns its pointer
+Statement* new_stmt(StatementKind k)
+{
     Statement* s = calloc_and_check(sizeof(Statement));
     s->kind = k;
     return s;
 }
-
-Func* new_func(){
+// Makes a new Func and returns its pointer
+Func* new_func()
+{
     Func* f = calloc_and_check(sizeof(Func));
     return f;
 }
 
-
-void add_param(Func* f, char* name, DataType type){
+// Adds a function parameter of given name and type
+void add_param(Func* f, char* name, DataType type)
+{
     char** names = realloc(f->param_names, (f->param_count + 1) * sizeof(char*));
     DataType* types = realloc(f->param_types, (f->param_count + 1) * sizeof(DataType));
-    if (names == NULL || types == NULL){
+    if (names == NULL || types == NULL) {
         printf("Realloc err"); ////////////////////////////C
         exit(1);
     }
@@ -173,40 +174,42 @@ void add_param(Func* f, char* name, DataType type){
     f->param_types[f->param_count] = type;
     f->param_count++;
 }
-
-Statement* append_statement(Statement* line, Statement* rest){
-    Statement* s = line;
-    if (s == NULL){
-        return rest;
+// Appends the last statement on the end of the first statement->next list
+Statement* append_statement(Statement* first, Statement* last)
+{
+    Statement* s = first;
+    if (s == NULL) {
+        return last;
     }
-    while (s->next != NULL){
+    while (s->next != NULL) {
         s = s->next;
     }
-    s->next = rest;
-    return line;
+    s->next = last;
+    return first;
 }
 
-Expression* make_ident_expr(char* name){
-    Expression* e = {0};
-    if (tok.type == T_LPAREN){
+Expression* make_ident_expr(char* name)
+{
+    Expression* e = { 0 };
+    if (tok.type == T_LPAREN) {
         e = new_expr(E_CALL);
         e->name = name;
         next_token();
         e->args = parse_arguments();
         expect_type(T_RPAREN);
-    }
-    else{
+    } else {
         e = new_expr(E_VAR);
         e->name = name;
     }
     return e;
 }
-
-void free_func(Func* f){
-    while (f != NULL){
+// Frees the given Func structure
+void free_func(Func* f)
+{
+    while (f != NULL) {
         Func* next = f->next;
         free(f->func_name);
-        for (int i = 0; i < f->param_count; i++){
+        for (int i = 0; i < f->param_count; i++) {
             free(f->param_names[i]);
         }
 
@@ -217,9 +220,10 @@ void free_func(Func* f){
         f = next;
     }
 }
-
-void free_statement(Statement* s){
-    while (s != NULL){
+// Frees the given Statement structure
+void free_statement(Statement* s)
+{
+    while (s != NULL) {
         Statement* next = s->next;
         free(s->name);
         free_expression(s->expr);
@@ -229,9 +233,10 @@ void free_statement(Statement* s){
         s = next;
     }
 }
-
-void free_expression(Expression* e){
-    while (e != NULL){
+// Frees the given Expression structure
+void free_expression(Expression* e)
+{
+    while (e != NULL) {
         Expression* next = e->next;
         free(e->name);
         free(e->string_val);
@@ -247,8 +252,9 @@ void free_expression(Expression* e){
  * PRECEDENCE ANALYZATOR
  * ========================
  */
-
-Stack* stack_init() {
+// Initializes a stack
+Stack* stack_init()
+{
     Stack* s = calloc_and_check(sizeof(Stack));
     s->data = malloc(4 * sizeof(PrecItem));
 
@@ -261,8 +267,9 @@ Stack* stack_init() {
     s->capacity = 4;
     return s;
 }
-
-void resize_stack(Stack* s) {
+// Doubles the size of the given stack
+void resize_stack(Stack* s)
+{
     int new_capacity = s->capacity * 2;
 
     PrecItem* temp = realloc(s->data, new_capacity * sizeof(PrecItem));
@@ -276,8 +283,9 @@ void resize_stack(Stack* s) {
     s->capacity = new_capacity;
 }
 
-
-void push(Stack* s, PrecItem item) {
+// Adds an item to the top of the stack
+void push(Stack* s, PrecItem item)
+{
 
     if (s->top + 1 == s->capacity) {
         resize_stack(s);
@@ -285,281 +293,279 @@ void push(Stack* s, PrecItem item) {
     s->top++;
     s->data[s->top] = item;
 }
-
+// Pop x-times
+// Removes the top x items from the stack
 // does not yet check if there is something to pop
-void popx(Stack* s, int x) {
-    for (int i = x; i > 0; i--){
+void popx(Stack* s, int x)
+{
+    for (int i = x; i > 0; i--) {
         s->top--;
     }
 }
 
-
-void free_stack(Stack *s) {
+// Frees the given stack
+void free_stack(Stack* s)
+{
     free(s->data);
     free(s);
 }
-
-int top_terminal_idx(Stack* s){
-    for (int i = s->top; i>-1; i--){
-        if (!(s->data[i].is_expression)){
+// Returns the index of top most terminal on given stack
+int top_terminal_idx(Stack* s)
+{
+    for (int i = s->top; i > -1; i--) {
+        if (!(s->data[i].is_expression)) {
             return i;
         }
     }
     printf("Top terminal idx - stack is empty\n"); // Should not ever happen, I hope
-    exit(1);/////////////////////////////////////////////////////////////////////
+    exit(1); /////////////////////////////////////////////////////////////////////
 }
 
 char prec_table[9][9] = {
-    //U   M/D  P/M  REL  EQ   L_P  R_P  ID   DOLL
-    {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // UNARY
-    {'<', '>', '>', '>', '>', '<', '>', '<', '>'}, // MUL/DIV
-    {'<', '<', '>', '>', '>', '<', '>', '<', '>'}, // PLUS/MINUS
-    {'<', '<', '<', 'B', '>', '<', '>', '<', '>'}, // REL
-    {'<', '<', '<', '<', 'B', '<', '>', '<', '>'}, // EQ
-    {'<', '<', '<', '<', '<', '<', '=', '<', 'B'}, // L_PAREN
-    {'B', '>', '>', '>', '>', 'B', '>', 'B', '>'}, // R_PAREN
-    {'B', '>', '>', '>', '>', 'B', '>', 'B', '>'}, // ID
-    {'<', '<', '<', '<', '<', '<', 'B', '<', 'A'}  // DOLLAR
+    // U   M/D  P/M  REL  EQ   L_P  R_P  ID   DOLL
+    { '<', '>', '>', '>', '>', '<', '>', '<', '>' }, // UNARY
+    { '<', '>', '>', '>', '>', '<', '>', '<', '>' }, // MUL/DIV
+    { '<', '<', '>', '>', '>', '<', '>', '<', '>' }, // PLUS/MINUS
+    { '<', '<', '<', 'B', '>', '<', '>', '<', '>' }, // REL
+    { '<', '<', '<', '<', 'B', '<', '>', '<', '>' }, // EQ
+    { '<', '<', '<', '<', '<', '<', '=', '<', 'B' }, // L_PAREN
+    { 'B', '>', '>', '>', '>', 'B', '>', 'B', '>' }, // R_PAREN
+    { 'B', '>', '>', '>', '>', 'B', '>', 'B', '>' }, // ID
+    { '<', '<', '<', '<', '<', '<', 'B', '<', 'A' } // DOLLAR
 };
-
-void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth){
-    PrecItem item = {0};
+// Makes a PrecItem out of given symbol and pushes it on the stack
+void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
+{
+    PrecItem item = { 0 };
     item.symbol = symbol;
     item.is_expression = false;
     item.has_handle_after = false;
-    switch(symbol){
-        case P_ID:{
-            char* name = NULL;
-            if (tok.type == T_STRING || tok.type == T_IDENTIFIER){
-                name = strdup_and_check(tok.attr.string_value);
-            }
-            TokenType prev_type = tok.type;
-            int prev_int_value;
-            double prev_double_value;
-            char* prev_string_value;
-
-            switch(prev_type){
-                case T_INT:
-                    prev_int_value = tok.attr.int_value;
-                    break;
-                case T_FLOAT:
-                    prev_double_value = tok.attr.double_value;
-                    break;
-                case T_STRING:
-                    prev_string_value = name;
-                    break;
-                default:
-                    break;
-            }
-            next_token();
-            if (tok.type == T_LPAREN){
-                if (prev_type == T_IDENTIFIER){
-                    item.node = new_expr(E_CALL);
-                    item.node->name = name;
-                    next_token();
-                    item.node->args = parse_arguments();
-                    expect_type(T_RPAREN);
-                }
-                else{
-                    syntax_error(-1, "Lit and then (");////////////////////////////
-                }
-            }
-            else{
-                switch(prev_type){
-                    case T_IDENTIFIER:
-                        item.node = new_expr(E_VAR);
-                        item.node->name = name;
-                        break;
-                    case T_INT:
-                        item.node = new_expr(E_INT);
-                        item.node->int_val = prev_int_value;
-                        item.node->type = D_INT;
-                        break;
-                    case T_FLOAT:
-                        item.node = new_expr(E_DOUBLE);
-                        item.node->double_val = prev_double_value;
-                        item.node->type = D_DOUBLE;
-                        break;
-                    case T_STRING:
-                        item.node = new_expr(E_STRING);
-                        item.node->string_val = prev_string_value;
-                        item.node->type = D_STRING;
-                        break;
-                    default:
-                        printf("Shift error that should never happen.");
-                        exit(1);/////////////////////////////////////////////////
-                }
-            }
-            *prev_is_operand = true;
-            break;
+    switch (symbol) {
+    case P_ID: { // Adds E on the stack
+        // Copies the previous token
+        char* name = NULL;
+        if (tok.type == T_STRING || tok.type == T_IDENTIFIER) {
+            name = strdup_and_check(tok.attr.string_value);
         }
-        case P_RPAREN:
-            *prev_is_operand = true;
-            (*depth)--;
+        TokenType prev_type = tok.type;
+        int prev_int_value;
+        double prev_double_value;
+        char* prev_string_value;
+        switch (prev_type) {
+        case T_INT:
+            prev_int_value = tok.attr.int_value;
             break;
-        case P_LPAREN:
-            *prev_is_operand = false;
-            (*depth)++;
+        case T_FLOAT:
+            prev_double_value = tok.attr.double_value;
             break;
-        case P_DOLLAR:
+        case T_STRING:
+            prev_string_value = name;
             break;
         default:
-            switch(tok.type){
-                case T_PLUS:
-                    item.op = O_PLUS;
-                    break;
-                case T_MINUS:
-                    item.op = O_MINUS;
-                    break;
-                case T_DIVIDE:
-                    item.op = O_DIVIDE;
-                    break;
-                case T_MULTIPLY:
-                    item.op = O_MULTIPLY;
-                    break;
-                case T_GREATER:
-                    item.op = O_GREATER;
-                    break;
-                case T_GREATER_EQUAL:
-                    item.op = O_GREATER_EQUAL;
-                    break;
-                case T_LESS:
-                    item.op = O_LESS;
-                    break;
-                case T_LESS_EQUAL:
-                    item.op = O_LESS_EQUAL;
-                    break;
-                case T_EQUAL_EQUAL:
-                    item.op = O_EQUAL_EQUAL;
-                    break;
-                case T_NOT_EQUAL:
-                    item.op = O_NOT_EQUAL;
-                    break;
-                default:
-                    syntax_error(-1, "Shift err");
-                    exit(1);//////////////////////////////////////
-
-            }
-            *prev_is_operand = false;
             break;
+        }
+
+        next_token();
+        // Makes a CALL expression if the tokens were ID and then (
+        if (tok.type == T_LPAREN) {
+            if (prev_type == T_IDENTIFIER) {
+                item.node = new_expr(E_CALL);
+                item.node->name = name;
+                next_token();
+                item.node->args = parse_arguments();
+                expect_type(T_RPAREN);
+            } else {
+                syntax_error(-1, "Lit and then ("); ////////////////////////////
+            }
+        } else {
+            switch (prev_type) {
+            case T_IDENTIFIER:
+                item.node = new_expr(E_VAR);
+                item.node->name = name;
+                break;
+            case T_INT:
+                item.node = new_expr(E_INT);
+                item.node->int_val = prev_int_value;
+                item.node->type = D_INT;
+                break;
+            case T_FLOAT:
+                item.node = new_expr(E_DOUBLE);
+                item.node->double_val = prev_double_value;
+                item.node->type = D_DOUBLE;
+                break;
+            case T_STRING:
+                item.node = new_expr(E_STRING);
+                item.node->string_val = prev_string_value;
+                item.node->type = D_STRING;
+                break;
+            default:
+                printf("Shift error that should never happen.");
+                exit(1); /////////////////////////////////////////////////
+            }
+        }
+        *prev_is_operand = true;
+        break;
     }
-    push(s,item);
-    if (symbol != P_ID){
+    case P_RPAREN:
+        *prev_is_operand = true;
+        (*depth)--;
+        break;
+    case P_LPAREN:
+        *prev_is_operand = false;
+        (*depth)++;
+        break;
+    case P_DOLLAR:
+        break;
+    default: // Adds an operator on the stack
+        switch (tok.type) {
+        case T_PLUS:
+            item.op = O_PLUS;
+            break;
+        case T_MINUS:
+            item.op = O_MINUS;
+            break;
+        case T_DIVIDE:
+            item.op = O_DIVIDE;
+            break;
+        case T_MULTIPLY:
+            item.op = O_MULTIPLY;
+            break;
+        case T_GREATER:
+            item.op = O_GREATER;
+            break;
+        case T_GREATER_EQUAL:
+            item.op = O_GREATER_EQUAL;
+            break;
+        case T_LESS:
+            item.op = O_LESS;
+            break;
+        case T_LESS_EQUAL:
+            item.op = O_LESS_EQUAL;
+            break;
+        case T_EQUAL_EQUAL:
+            item.op = O_EQUAL_EQUAL;
+            break;
+        case T_NOT_EQUAL:
+            item.op = O_NOT_EQUAL;
+            break;
+        default:
+            syntax_error(-1, "Shift err");
+            exit(1); //////////////////////////////////////
+        }
+        *prev_is_operand = false;
+        break;
+    }
+    push(s, item);
+    // If the symbol was ID then next_token was already called
+    if (symbol != P_ID) {
         next_token();
     }
-
 }
-
-void insert_handle(Stack* s, int idx){
+// Adds a handle after the given idx on the stack
+void insert_handle(Stack* s, int idx)
+{
     s->data[idx].has_handle_after = true;
 }
-
+// Reduces expressions on the stack using precedence analyzator rules
 // TODO Check if E is E_CALL because function call has to be a whole expression (not func(a) + 4)
-void reduce(Stack* s){
-    int n = 0;
-    for (int i = s->top; i>-1; i--){
-        if (s->data[i].has_handle_after){
-            switch (n){
-                case 1: // i -> E
-                    if (!(s->data[i+1].is_expression) && s->data[i+1].symbol == P_ID){
-                       s->data[s->top].is_expression = true;
-                    }
-                    else{
-                        syntax_error(-1,"Reduce function err - not <i.");//////////////////////////////
-                        exit(1);
-                    }
-                    break;
-                case 2:
-                    if (!(s->data[i+1].is_expression) && !(s->data[i+2].is_expression)){
-                        if (s->data[i+1].symbol == P_LPAREN && s->data[i+2].symbol == P_RPAREN){ // () -> E
-                            PrecItem item = {0};
-                            item.is_expression = true;
-                            item.has_handle_after = false;
-
-                            item.node = new_expr(E_UNIT);
-                            item.node->type = D_UNIT;
-
-                            popx(s, 2);
-                            push(s, item);
-                        }
-                        else{
-                            syntax_error(-1,"Reduce function err - not ().");/////////////////////////////
-                            exit(1);
-                        }
-                    }
-                    else if (!(s->data[i+1].is_expression) && s->data[i+2].is_expression){
-                        if (s->data[i+1].symbol == P_UNARY){// UNARY E -> E
-                            PrecItem item = {0};
-                            item.is_expression = true;
-                            item.has_handle_after = false;
-
-                            item.node = new_expr(E_UNARY);
-                            item.node->op = s->data[i+1].op;
-                            item.node->left = s->data[i+2].node;
-
-                            popx(s, 2);
-                            push(s, item);
-                        }
-                        else{
-                            syntax_error(-1,"Reduce function err - not UNARY E.");/////////////////////////////
-                            exit(1);
-                        }
-                    }
-                    else{
-                        syntax_error(-1,"Reduce function err - not () or UNARY E.");/////////////////////////////
-                        exit(1);
-                    }
-                    break;
-                case 3:
-                    if (!(s->data[i+1].is_expression) && s->data[i+2].is_expression && !(s->data[i+3].is_expression)){
-                        if (s->data[i+1].symbol == P_LPAREN && s->data[i+3].symbol == P_RPAREN){ // (E) -> E
-                            PrecItem item = {0};
-                            item.is_expression = true;
-                            item.has_handle_after = false;
-
-                            item.node = s->data[i+2].node;
-
-                            popx(s, 3);
-                            push(s, item);
-                        }
-                        else{
-                            syntax_error(-1,"Reduce function err - not (E).");/////////////////////////////
-                            exit(1);
-                        }
-                    }
-                    else if (s->data[i+1].is_expression && !(s->data[i+2].is_expression) && s->data[i+3].is_expression){
-                        PrecItem item = {0};
+void reduce(Stack* s)
+{
+    int n = 0; // Tracks how many items are before a handle
+    for (int i = s->top; i > -1; i--) {
+        if (s->data[i].has_handle_after) {
+            switch (n) {
+            case 1: // Rule i -> E
+                if (!(s->data[i + 1].is_expression) && s->data[i + 1].symbol == P_ID) {
+                    s->data[s->top].is_expression = true;
+                } else {
+                    syntax_error(-1, "Reduce function err - not <i."); //////////////////////////////
+                    exit(1);
+                }
+                break;
+            case 2:
+                if (!(s->data[i + 1].is_expression) && !(s->data[i + 2].is_expression)) {
+                    if (s->data[i + 1].symbol == P_LPAREN && s->data[i + 2].symbol == P_RPAREN) { // Rule () -> E
+                        PrecItem item = { 0 };
                         item.is_expression = true;
                         item.has_handle_after = false;
 
-                        item.node = new_expr(E_BINARY);
+                        item.node = new_expr(E_UNIT);
+                        item.node->type = D_UNIT;
 
-                        switch(s->data[i+2].symbol){// E op E -> E
-                            case P_MULDIV:
-                            case P_PLUSMINUS:
-                            case P_REL:
-                            case P_EQ:
-                                item.node->op = s->data[i+2].op;
-                                item.node->left = s->data[i+1].node;
-                                item.node->right = s->data[i+3].node;
-
-                                popx(s, 3);
-                                push(s, item);
-                                break;
-                            default:
-                                syntax_error(-1,"Reduce function err - not E op E.");/////////////////////////////
-                                exit(1);
-                                break;
-                        }
-                    }
-                    else{
-                        syntax_error(-1,"Reduce function err - not (E) or E op E.");/////////////////////////////
+                        popx(s, 2);
+                        push(s, item);
+                    } else {
+                        syntax_error(-1, "Reduce function err - not ()."); /////////////////////////////
                         exit(1);
                     }
-                    break;
-                default:
-                    syntax_error(-1,"Reduce function err.");
-                    exit(1);////////////////////////////////////////////////
+                } else if (!(s->data[i + 1].is_expression) && s->data[i + 2].is_expression) {
+                    if (s->data[i + 1].symbol == P_UNARY) { // Rule UNARY E -> E
+                        PrecItem item = { 0 };
+                        item.is_expression = true;
+                        item.has_handle_after = false;
+
+                        item.node = new_expr(E_UNARY);
+                        item.node->op = s->data[i + 1].op;
+                        item.node->left = s->data[i + 2].node;
+
+                        popx(s, 2);
+                        push(s, item);
+                    } else {
+                        syntax_error(-1, "Reduce function err - not UNARY E."); /////////////////////////////
+                        exit(1);
+                    }
+                } else {
+                    syntax_error(-1, "Reduce function err - not () or UNARY E."); /////////////////////////////
+                    exit(1);
+                }
+                break;
+            case 3:
+                if (!(s->data[i + 1].is_expression) && s->data[i + 2].is_expression && !(s->data[i + 3].is_expression)) {
+                    if (s->data[i + 1].symbol == P_LPAREN && s->data[i + 3].symbol == P_RPAREN) { // Rule (E) -> E
+                        PrecItem item = { 0 };
+                        item.is_expression = true;
+                        item.has_handle_after = false;
+
+                        item.node = s->data[i + 2].node;
+
+                        popx(s, 3);
+                        push(s, item);
+                    } else {
+                        syntax_error(-1, "Reduce function err - not (E)."); /////////////////////////////
+                        exit(1);
+                    }
+                } else if (s->data[i + 1].is_expression && !(s->data[i + 2].is_expression) && s->data[i + 3].is_expression) {
+                    PrecItem item = { 0 };
+                    item.is_expression = true;
+                    item.has_handle_after = false;
+
+                    item.node = new_expr(E_BINARY);
+
+                    switch (s->data[i + 2].symbol) { // Rule E op E -> E
+                    case P_MULDIV:
+                    case P_PLUSMINUS:
+                    case P_REL:
+                    case P_EQ:
+                        item.node->op = s->data[i + 2].op;
+                        item.node->left = s->data[i + 1].node;
+                        item.node->right = s->data[i + 3].node;
+
+                        popx(s, 3);
+                        push(s, item);
+                        break;
+                    default:
+                        syntax_error(-1, "Reduce function err - not E op E."); /////////////////////////////
+                        exit(1);
+                        break;
+                    }
+                } else {
+                    syntax_error(-1, "Reduce function err - not (E) or E op E."); /////////////////////////////
+                    exit(1);
+                }
+                break;
+            default:
+                syntax_error(-1, "Reduce function err.");
+                exit(1); ////////////////////////////////////////////////
             }
             s->data[i].has_handle_after = false;
             return;
@@ -570,760 +576,786 @@ void reduce(Stack* s){
     exit(1);
 }
 
-
-
-PrecSym tok_to_sym(bool prev_is_operand, int depth){
+// Makes a PrecSym from current token and returns it
+PrecSym tok_to_sym(bool prev_is_operand, int depth)
+{
     PrecSym symbol;
-    switch (tok.type){
-        case T_MULTIPLY:
-        case T_DIVIDE:
-            symbol = P_MULDIV;
-            break;
-        case T_LESS:
-        case T_LESS_EQUAL:
-        case T_GREATER:
-        case T_GREATER_EQUAL:
-            symbol = P_REL;
-            break;
-        case T_EQUAL_EQUAL:
-        case T_NOT_EQUAL:
-            symbol = P_EQ;
-            break;
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-            symbol = P_ID;
-            break;
-        case T_PLUS:
-        case T_MINUS:
-            if (prev_is_operand){
-                symbol = P_PLUSMINUS;
-            }
-            else{
-                symbol = P_UNARY;
-            }
-            break;
-        case T_LPAREN:
-            symbol = P_LPAREN;
-            break;
-        case T_RPAREN:
-            if (depth > 0){
-                symbol = P_RPAREN;
-            }
-            else{
-                symbol = P_DOLLAR;
-            }
-            break;
-        default:
+    switch (tok.type) {
+    case T_MULTIPLY:
+    case T_DIVIDE:
+        symbol = P_MULDIV;
+        break;
+    case T_LESS:
+    case T_LESS_EQUAL:
+    case T_GREATER:
+    case T_GREATER_EQUAL:
+        symbol = P_REL;
+        break;
+    case T_EQUAL_EQUAL:
+    case T_NOT_EQUAL:
+        symbol = P_EQ;
+        break;
+    case T_IDENTIFIER:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+        symbol = P_ID;
+        break;
+    case T_PLUS:
+    case T_MINUS:
+        if (prev_is_operand) {
+            symbol = P_PLUSMINUS;
+        } else {
+            symbol = P_UNARY;
+        }
+        break;
+    case T_LPAREN:
+        symbol = P_LPAREN;
+        break;
+    case T_RPAREN:
+        if (depth > 0) {
+            symbol = P_RPAREN;
+        } else {
             symbol = P_DOLLAR;
+        }
+        break;
+    default:
+        symbol = P_DOLLAR;
     }
     return symbol;
 }
-
 
 /*========================
  * LL TABLE FUNCTIONS
  * =======================
  */
 
-Func* parse_program(){
-    if (tok.type != T_IMPORT ) syntax_error(T_IMPORT, "abab");
+Func* parse_program()
+{
+    if (tok.type != T_IMPORT)
+        syntax_error(T_IMPORT, "abab");
 
     parse_prologue();
     expect_type(T_EOL);
-    Func* f = {0};
+    Func* f = { 0 };
     f = parse_func_list();
     expect_type(T_EOF);
     return f;
 }
 
-void parse_prologue(){
+void parse_prologue()
+{
     expect_type(T_IMPORT);
     expect_type(T_IDENTIFIER);
     expect_type(T_DOT);
     expect_type(T_MULTIPLY);
 }
 
-Func* parse_func_list(){
-    Func* f = {0};
-    switch (tok.type){
-        case T_DEF:
-        case T_AT:
-            f = parse_func_def();
-            f->next = parse_func_list();
-            break;
-        case T_EOF:
-            return NULL;
-        default:
-            syntax_error(-1,"func_list");
+Func* parse_func_list()
+{
+    Func* f = { 0 };
+    switch (tok.type) {
+    case T_DEF:
+    case T_AT:
+        f = parse_func_def();
+        f->next = parse_func_list();
+        break;
+    case T_EOF:
+        return NULL;
+    default:
+        syntax_error(-1, "func_list");
     }
     return f;
 }
 
-Func* parse_func_def(){
+Func* parse_func_def()
+{
     Func* f = new_func();
-    switch (tok.type){
-        case T_DEF:
-        case T_AT:
-            f->is_main = parse_annot();
-            expect_type(T_DEF);
-            if (tok.type == T_IDENTIFIER){
-               f->func_name = strdup_and_check(tok.attr.string_value);
-            }
-            expect_type(T_IDENTIFIER);
-            expect_type(T_LPAREN);
-            parse_params(f);
-            expect_type(T_RPAREN);
-            f->return_type = parse_n_type();
-            expect_type(T_EQUAL);
-            f->body = parse_func_body();
-            break;
-        default:
-            syntax_error(-1, "func_def");
+    switch (tok.type) {
+    case T_DEF:
+    case T_AT:
+        f->is_main = parse_annot();
+        expect_type(T_DEF);
+        if (tok.type == T_IDENTIFIER) {
+            f->func_name = strdup_and_check(tok.attr.string_value);
+        }
+        expect_type(T_IDENTIFIER);
+        expect_type(T_LPAREN);
+        parse_params(f);
+        expect_type(T_RPAREN);
+        f->return_type = parse_n_type();
+        expect_type(T_EQUAL);
+        f->body = parse_func_body();
+        break;
+    default:
+        syntax_error(-1, "func_def");
     }
     return f;
 }
 
-bool parse_annot(){
+bool parse_annot()
+{
     bool is_main = false;
-    switch (tok.type){
-        case T_AT:
-            next_token();
-            if (tok.type == T_IDENTIFIER){
-                if (strcmp(tok.attr.string_value, "main") != 0){
-                    printf("At and then not main.\n"); /////////////////////// Change later
-                    exit(1);
-                }
-                else{
-                    is_main = true;
-                }
+    switch (tok.type) {
+    case T_AT:
+        next_token();
+        if (tok.type == T_IDENTIFIER) {
+            if (strcmp(tok.attr.string_value, "main") != 0) {
+                printf("At and then not main.\n"); /////////////////////// Change later
+                exit(1);
+            } else {
+                is_main = true;
             }
-            expect_type(T_IDENTIFIER);
-            parse_annot_n();
-            break;
-        case T_DEF:
-            break;
-        default:
-            syntax_error(-1, "annot");
+        }
+        expect_type(T_IDENTIFIER);
+        parse_annot_n();
+        break;
+    case T_DEF:
+        break;
+    default:
+        syntax_error(-1, "annot");
     }
     return is_main;
 }
 
-void parse_annot_n(){
-    switch (tok.type){
-        case T_EOL:
-            next_token();
-            break;
-        case T_DEF:
-            break;
-        default:
-            syntax_error(-1, "annot_n");
+void parse_annot_n()
+{
+    switch (tok.type) {
+    case T_EOL:
+        next_token();
+        break;
+    case T_DEF:
+        break;
+    default:
+        syntax_error(-1, "annot_n");
     }
 }
 
-void parse_params(Func* f){
-    switch (tok.type){
-        case T_RPAREN:
-            break;
-        case T_IDENTIFIER:{
-            char* param_name = strdup_and_check(tok.attr.string_value);
-            next_token();
-            expect_type(T_COLON);
-            DataType param_type = parse_type();
-            add_param(f, param_name, param_type);
-            parse_params_n(f);
-            break;
+void parse_params(Func* f)
+{
+    switch (tok.type) {
+    case T_RPAREN:
+        break;
+    case T_IDENTIFIER: {
+        char* param_name = strdup_and_check(tok.attr.string_value);
+        next_token();
+        expect_type(T_COLON);
+        DataType param_type = parse_type();
+        add_param(f, param_name, param_type);
+        parse_params_n(f);
+        break;
+    }
+    default:
+        syntax_error(-1, "params");
+    }
+}
+
+void parse_params_n(Func* f)
+{
+    switch (tok.type) {
+    case T_COMMA:
+        next_token();
+        char* param_name = NULL;
+        if (tok.type == T_IDENTIFIER) {
+            param_name = strdup_and_check(tok.attr.string_value);
         }
-        default:
-            syntax_error(-1, "params");
+        expect_type(T_IDENTIFIER);
+        expect_type(T_COLON);
+        DataType param_type = parse_type();
+        add_param(f, param_name, param_type);
+        parse_params_n(f);
+        break;
+    case T_RPAREN:
+        break;
+    default:
+        syntax_error(-1, "params_n");
     }
 }
 
-void parse_params_n(Func* f){
-    switch (tok.type){
-        case T_COMMA:
-            next_token();
-            char* param_name = NULL;
-            if (tok.type == T_IDENTIFIER){
-                param_name = strdup_and_check(tok.attr.string_value);
-            }
-            expect_type(T_IDENTIFIER);
-            expect_type(T_COLON);
-            DataType param_type = parse_type();
-            add_param(f, param_name, param_type);
-            parse_params_n(f);
-            break;
-        case T_RPAREN:
-            break;
-        default:
-            syntax_error(-1, "params_n");
+Statement* parse_func_body()
+{
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_PLUS:
+    case T_MINUS: {
+        Expression* e = parse_expression();
+        Statement* s = new_stmt(S_EXPR);
+        s->expr = e;
+        expect_type(T_EOL);
+        return s;
+        break;
     }
-}
-
-Statement* parse_func_body(){
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:{
-            Expression* e = parse_expression();
-            Statement* s = new_stmt(S_EXPR);
-            s->expr = e;
-            expect_type(T_EOL);
-            return s;
-            break;
-        }
-        case T_EOL:
-            next_token();
-            return parse_block();
-        default:
-            syntax_error(-1, "func_body");
+    case T_EOL:
+        next_token();
+        return parse_block();
+    default:
+        syntax_error(-1, "func_body");
     }
     return NULL;
 }
 
-DataType parse_n_type(){
+DataType parse_n_type()
+{
     DataType d;
-    switch (tok.type){
-        case T_EQUAL:
-            d = D_UNKNOWN;
-            break;
-        case T_COLON:
-            next_token();
-            d = parse_type();
-            break;
-        default:
-            syntax_error(-1, "n_type");
+    switch (tok.type) {
+    case T_EQUAL:
+        d = D_UNKNOWN;
+        break;
+    case T_COLON:
+        next_token();
+        d = parse_type();
+        break;
+    default:
+        syntax_error(-1, "n_type");
     }
     return d;
 }
 
-DataType parse_type(){
+DataType parse_type()
+{
     DataType d;
-    switch (tok.type){
-        case TK_UNIT:
-            d = D_UNIT;
-            break;
-        case TK_INT:
-            d = D_INT;
-            break;
-        case TK_FLOAT:
-            d = D_DOUBLE;
-            break;
-        case TK_STRING:
-            d = D_STRING;
-            break;
-        default:
-            syntax_error(-1, "type");
+    switch (tok.type) {
+    case TK_UNIT:
+        d = D_UNIT;
+        break;
+    case TK_INT:
+        d = D_INT;
+        break;
+    case TK_FLOAT:
+        d = D_DOUBLE;
+        break;
+    case TK_STRING:
+        d = D_STRING;
+        break;
+    default:
+        syntax_error(-1, "type");
     }
     next_token();
     return d;
 }
 
-Statement* parse_block(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_INDENT:
+Statement* parse_block()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_INDENT:
+        next_token();
+        s = parse_statement();
+        expect_type(T_DEDENT);
+        break;
+    default:
+        syntax_error(-1, "block");
+    }
+    return s;
+}
+
+Statement* parse_statement()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_IF:
+    case T_WHILE:
+    case T_RETURN:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_VAL:
+    case T_VAR:
+    case T_PLUS:
+    case T_MINUS: {
+        Statement* line = parse_statement_line();
+        Statement* rest = parse_statement_n();
+        s = append_statement(line, rest);
+        break;
+    }
+    default:
+        syntax_error(-1, "statement");
+    }
+    return s;
+}
+
+Statement* parse_statement_n()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_IF:
+    case T_WHILE:
+    case T_RETURN:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_VAL:
+    case T_VAR:
+    case T_PLUS:
+    case T_MINUS: {
+        Statement* line = parse_statement_line();
+        Statement* rest = parse_statement_n();
+        s = append_statement(line, rest);
+        break;
+    }
+    case T_DEDENT:
+        s = NULL;
+        break;
+    default:
+        syntax_error(-1, "statement_n");
+    }
+    return s;
+}
+
+Statement* parse_statement_line()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_RETURN:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_VAL:
+    case T_VAR:
+    case T_PLUS:
+    case T_MINUS:
+        s = parse_simple_statement();
+        expect_type(T_EOL);
+        break;
+    case T_IF:
+        s = parse_if_statement();
+        break;
+    case T_WHILE:
+        s = parse_while_statement();
+        break;
+    default:
+        syntax_error(-1, "statement_line");
+    }
+    return s;
+}
+
+Statement* parse_simple_statement()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_RETURN:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_VAL:
+    case T_VAR:
+    case T_PLUS:
+    case T_MINUS:
+        s = parse_simple_s();
+        s->next = parse_simple_n();
+        break;
+    default:
+        syntax_error(-1, "simple_statement");
+    }
+    return s;
+}
+
+Statement* parse_simple_n()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_SEMICOLON:
+        next_token();
+        s = parse_simple_s();
+        s->next = parse_simple_n();
+        break;
+    case T_EOL:
+        s = NULL;
+        break;
+    default:
+        syntax_error(-1, "simple_n");
+    }
+    return s;
+}
+
+Statement* parse_simple_s()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER: {
+        char* name = strdup_and_check(tok.attr.string_value);
+        next_token();
+        if (tok.type == T_EQUAL) {
             next_token();
-            s = parse_statement();
-            expect_type(T_DEDENT);
-            break;
-        default:
-            syntax_error(-1, "block");
-    }
-    return s;
-}
-
-Statement* parse_statement(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_IF:
-        case T_WHILE:
-        case T_RETURN:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_VAL:
-        case T_VAR:
-        case T_PLUS:
-        case T_MINUS:{
-            Statement* line = parse_statement_line();
-            Statement* rest = parse_statement_n();
-            s = append_statement(line, rest);
-            break;
-        }
-        default:
-            syntax_error(-1, "statement");
-    }
-    return s;
-}
-
-Statement* parse_statement_n(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_IF:
-        case T_WHILE:
-        case T_RETURN:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_VAL:
-        case T_VAR:
-        case T_PLUS:
-        case T_MINUS:{
-            Statement* line = parse_statement_line();
-            Statement* rest = parse_statement_n();
-            s = append_statement(line, rest);
-            break;
-        }
-        case T_DEDENT:
-            s = NULL;
-            break;
-        default:
-            syntax_error(-1, "statement_n");
-    }
-    return s;
-}
-
-Statement* parse_statement_line(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_RETURN:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_VAL:
-        case T_VAR:
-        case T_PLUS:
-        case T_MINUS:
-            s = parse_simple_statement();
-            expect_type(T_EOL);
-            break;
-        case T_IF:
-            s = parse_if_statement();
-            break;
-        case T_WHILE:
-            s = parse_while_statement();
-            break;
-        default:
-            syntax_error(-1, "statement_line");
-    }
-    return s;
-}
-
-Statement* parse_simple_statement(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_RETURN:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_VAL:
-        case T_VAR:
-        case T_PLUS:
-        case T_MINUS:
-            s = parse_simple_s();
-            s->next = parse_simple_n();
-            break;
-        default:
-            syntax_error(-1, "simple_statement");
-    }
-    return s;
-}
-
-Statement* parse_simple_n(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_SEMICOLON:
-            next_token();
-            s = parse_simple_s();
-            s->next = parse_simple_n();
-            break;
-        case T_EOL:
-            s = NULL;
-            break;
-        default:
-            syntax_error(-1, "simple_n");
-    }
-    return s;
-}
-
-Statement* parse_simple_s(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:{
-            char* name = strdup_and_check(tok.attr.string_value);
-            next_token();
-            if (tok.type == T_EQUAL){
-                next_token();
-                s = new_stmt(S_ASSIGN);
-                s->name = name;
-                s->expr = parse_expression();
-            }
-            else{
-                Expression* e = make_ident_expr(name);
-                s = new_stmt(S_EXPR);
-                s->expr = parse_expression_from(e);
-            }
-            break;
-        }
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
+            s = new_stmt(S_ASSIGN);
+            s->name = name;
+            s->expr = parse_expression();
+        } else {
+            Expression* e = make_ident_expr(name);
             s = new_stmt(S_EXPR);
-            s->expr = parse_expression();
-            break;
-        case T_VAL:
-        case T_VAR:
-            s = parse_var_def();
-            break;
-        case T_RETURN:
-            s = parse_return_statement();
-            break;
-        default:
-            syntax_error(-1, "simple_s");
+            s->expr = parse_expression_from(e);
+        }
+        break;
+    }
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_PLUS:
+    case T_MINUS:
+        s = new_stmt(S_EXPR);
+        s->expr = parse_expression();
+        break;
+    case T_VAL:
+    case T_VAR:
+        s = parse_var_def();
+        break;
+    case T_RETURN:
+        s = parse_return_statement();
+        break;
+    default:
+        syntax_error(-1, "simple_s");
     }
     return s;
 }
 
-Statement* parse_if_statement(){
+Statement* parse_if_statement()
+{
     Statement* s = new_stmt(S_IF);
-    switch (tok.type){
-        case T_IF:
-            next_token();
-            s->expr = parse_condition();
-            expect_type(T_THEN);
-            expect_type(T_EOL);
-            s->body = parse_block();
-            expect_type(T_ELSE);
-            expect_type(T_EOL);
-            s->else_body = parse_block();
-            break;
-        default:
-            syntax_error(-1, "if_statement");
+    switch (tok.type) {
+    case T_IF:
+        next_token();
+        s->expr = parse_condition();
+        expect_type(T_THEN);
+        expect_type(T_EOL);
+        s->body = parse_block();
+        expect_type(T_ELSE);
+        expect_type(T_EOL);
+        s->else_body = parse_block();
+        break;
+    default:
+        syntax_error(-1, "if_statement");
     }
     return s;
 }
 
-Statement* parse_while_statement(){
+Statement* parse_while_statement()
+{
     Statement* s = new_stmt(S_WHILE);
-    switch (tok.type){
-        case T_WHILE:
-            next_token();
-            s->expr = parse_condition();
-            expect_type(T_DO);
-            expect_type(T_EOL);
-            s->body = parse_block();
-            break;
-        default:
-            syntax_error(-1, "while_statement");
+    switch (tok.type) {
+    case T_WHILE:
+        next_token();
+        s->expr = parse_condition();
+        expect_type(T_DO);
+        expect_type(T_EOL);
+        s->body = parse_block();
+        break;
+    default:
+        syntax_error(-1, "while_statement");
     }
     return s;
 }
 
-Expression* parse_condition(){
-    Expression* e = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            e = parse_expression();
-            break;
-        default:
-            syntax_error(-1, "condition");
+Expression* parse_condition()
+{
+    Expression* e = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_PLUS:
+    case T_MINUS:
+        e = parse_expression();
+        break;
+    default:
+        syntax_error(-1, "condition");
     }
     return e;
 }
 
-Statement* parse_return_statement(){
-    Statement* s = {0};
-    switch (tok.type){
-        case T_RETURN:
-            next_token();
-            s = parse_return_val();
-            break;
-        default:
-            syntax_error(-1, "return_statement");
+Statement* parse_return_statement()
+{
+    Statement* s = { 0 };
+    switch (tok.type) {
+    case T_RETURN:
+        next_token();
+        s = parse_return_val();
+        break;
+    default:
+        syntax_error(-1, "return_statement");
     }
     return s;
 }
 
-Statement* parse_return_val(){
+Statement* parse_return_val()
+{
     Statement* s = new_stmt(S_RETURN);
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_PLUS:
-        case T_MINUS:
-            s->expr = parse_expression();
-            break;
-        case T_EOL:
-        case T_SEMICOLON:
-            s->type = D_UNKNOWN;
-            break;
-        default:
-            syntax_error(-1, "return_val");
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_PLUS:
+    case T_MINUS:
+        s->expr = parse_expression();
+        break;
+    case T_EOL:
+    case T_SEMICOLON:
+        s->type = D_UNKNOWN;
+        break;
+    default:
+        syntax_error(-1, "return_val");
     }
     return s;
 }
 
-Expression* parse_arguments(){
-    Expression* e = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_MINUS:
-            e = parse_term();
-            e->next = parse_arguments_n();
-            break;
-        case T_RPAREN:
-            e = NULL;
-            break;
-        default:
-            syntax_error(-1, "arguments");
+Expression* parse_arguments()
+{
+    Expression* e = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_MINUS:
+        e = parse_term();
+        e->next = parse_arguments_n();
+        break;
+    case T_RPAREN:
+        e = NULL;
+        break;
+    default:
+        syntax_error(-1, "arguments");
     }
     return e;
 }
 
-Expression* parse_arguments_n(){
-    Expression* e = {0};
-    switch (tok.type){
-        case T_COMMA:
-            next_token();
-            e = parse_arguments_nn();
-            break;
-        case T_RPAREN:
-            e = NULL;
-            break;
-        default:
-            syntax_error(-1, "arguments_n");
+Expression* parse_arguments_n()
+{
+    Expression* e = { 0 };
+    switch (tok.type) {
+    case T_COMMA:
+        next_token();
+        e = parse_arguments_nn();
+        break;
+    case T_RPAREN:
+        e = NULL;
+        break;
+    default:
+        syntax_error(-1, "arguments_n");
     }
     return e;
 }
 
-Expression* parse_arguments_nn(){
-    Expression* e = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-        case T_INT:
-        case T_FLOAT:
-        case T_STRING:
-        case T_LPAREN:
-        case T_MINUS:
-            e = parse_term();
-            e->next = parse_arguments_n();
-            break;
-        default:
-            syntax_error(-1, "arguments_nn");
+Expression* parse_arguments_nn()
+{
+    Expression* e = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+    case T_INT:
+    case T_FLOAT:
+    case T_STRING:
+    case T_LPAREN:
+    case T_MINUS:
+        e = parse_term();
+        e->next = parse_arguments_n();
+        break;
+    default:
+        syntax_error(-1, "arguments_nn");
     }
     return e;
 }
 
-Expression* parse_term(){
-    Expression* e = {0};
-    switch (tok.type){
-        case T_IDENTIFIER:
-            e = new_expr(E_VAR);
-            e->name = strdup_and_check(tok.attr.string_value);
-            next_token();
-            break;
-        case T_INT:
-            e = new_expr(E_INT);
-            e->int_val = tok.attr.int_value;
-            next_token();
-            break;
-        case T_FLOAT:
-            e = new_expr(E_DOUBLE);
-            e->double_val = tok.attr.double_value;
-            next_token();
-            break;
-        case T_STRING:
-            e = new_expr(E_STRING);
-            e->string_val = strdup_and_check(tok.attr.string_value);
-            next_token();
-            break;
-        case T_LPAREN:
-            next_token();
-            expect_type(T_RPAREN);
-            e = new_expr(E_UNIT);
-            e->type = D_UNIT;
-            break;
-        case T_MINUS:
-            e = new_expr(E_UNARY);
-            e->op = O_MINUS;
-            next_token();
-            e->left = parse_num_lit();
-            break;
-        default:
-            syntax_error(-1, "term");
+Expression* parse_term()
+{
+    Expression* e = { 0 };
+    switch (tok.type) {
+    case T_IDENTIFIER:
+        e = new_expr(E_VAR);
+        e->name = strdup_and_check(tok.attr.string_value);
+        next_token();
+        break;
+    case T_INT:
+        e = new_expr(E_INT);
+        e->int_val = tok.attr.int_value;
+        next_token();
+        break;
+    case T_FLOAT:
+        e = new_expr(E_DOUBLE);
+        e->double_val = tok.attr.double_value;
+        next_token();
+        break;
+    case T_STRING:
+        e = new_expr(E_STRING);
+        e->string_val = strdup_and_check(tok.attr.string_value);
+        next_token();
+        break;
+    case T_LPAREN:
+        next_token();
+        expect_type(T_RPAREN);
+        e = new_expr(E_UNIT);
+        e->type = D_UNIT;
+        break;
+    case T_MINUS:
+        e = new_expr(E_UNARY);
+        e->op = O_MINUS;
+        next_token();
+        e->left = parse_num_lit();
+        break;
+    default:
+        syntax_error(-1, "term");
     }
     return e;
 }
 
-Expression* parse_num_lit(){
-    Expression* e = {0};
-    switch (tok.type){
-        case T_INT:
-            e = new_expr(E_INT);
-            e->int_val = tok.attr.int_value;
-            next_token();
-            break;
-        case T_FLOAT:
-            e = new_expr(E_DOUBLE);
-            e->double_val = tok.attr.double_value;
-            next_token();
-            break;
-        default:
-            syntax_error(-1, "num_lit");
+Expression* parse_num_lit()
+{
+    Expression* e = { 0 };
+    switch (tok.type) {
+    case T_INT:
+        e = new_expr(E_INT);
+        e->int_val = tok.attr.int_value;
+        next_token();
+        break;
+    case T_FLOAT:
+        e = new_expr(E_DOUBLE);
+        e->double_val = tok.attr.double_value;
+        next_token();
+        break;
+    default:
+        syntax_error(-1, "num_lit");
     }
     return e;
 }
 
-Statement* parse_var_def(){
+Statement* parse_var_def()
+{
     Statement* s = new_stmt(S_VAR_DEF);
-    switch (tok.type){
-        case T_VAL:
-        case T_VAR:
-            s->is_var = parse_vax();
-            if (tok.type == T_IDENTIFIER){
-                s->name = strdup_and_check(tok.attr.string_value);
-            }
-            expect_type(T_IDENTIFIER);
-            s->type = parse_n_type();
-            expect_type(T_EQUAL);
-            s->expr = parse_expression();
-            break;
-        default:
-            syntax_error(-1, "var_def");
+    switch (tok.type) {
+    case T_VAL:
+    case T_VAR:
+        s->is_var = parse_vax();
+        if (tok.type == T_IDENTIFIER) {
+            s->name = strdup_and_check(tok.attr.string_value);
+        }
+        expect_type(T_IDENTIFIER);
+        s->type = parse_n_type();
+        expect_type(T_EQUAL);
+        s->expr = parse_expression();
+        break;
+    default:
+        syntax_error(-1, "var_def");
     }
     return s;
 }
 
-bool parse_vax(){
+bool parse_vax()
+{
     bool is_var = false;
-    switch (tok.type){
-        case T_VAL:
-            next_token();
-            break;
-        case T_VAR:
-            is_var = true;
-            next_token();
-            break;
-        default:
-            syntax_error(-1, "vax");
+    switch (tok.type) {
+    case T_VAL:
+        next_token();
+        break;
+    case T_VAR:
+        is_var = true;
+        next_token();
+        break;
+    default:
+        syntax_error(-1, "vax");
     }
     return is_var;
 }
-
-Expression* parse_expression(){
-    return parse_expression_from(NULL);
-}
-
-Expression* parse_expression_from(Expression* first){
-    Stack* s = stack_init();
-
-    PrecItem item = {0};
-    item.symbol = P_DOLLAR;
-    item.is_expression = false;
-    item.has_handle_after = false;
-    push(s,item);
-
-    bool prev_is_operand;
-    if (first != NULL){
-        PrecItem item2 = {0};
-        item2.is_expression = true;
-        item2.has_handle_after = false;
-        item2.node = first;
-        push(s,item2);
-
-        prev_is_operand = true;
-    }
-    else{
-        prev_is_operand = false;
-    }
-    int depth = 0;
-
-    while(true){
-        PrecSym b = tok_to_sym(prev_is_operand, depth);
-        PrecSym a = s->data[top_terminal_idx(s)].symbol;
-
-        switch (prec_table[a][b]){
-            case '=':
-                shift(s, b, &prev_is_operand, &depth);
-                break;
-            case '<':
-                insert_handle(s, top_terminal_idx(s));
-                shift(s, b, &prev_is_operand, &depth);
-                break;
-            case '>':
-                reduce(s);
-                break;
-            case 'A':
-                if (s->top == 1 && s->data[1].is_expression){
-                    Expression* result = s->data[1].node;
-                    free_stack(s);
-                    return result;
-                }
-                else{
-                    syntax_error(-1, "Prec table - ACCEPT but stack is not $E");
-                    exit(1);/////////////////////////////////////////
-                }
-                break;
-            default:
-                syntax_error(-1,"Prec Table.");
-                exit(1);/////////////////////////////////////////
-        }
-    }
-
-}
-
 /* ==================
  * END OF LL TABLE FUNCTIONS
  * ==================
  */
 
+// Parses the expression using precedence analyzator
+Expression* parse_expression()
+{
+    return parse_expression_from(NULL);
+}
+// Parses the expression using precedence analyzator and adds an expression on the stack if given
+Expression* parse_expression_from(Expression* first)
+{
+    Stack* s = stack_init();
+    // Puts dollar on the stack
+    PrecItem item = { 0 };
+    item.symbol = P_DOLLAR;
+    item.is_expression = false;
+    item.has_handle_after = false;
+    push(s, item);
 
-int main (){
-    FILE* test_file = fopen("test.txt","r");
-    if (test_file == NULL){
+    bool prev_is_operand;
+    // Puts the first Expression on the stack if it is provided
+    if (first != NULL) {
+        PrecItem item2 = { 0 };
+        item2.is_expression = true;
+        item2.has_handle_after = false;
+        item2.node = first;
+        push(s, item2);
+
+        prev_is_operand = true;
+    } else {
+        prev_is_operand = false;
+    }
+    int depth = 0; // Tracks the depth of parentheses
+
+    while (true) {
+        PrecSym b = tok_to_sym(prev_is_operand, depth);
+        PrecSym a = s->data[top_terminal_idx(s)].symbol;
+
+        switch (prec_table[a][b]) {
+        case '=':
+            shift(s, b, &prev_is_operand, &depth);
+            break;
+        case '<':
+            insert_handle(s, top_terminal_idx(s));
+            shift(s, b, &prev_is_operand, &depth);
+            break;
+        case '>':
+            reduce(s);
+            break;
+        case 'A':
+            if (s->top == 1 && s->data[1].is_expression) {
+                Expression* result = s->data[1].node;
+                free_stack(s);
+                return result;
+            } else {
+                syntax_error(-1, "Prec table - ACCEPT but stack is not $E");
+                exit(1); /////////////////////////////////////////
+            }
+            break;
+        default: // Blank space in precedence table
+            syntax_error(-1, "Prec Table.");
+            exit(1); /////////////////////////////////////////
+        }
+    }
+}
+
+int main()
+{
+    FILE* test_file = fopen("test.txt", "r");
+    if (test_file == NULL) {
         return -1;
     }
     scanner_init(test_file);
 
     next_token();
 
-    Func* f = {0};
+    Func* f = { 0 };
     f = parse_program();
 
     token_destroy(&tok);
     free_func(f);
 
-    printf("uz je konec hej\n");
+    printf("No syntax error found\n");
 
     fclose(test_file);
     return 0;
