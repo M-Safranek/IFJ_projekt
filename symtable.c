@@ -77,13 +77,12 @@ table_symbol *rl_rotate(table_symbol *top){
     return rr_rotate(top);
 };
 
-table_symbol *create_symbol(char *name[], TokenType type, bool defined){
+table_symbol *create_symbol(char *name[], bool defined){
     table_symbol *new_symbol = malloc(sizeof(table_symbol));
     if(new_symbol == NULL){
         return NULL;
     }
     *new_symbol->name = name;
-    new_symbol->type = type;
     new_symbol->defined = defined;
     new_symbol->left = NULL;
     new_symbol->right = NULL;
@@ -91,12 +90,12 @@ table_symbol *create_symbol(char *name[], TokenType type, bool defined){
     return new_symbol;
 }
 
-table_symbol *insert(table_symbol *where, char *name[], TokenType type, bool defined){
+table_symbol *insert(table_symbol *where, char *name[], bool defined){
     if(where == NULL){
-        table_symbol *new_symbol = create_symbol(name, type, defined);
+        table_symbol *new_symbol = create_symbol(name, defined);
         where = new_symbol;
     }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
-        where->left = insert(where->left, name, type, defined);
+        where->left = insert(where->left, name, defined);
         if(get_balance(where) == 2){
             if(strcmp(lower_string(where->left->name), lower_string(name)) > 0){
                 where = ll_rotate(where);
@@ -105,7 +104,7 @@ table_symbol *insert(table_symbol *where, char *name[], TokenType type, bool def
             }
         }
     }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){
-        where->right = insert(where->right, name, type, defined);
+        where->right = insert(where->right, name, defined);
         if(get_balance(where) == -2){
             if(strcmp(lower_string(where->right->name), lower_string(name)) < 0){
                 where = rr_rotate(where);
@@ -113,9 +112,6 @@ table_symbol *insert(table_symbol *where, char *name[], TokenType type, bool def
                 where = lr_rotate(where);
             }
         }
-    }else{
-        where->type = type;
-        where->defined = defined;
     }
     where->height = compare_height(where->left, where->right);
     return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
