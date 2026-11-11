@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "semantics.h"
 #include "symtable.h"
 #include "symtable_stack.h"
 #include "parser.h"
@@ -12,8 +13,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body){
     return;
 };
 
-void analyze(Func *analyzed_code){
-    symtable_stack *stack = sym_init_stack();
+void analyze(symtable_stack *stack, Func *analyzed_code){
     //analyze first func, push global scope
     //analyze inside func, push func scope
     //pop func scope, analyze second func, push second func scope
@@ -40,17 +40,18 @@ void analyze(Func *analyzed_code){
             analyze_body(stack, func_body);
             func_body = func_body->next;
         }
-        delete_tree(stack->top_symbol);
         stack = sym_pop(stack);
         func = func->next;
     }
-
-    //konec
-    sym_delete_stack(stack);
     return;
 };
 
-int main(){
+semantics_return build_symtable(){
     Func *analyzed_code = parse_program();
-    analyze(analyzed_code);
+    symtable_stack *stack = sym_init_stack();
+    analyze(stack, analyzed_code);
+    semantics_return return_value;
+    return_value.return_symtable = stack->top_symbol;
+    sym_delete_stack(stack);
+    return return_value;
 }
