@@ -2,6 +2,7 @@
 #include "semantics.h"
 #include "symtable.h"
 #include "symtable_stack.h"
+#include "ast_tree.h"
 #include "parser.h"
 
 void analyze_body(symtable_stack *stack, Statement *func_body){
@@ -38,6 +39,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
         sym_push(stack, NULL); //push func scope
         while(func_body != NULL){ //analyze all statements in func
             analyze_body(stack, func_body);
+            func_symbol->subtree = stack;
             func_body = func_body->next;
         }
         stack = sym_pop(stack);
