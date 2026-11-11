@@ -15,7 +15,6 @@ typedef struct symbol{
     table_symbol *left;
     table_symbol *right;
     int height;
-    table_symbol *subtree;
 }table_symbol;
 
 table_symbol *search(char *what[], table_symbol *where);

@@ -40,7 +40,6 @@ void analyze(symtable_stack *stack, Func *analyzed_code, ast_tree *ast_tree){
         sym_push(stack, NULL); //push func scope
         while(func_body != NULL){ //analyze all statements in func
             analyze_body(stack, func_body);
-            func_symbol->subtree = sym_top(stack);
             func_body = func_body->next;
         }
         stack = sym_pop(stack);
