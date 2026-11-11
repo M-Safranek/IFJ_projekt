@@ -16,7 +16,12 @@ struct ast_tree{
     ast_type;
     union{
         int value;
+        char string[100];
         char operator;
+        struct{
+            char name[20];
+            char operands[50][100];
+        }func_call;
         struct{
             char operator;
             struct ast_tree *left;
