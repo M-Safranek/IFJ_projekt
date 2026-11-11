@@ -91,8 +91,11 @@ void pop_indent(Scanner *scanner) {
 }
 
 // Returns false on indentation error.
-bool new_indent(int current_indent, Token *current_token, Scanner *scanner) {
-  int previous_indent = scanner->indent_stack[scanner->indent_top];
+bool new_indent(long unsigned int current_indent, Token *current_token,
+                Scanner *scanner) {
+
+  long unsigned int previous_indent =
+      scanner->indent_stack[scanner->indent_top];
 
   if (current_indent > previous_indent) {
     if (!push_indent(current_indent, scanner)) {
@@ -721,28 +724,179 @@ Token get_next_token(Scanner *scanner) {
       }
       break;
 
-    //--------------------------//
+      //--------------------------//
 
-    // line start(indent check)
+      // line start(indent check)
+
     case L_START:
-      if (c == '\n') {
+      if (c == ' ') {
+        // Spaces are already being added to current_attr.
+      }
+
+      else if (c == '\n') {
         scanner->line_number++;
-        scanner->count_indent_flag = true;
+        scanner->current_attr.attr_length = 0;
+        state = L_START;
+      }
+
+      else if (c == EOF) {
         scanner->current_attr.attr_length = 0;
         state = START;
       }
 
-      else if (c != ' ') {
+      else if (c == '/') {
+        state = L_START_SLASH;
+      }
+
+      else {
         forget_char(c, scanner);
+
+        if (c == '\t') {
+          create_token(T_ERROR, &current_token, scanner);
+          state = FALSE;
+          break;
+        }
+
+        if (scanner->paren_depth > 0) {
+          if (scanner->current_attr.attr_length <=
+              scanner->indent_stack[scanner->indent_top]) {
+            create_token(T_ERROR, &current_token, scanner);
+            state = FALSE;
+            break;
+          }
+
+          scanner->current_attr.attr_length = 0;
+          state = START;
+          break;
+        }
+
         if (!new_indent(scanner->current_attr.attr_length, &current_token,
                         scanner)) {
           create_token(T_ERROR, &current_token, scanner);
+          state = FALSE;
+          break;
         }
-        scanner->current_attr.attr_length = 0;
 
+        scanner->current_attr.attr_length = 0;
         state = START;
       }
+      break;
 
+    case L_START_SLASH:
+      if (c == '/') {
+        state = L_START_L_COMMENT;
+      }
+
+      else if (c == '*') {
+        scanner->block_comment_depth = 1;
+        scanner->has_newline = false;
+        scanner->current_attr.attr_length -= 2;
+        state = L_START_ML_COMMENT;
+      }
+
+      else {
+        forget_char(c, scanner);
+        create_token(T_DIVIDE, &current_token, scanner);
+        state = FALSE;
+      }
+      break;
+
+    case L_START_L_COMMENT:
+      if (c == '\n') {
+        scanner->line_number++;
+        scanner->current_attr.attr_length = 0;
+        state = L_START;
+      }
+
+      else if (c == EOF) {
+        scanner->current_attr.attr_length = 0;
+        state = START;
+      }
+      break;
+
+    case L_START_ML_COMMENT:
+      if (c == EOF) {
+        create_token(T_ERROR, &current_token, scanner);
+      }
+
+      else if (c == '\n') {
+        scanner->line_number++;
+        scanner->current_attr.attr_length = 0;
+        scanner->has_newline = true;
+        state = ML_COMMENT;
+      }
+
+      else if (c == '/') {
+        state = L_START_ML_COMMENT_SLASH;
+      }
+
+      else if (c == '*') {
+        state = L_START_ML_COMMENT_STAR;
+      }
+
+      else {
+        scanner->current_attr.attr_length--;
+      }
+      break;
+
+    case L_START_ML_COMMENT_SLASH:
+      if (c == EOF) {
+        create_token(T_ERROR, &current_token, scanner);
+      }
+
+      else if (c == '*') {
+        scanner->block_comment_depth++;
+        scanner->current_attr.attr_length -= 2;
+        state = L_START_ML_COMMENT;
+      }
+
+      else if (c == '\n') {
+        scanner->line_number++;
+        scanner->current_attr.attr_length = 0;
+        scanner->has_newline = true;
+        state = ML_COMMENT;
+      }
+
+      else {
+        // Both the previous slash and this character are comment content.
+        scanner->current_attr.attr_length -= 2;
+        state = L_START_ML_COMMENT;
+      }
+      break;
+
+    case L_START_ML_COMMENT_STAR:
+      if (c == EOF) {
+        create_token(T_ERROR, &current_token, scanner);
+      }
+
+      else if (c == '/') {
+        scanner->block_comment_depth--;
+        scanner->current_attr.attr_length -= 2;
+
+        if (scanner->block_comment_depth == 0) {
+          state = L_START;
+        } else {
+          state = L_START_ML_COMMENT;
+        }
+      }
+
+      else if (c == '*') {
+        // The previous star is ordinary content; this one might close it.
+        scanner->current_attr.attr_length--;
+        state = L_START_ML_COMMENT_STAR;
+      }
+
+      else if (c == '\n') {
+        scanner->line_number++;
+        scanner->current_attr.attr_length = 0;
+        scanner->has_newline = true;
+        state = ML_COMMENT;
+      }
+
+      else {
+        scanner->current_attr.attr_length -= 2;
+        state = L_START_ML_COMMENT;
+      }
       break;
 
     // false state keeps reading until end of line or EOF
@@ -841,7 +995,6 @@ void forget_char(char c, Scanner *scanner) {
   scanner->current_attr.attr_length -= 1;
 }
 
-/*
 int main(void) {
   FILE *test_file = fopen("id_test", "r");
 
@@ -880,4 +1033,3 @@ int main(void) {
   fclose(test_file);
   return 0;
 }
-*/

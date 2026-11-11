@@ -35,8 +35,8 @@ typedef struct {
 
   int pending_dedents;
 
-  int indent_stack[MAX_INDENT_LEVELS];
-  int indent_top;
+  long unsigned int indent_stack[MAX_INDENT_LEVELS];
+  unsigned int indent_top;
 } Scanner;
 
 typedef enum {
@@ -154,6 +154,11 @@ typedef enum {
   ML_COMMENT_END_CHECK,
 
   L_START,
+  L_START_SLASH,
+  L_START_L_COMMENT,
+  L_START_ML_COMMENT,
+  L_START_ML_COMMENT_SLASH,
+  L_START_ML_COMMENT_STAR,
 
   FALSE
 
