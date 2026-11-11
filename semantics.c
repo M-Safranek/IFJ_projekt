@@ -13,7 +13,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body){
     return;
 };
 
-void analyze(symtable_stack *stack, Func *analyzed_code, ast_tree *ast_tree){
+void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree *ast_tree){
     //analyze first func, push global scope
     //analyze inside func, push func scope
     //pop func scope, analyze second func, push second func scope

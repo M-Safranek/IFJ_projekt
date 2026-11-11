@@ -5,22 +5,36 @@ char builtin_func_list[10][11] = {"print", "readLine", "readInt", "readDouble", 
 
 enum{
     CONSTANT,
-    ADDITION,
-    SUBTRACTION,
-    MULTIPLICATION,
-    DIVISION,
-    ASSIGNMENT,
-    UNARY
+    UNARY,
+    BINARY,
+    IFTHENELSE,
+    FOR,
+    WHILE
 }ast_type;
 
 struct ast_tree{
     ast_type;
     union{
         int value;
+        char operator;
         struct{
+            char operator;
             struct ast_tree *left;
             struct ast_tree *right;
-        }ast_child;
+        }binary;
+        struct{
+            struct ast_tree *condition;
+            struct ast_tree *body;
+            struct ast_tree *elsebody;
+        }ifthenelse;
+        struct{
+            struct ast_tree *condition;
+            struct ast_tree *body;
+        }ast_for;
+        struct{
+            struct ast_tree *condition;
+            struct ast_tree *body;
+        }ast_while;
     };
 };
 
