@@ -6,7 +6,7 @@
 #include "parser.h"
 
 void analyze_body(symtable_stack *stack, Statement *func_body){
-    if(func_body->body =! NULL){ //statement is not if, for or while
+    if(func_body->name != "if" || func_body->name != "for" || func_body->name != "while"){ //statement is not if, for or while
         stack->top_symbol = insert(stack->top_symbol, func_body->name, false, true); //get statement into tree in func scope
     }else{
 
@@ -35,6 +35,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
         func_symbol->param_types = func->param_types; //record params
         func_symbol->param_count = func->param_count;
         func_symbol->is_main = func->is_main; //is main
+
         Statement *func_body = func->body; //get body of func
         sym_push(stack, NULL); //push func scope
         while(func_body != NULL){ //analyze all statements in func
@@ -48,10 +49,11 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
     return;
 };
 
-semantics_return build_symtable(){
+semantics_return build_table(){
     Func *analyzed_code = parse_program();
     symtable_stack *stack = sym_init_stack();
     analyze(stack, analyzed_code);
+    analyze(stack, analyzed_code); //pass 2
     semantics_return return_value;
     return_value.return_symtable = sym_top(stack)->top_symbol;
     sym_delete_stack(stack);
