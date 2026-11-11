@@ -9,9 +9,6 @@
 /* TODO
  * remove debug things
  *
- * fix syntax_error func
- * fix error handling (so far it is just exit(1))
- *
  * add comments
  *
  * Make it so this is valid:
@@ -79,12 +76,12 @@ const char* token_names[] = {
     "T_EOF" // 45
 };
 // for debug
-int token_count = T_DO;
+int token_count = 1;
 
 // for debug
 void print_token()
 {
-    printf("Type: %d aka %s, LINE:%d NUMBER:%d\n", tok.type, token_names[tok.type], tok.line, token_count);
+    printf("Type: %s, TOKEN NUMBER:%d LINE:%d\n", token_names[tok.type], token_count, tok.line);
 }
 
 // Gets a new token from lexical analyzer
@@ -95,15 +92,15 @@ void next_token()
     token_count++;
 }
 
-void syntax_error(TokenType t, char* str)
+void syntax_error(char* str)
 {
-    if (t == -1) {
-        printf("SWITCH FAIL u %s, last token: ", str);
-        print_token();
-    } else {
-        printf("Syntax error, EXPECTED %d aka %s, got %d aka %s, NUMBER:%d, LINE:%d\n", t, token_names[t], tok.type, token_names[tok.type], token_count, tok.line);
-    }
-    exit(1); ///////////////////////
+    fprintf(stderr, "Syntax error: %s\n", str);
+}
+
+void expect_syntax_error(TokenType t)
+{
+    printf("Syntax error, EXPECTED %s, got %s, TOKEN NUMBER:%d, LINE:%d.\n", token_names[t], token_names[tok.type], token_count, tok.line);
+    exit(2);
 }
 
 void expect_type(TokenType t)
@@ -111,7 +108,7 @@ void expect_type(TokenType t)
     if (tok.type == t) {
         next_token();
     } else {
-        syntax_error(t, "abab");
+        expect_syntax_error(t);
     }
 }
 // Calls calloc and checks if it succeeded
@@ -119,8 +116,8 @@ void* calloc_and_check(size_t n)
 {
     void* p = calloc(1, n);
     if (p == NULL) {
-        printf("Calloc err.\n"); //////////////////////C
-        exit(1);
+        fprintf(stderr, "Calloc err.\n");
+        exit(99);
     }
     return p;
 }
@@ -129,8 +126,8 @@ char* strdup_and_check(char* s)
 {
     char* p = strdup(s);
     if (p == NULL) {
-        printf("Strdup err.\n"); //////////////////////C
-        exit(1);
+        fprintf(stderr, "Strdup err.\n");
+        exit(99);
     }
     return p;
 }
@@ -165,8 +162,8 @@ void add_param(Func* f, char* name, DataType type)
     char** names = realloc(f->param_names, (f->param_count + 1) * sizeof(char*));
     DataType* types = realloc(f->param_types, (f->param_count + 1) * sizeof(DataType));
     if (names == NULL || types == NULL) {
-        printf("Realloc err"); ////////////////////////////C
-        exit(1);
+        fprintf(stderr, "Realloc err.");
+        exit(99);
     }
     f->param_names = names;
     f->param_types = types;
@@ -259,8 +256,8 @@ Stack* stack_init()
     s->data = malloc(4 * sizeof(PrecItem));
 
     if (s->data == NULL) {
-        printf("Malloc err"); ////////////////////////////C
-        exit(1);
+        fprintf(stderr, "Malloc err.");
+        exit(99);
     }
 
     s->top = -1;
@@ -275,8 +272,8 @@ void resize_stack(Stack* s)
     PrecItem* temp = realloc(s->data, new_capacity * sizeof(PrecItem));
 
     if (temp == NULL) {
-        printf("Realloc err"); ////////////////////////////C
-        exit(1);
+        fprintf(stderr, "Realloc err.");
+        exit(99);
     }
 
     s->data = temp;
@@ -295,7 +292,6 @@ void push(Stack* s, PrecItem item)
 }
 // Pop x-times
 // Removes the top x items from the stack
-// does not yet check if there is something to pop
 void popx(Stack* s, int x)
 {
     for (int i = x; i > 0; i--) {
@@ -317,8 +313,8 @@ int top_terminal_idx(Stack* s)
             return i;
         }
     }
-    printf("Top terminal idx - stack is empty\n"); // Should not ever happen, I hope
-    exit(1); /////////////////////////////////////////////////////////////////////
+    syntax_error("top_terminal_idx - stack is empty."); // Should not ever happen
+    return 0; // Will never happen because syntax error does exit(2), but it is a warning if it is not there
 }
 
 char prec_table[9][9] = {
@@ -375,7 +371,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
                 item.node->args = parse_arguments();
                 expect_type(T_RPAREN);
             } else {
-                syntax_error(-1, "Lit and then ("); ////////////////////////////
+                syntax_error("Lit and then (.");
             }
         } else {
             switch (prev_type) {
@@ -399,8 +395,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
                 item.node->type = D_STRING;
                 break;
             default:
-                printf("Shift error that should never happen.");
-                exit(1); /////////////////////////////////////////////////
+                syntax_error("Shift error - invalid symbol.");
             }
         }
         *prev_is_operand = true;
@@ -449,8 +444,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
             item.op = O_NOT_EQUAL;
             break;
         default:
-            syntax_error(-1, "Shift err");
-            exit(1); //////////////////////////////////////
+            syntax_error("Shift error - invalid symbol.");
         }
         *prev_is_operand = false;
         break;
@@ -478,8 +472,7 @@ void reduce(Stack* s)
                 if (!(s->data[i + 1].is_expression) && s->data[i + 1].symbol == P_ID) {
                     s->data[s->top].is_expression = true;
                 } else {
-                    syntax_error(-1, "Reduce function err - not <i."); //////////////////////////////
-                    exit(1);
+                    syntax_error("Reduce function err - expected HANDLE then i.");
                 }
                 break;
             case 2:
@@ -495,8 +488,7 @@ void reduce(Stack* s)
                         popx(s, 2);
                         push(s, item);
                     } else {
-                        syntax_error(-1, "Reduce function err - not ()."); /////////////////////////////
-                        exit(1);
+                        syntax_error("Reduce function err - expected ().");
                     }
                 } else if (!(s->data[i + 1].is_expression) && s->data[i + 2].is_expression) {
                     if (s->data[i + 1].symbol == P_UNARY) { // Rule UNARY E -> E
@@ -511,12 +503,10 @@ void reduce(Stack* s)
                         popx(s, 2);
                         push(s, item);
                     } else {
-                        syntax_error(-1, "Reduce function err - not UNARY E."); /////////////////////////////
-                        exit(1);
+                        syntax_error("Reduce function err - expected UNARY E.");
                     }
                 } else {
-                    syntax_error(-1, "Reduce function err - not () or UNARY E."); /////////////////////////////
-                    exit(1);
+                    syntax_error("Reduce function err - expected () or UNARY E.");
                 }
                 break;
             case 3:
@@ -531,8 +521,7 @@ void reduce(Stack* s)
                         popx(s, 3);
                         push(s, item);
                     } else {
-                        syntax_error(-1, "Reduce function err - not (E)."); /////////////////////////////
-                        exit(1);
+                        syntax_error("Reduce function err - expected (E).");
                     }
                 } else if (s->data[i + 1].is_expression && !(s->data[i + 2].is_expression) && s->data[i + 3].is_expression) {
                     PrecItem item = { 0 };
@@ -554,26 +543,22 @@ void reduce(Stack* s)
                         push(s, item);
                         break;
                     default:
-                        syntax_error(-1, "Reduce function err - not E op E."); /////////////////////////////
-                        exit(1);
+                        syntax_error("Reduce function err - expected E op E.");
                         break;
                     }
                 } else {
-                    syntax_error(-1, "Reduce function err - not (E) or E op E."); /////////////////////////////
-                    exit(1);
+                    syntax_error("Reduce function err - expected (E) or E op E.");
                 }
                 break;
             default:
-                syntax_error(-1, "Reduce function err.");
-                exit(1); ////////////////////////////////////////////////
+                syntax_error("Reduce function err - invalid symbol.");
             }
             s->data[i].has_handle_after = false;
             return;
         }
         n++;
     }
-    printf("Did not find any HANDLE.\n"); // Should not ever happen, I hope
-    exit(1);
+    syntax_error("Reduce function err - did not find any HANDLE."); // Should not ever happen
 }
 
 // Makes a PrecSym from current token and returns it
@@ -633,7 +618,7 @@ PrecSym tok_to_sym(bool prev_is_operand, int depth)
 Func* parse_program()
 {
     if (tok.type != T_IMPORT)
-        syntax_error(T_IMPORT, "abab");
+        syntax_error("Missing or invalid prologue.");
 
     parse_prologue();
     expect_type(T_EOL);
@@ -663,7 +648,7 @@ Func* parse_func_list()
     case T_EOF:
         return NULL;
     default:
-        syntax_error(-1, "func_list");
+        syntax_error("Invalid function definition.");
     }
     return f;
 }
@@ -688,7 +673,7 @@ Func* parse_func_def()
         f->body = parse_func_body();
         break;
     default:
-        syntax_error(-1, "func_def");
+        syntax_error("Invalid function definition.");
     }
     return f;
 }
@@ -701,8 +686,7 @@ bool parse_annot()
         next_token();
         if (tok.type == T_IDENTIFIER) {
             if (strcmp(tok.attr.string_value, "main") != 0) {
-                printf("At and then not main.\n"); /////////////////////// Change later
-                exit(1);
+                syntax_error("Expected main after @.");
             } else {
                 is_main = true;
             }
@@ -713,7 +697,7 @@ bool parse_annot()
     case T_DEF:
         break;
     default:
-        syntax_error(-1, "annot");
+        syntax_error("Invalid function annotation.");
     }
     return is_main;
 }
@@ -727,7 +711,7 @@ void parse_annot_n()
     case T_DEF:
         break;
     default:
-        syntax_error(-1, "annot_n");
+        syntax_error("Invalid function annotation.");
     }
 }
 
@@ -746,7 +730,7 @@ void parse_params(Func* f)
         break;
     }
     default:
-        syntax_error(-1, "params");
+        syntax_error("Invalid function parameters.");
     }
 }
 
@@ -768,7 +752,7 @@ void parse_params_n(Func* f)
     case T_RPAREN:
         break;
     default:
-        syntax_error(-1, "params_n");
+        syntax_error("Invalid function parameters.");
     }
 }
 
@@ -787,13 +771,12 @@ Statement* parse_func_body()
         s->expr = e;
         expect_type(T_EOL);
         return s;
-        break;
     }
     case T_EOL:
         next_token();
         return parse_block();
     default:
-        syntax_error(-1, "func_body");
+        syntax_error("Invalid function body.");
     }
     return NULL;
 }
@@ -810,7 +793,7 @@ DataType parse_n_type()
         d = parse_type();
         break;
     default:
-        syntax_error(-1, "n_type");
+        syntax_error("Invalid function return data type.");
     }
     return d;
 }
@@ -832,7 +815,7 @@ DataType parse_type()
         d = D_STRING;
         break;
     default:
-        syntax_error(-1, "type");
+        syntax_error("Invalid function return or function parameters data type.");
     }
     next_token();
     return d;
@@ -848,7 +831,7 @@ Statement* parse_block()
         expect_type(T_DEDENT);
         break;
     default:
-        syntax_error(-1, "block");
+        syntax_error("Invalid block syntax.");
     }
     return s;
 }
@@ -875,7 +858,7 @@ Statement* parse_statement()
         break;
     }
     default:
-        syntax_error(-1, "statement");
+        syntax_error("Invalid statement syntax.");
     }
     return s;
 }
@@ -905,7 +888,7 @@ Statement* parse_statement_n()
         s = NULL;
         break;
     default:
-        syntax_error(-1, "statement_n");
+        syntax_error("Invalid statement syntax.");
     }
     return s;
 }
@@ -934,7 +917,7 @@ Statement* parse_statement_line()
         s = parse_while_statement();
         break;
     default:
-        syntax_error(-1, "statement_line");
+        syntax_error("Invalid statement syntax.");
     }
     return s;
 }
@@ -957,7 +940,7 @@ Statement* parse_simple_statement()
         s->next = parse_simple_n();
         break;
     default:
-        syntax_error(-1, "simple_statement");
+        syntax_error("Invalid statement syntax.");
     }
     return s;
 }
@@ -975,7 +958,7 @@ Statement* parse_simple_n()
         s = NULL;
         break;
     default:
-        syntax_error(-1, "simple_n");
+        syntax_error("Invalid statement syntax.");
     }
     return s;
 }
@@ -1016,7 +999,7 @@ Statement* parse_simple_s()
         s = parse_return_statement();
         break;
     default:
-        syntax_error(-1, "simple_s");
+        syntax_error("Invalid statement syntax.");
     }
     return s;
 }
@@ -1036,7 +1019,7 @@ Statement* parse_if_statement()
         s->else_body = parse_block();
         break;
     default:
-        syntax_error(-1, "if_statement");
+        syntax_error("Invalid if statement syntax.");
     }
     return s;
 }
@@ -1053,7 +1036,7 @@ Statement* parse_while_statement()
         s->body = parse_block();
         break;
     default:
-        syntax_error(-1, "while_statement");
+        syntax_error("Invalid while statement syntax.");
     }
     return s;
 }
@@ -1072,7 +1055,7 @@ Expression* parse_condition()
         e = parse_expression();
         break;
     default:
-        syntax_error(-1, "condition");
+        syntax_error("Invalid statement condition.");
     }
     return e;
 }
@@ -1086,7 +1069,7 @@ Statement* parse_return_statement()
         s = parse_return_val();
         break;
     default:
-        syntax_error(-1, "return_statement");
+        syntax_error("Missing return statement.");
     }
     return s;
 }
@@ -1109,7 +1092,7 @@ Statement* parse_return_val()
         s->type = D_UNKNOWN;
         break;
     default:
-        syntax_error(-1, "return_val");
+        syntax_error("Invalid return value.");
     }
     return s;
 }
@@ -1131,7 +1114,7 @@ Expression* parse_arguments()
         e = NULL;
         break;
     default:
-        syntax_error(-1, "arguments");
+        syntax_error("Invalid function arguments.");
     }
     return e;
 }
@@ -1148,7 +1131,7 @@ Expression* parse_arguments_n()
         e = NULL;
         break;
     default:
-        syntax_error(-1, "arguments_n");
+        syntax_error("Expected comma between function arguments.");
     }
     return e;
 }
@@ -1167,7 +1150,7 @@ Expression* parse_arguments_nn()
         e->next = parse_arguments_n();
         break;
     default:
-        syntax_error(-1, "arguments_nn");
+        syntax_error("Invalid function arguments - expected valid argument after comma.");
     }
     return e;
 }
@@ -1209,7 +1192,7 @@ Expression* parse_term()
         e->left = parse_num_lit();
         break;
     default:
-        syntax_error(-1, "term");
+        syntax_error("Invalid function arguments.");
     }
     return e;
 }
@@ -1229,7 +1212,7 @@ Expression* parse_num_lit()
         next_token();
         break;
     default:
-        syntax_error(-1, "num_lit");
+        syntax_error("Invalid function arguments - epected float or int after UNARY sign.");
     }
     return e;
 }
@@ -1250,7 +1233,7 @@ Statement* parse_var_def()
         s->expr = parse_expression();
         break;
     default:
-        syntax_error(-1, "var_def");
+        syntax_error("Invalid variable or value definition.");
     }
     return s;
 }
@@ -1267,7 +1250,7 @@ bool parse_vax()
         next_token();
         break;
     default:
-        syntax_error(-1, "vax");
+        syntax_error("Invalid variable or value definition.");
     }
     return is_var;
 }
@@ -1328,13 +1311,11 @@ Expression* parse_expression_from(Expression* first)
                 free_stack(s);
                 return result;
             } else {
-                syntax_error(-1, "Prec table - ACCEPT but stack is not $E");
-                exit(1); /////////////////////////////////////////
+                syntax_error("Prec analysis - ACCEPT but stack is not only $E");
             }
             break;
         default: // Blank space in precedence table
-            syntax_error(-1, "Prec Table.");
-            exit(1); /////////////////////////////////////////
+            syntax_error("Prec analysis - Invalid expression.");
         }
     }
 }
@@ -1355,6 +1336,7 @@ int main()
     token_destroy(&tok);
     free_func(f);
 
+    // for debug
     printf("No syntax error found\n");
 
     fclose(test_file);
