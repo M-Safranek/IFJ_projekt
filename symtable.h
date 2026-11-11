@@ -9,9 +9,9 @@ typedef struct symbol{
     bool function;
     bool defined;
     bool modifiable;
-    DataType *param_types; //is this needed?
-    int param_count; //ditto
-    bool is_main; //ditto
+    DataType *param_types;
+    int param_count;
+    bool is_main;
     table_symbol *left;
     table_symbol *right;
     int height;
