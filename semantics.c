@@ -3,17 +3,10 @@
 #include "symtable_stack.h"
 #include "parser.h"
 
-Statement *analyze_statement(symtable_stack *stack, Statement *analyzed_statement){
+void analyze_body(symtable_stack *stack, Statement *func_body){
     
-};
 
-Func *analyze_func(symtable_stack *stack, Func *analyzed_code){
-    while(analyzed_code->body != NULL){
-        Statement *analyzed_statement = analyze_statement(stack, analyzed_code->body);
-        delete_tree(stack->top_symbol);
-        stack = sym_pop(stack);
-    }
-    return;
+    return
 };
 
 void analyze(Func *analyzed_code){
@@ -30,12 +23,20 @@ void analyze(Func *analyzed_code){
     }
     
     Func *func = analyzed_code;
-    table_symbol *symbol = insert(NULL, func->func_name, func->return_type, true);
-    stack = sym_push(stack, symbol); //push global scope
-
-    while(analyzed_code != NULL){
-        Func analyzed_func = *analyze_func(stack, analyzed_code);
-        analyzed_code = analyzed_code->next;
+    sym_push(stack, NULL); //push global scope
+    while(func != NULL){ //analyze all funcs in code
+        stack->top_symbol = insert(stack->top_symbol, analyzed_code->func_name, true, true); //get func into tree in global scope
+        table_symbol *func_symbol = search(analyzed_code->func_name, stack->top_symbol); //get the inserted func
+        func_symbol->type = analyzed_code->return_type; //record type
+        Statement *func_body = analyzed_code->body; //get body of func
+        sym_push(stack, NULL); //push func scope
+        while(func_body != NULL){ //analyze all statements in func
+            analyze_body(stack, func_body);
+            func_body = func_body->next;
+        }
+        delete_tree(stack->top_symbol);
+        stack = sym_pop(stack);
+        func = func->next;
     }
 
     //konec
