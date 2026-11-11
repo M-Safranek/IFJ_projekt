@@ -4,9 +4,12 @@
 #include "parser.h"
 
 void analyze_body(symtable_stack *stack, Statement *func_body){
-    
+    if(func_body->body =! NULL){ //statement is not if, for or while
+        stack->top_symbol = insert(stack->top_symbol, func_body->name, false, true); //get statement into tree in func scope
+    }else{
 
-    return
+    }
+    return;
 };
 
 void analyze(Func *analyzed_code){
@@ -25,10 +28,13 @@ void analyze(Func *analyzed_code){
     Func *func = analyzed_code;
     sym_push(stack, NULL); //push global scope
     while(func != NULL){ //analyze all funcs in code
-        stack->top_symbol = insert(stack->top_symbol, analyzed_code->func_name, true, true); //get func into tree in global scope
-        table_symbol *func_symbol = search(analyzed_code->func_name, stack->top_symbol); //get the inserted func
-        func_symbol->type = analyzed_code->return_type; //record type
-        Statement *func_body = analyzed_code->body; //get body of func
+        stack->top_symbol = insert(stack->top_symbol, func->func_name, true, true); //get func into tree in global scope
+        table_symbol *func_symbol = search(func->func_name, stack->top_symbol); //get the inserted func
+        func_symbol->type = func->return_type; //record type
+        func_symbol->param_types = func->param_types; //record params
+        func_symbol->param_count = func->param_count;
+        func_symbol->is_main = func->is_main; //is main
+        Statement *func_body = func->body; //get body of func
         sym_push(stack, NULL); //push func scope
         while(func_body != NULL){ //analyze all statements in func
             analyze_body(stack, func_body);
