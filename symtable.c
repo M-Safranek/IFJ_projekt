@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include "symtable.h"
 
-int max(int a, int b){
+int max(int a, int b){ //return max value out of the two provided
     if(a < b){
         return b;
     }else{
@@ -11,7 +11,7 @@ int max(int a, int b){
     }
 };
 
-int get_height(table_symbol *where){
+int get_height(table_symbol *where){ //get height of symbol if it exists
     if(where == NULL){
         return 0;
     }else{
@@ -19,11 +19,11 @@ int get_height(table_symbol *where){
     }
 };
 
-int compare_height(table_symbol *one, table_symbol *two){
+int compare_height(table_symbol *one, table_symbol *two){ //quick comparison of height between two symbols
     return max(get_height(one), get_height(two)) + 1;
 };
 
-int get_balance(table_symbol *where){
+int get_balance(table_symbol *where){ //tree balance calculation
     if(where == NULL){
         return 0;
     }else{
@@ -31,13 +31,13 @@ int get_balance(table_symbol *where){
     }
 };
 
-char *lower_string(char *string[]){
+char *lower_string(char *string[]){ //makes string lowercase
     for(int i = 0; string[i]; i++){
         string[i] = tolower(string[i]);
     }
 };
 
-table_symbol *search(char *what[], table_symbol *where){
+table_symbol *search(char *what[], table_symbol *where){ //searches for a symbol, returns NULL if nonexistent
     if(where == NULL){
         return NULL;
     }else if(strcmp(lower_string(where->name), lower_string(what)) == 0){
@@ -67,17 +67,17 @@ table_symbol *rr_rotate(table_symbol *top){ //left_rotate
     return right_symbol;
 };
 
-table_symbol *lr_rotate(table_symbol *top){
+table_symbol *lr_rotate(table_symbol *top){ //left, then right
     top->left = rr_rotate(top->left);
     return ll_rotate(top); 
 };
 
-table_symbol *rl_rotate(table_symbol *top){
+table_symbol *rl_rotate(table_symbol *top){ //right, then left
     top->right = ll_rotate(top->right);
     return rr_rotate(top);
 };
 
-table_symbol *create_symbol(char *name[], bool defined, bool function){
+table_symbol *create_symbol(char *name[], bool defined, bool function){ //record necessary values for symbol creation
     table_symbol *new_symbol = malloc(sizeof(table_symbol));
     if(new_symbol == NULL){
         return NULL;
@@ -87,15 +87,16 @@ table_symbol *create_symbol(char *name[], bool defined, bool function){
     new_symbol->function = function;
     new_symbol->left = NULL;
     new_symbol->right = NULL;
+    new_symbol->subtree = NULL;
     new_symbol->height = 0;
     return new_symbol;
 }
 
-table_symbol *insert(table_symbol *where, char *name[], bool defined, bool function){
-    if(where == NULL){
+table_symbol *insert(table_symbol *where, char *name[], bool defined, bool function){ //insert a symbol into a tree, search first
+    if(where == NULL){ //symbol doesn't exist yet, create
         table_symbol *new_symbol = create_symbol(name, defined, function);
         where = new_symbol;
-    }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){
+    }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){ //symbol is in the left child
         where->left = insert(where->left, name, defined, function);
         if(get_balance(where) == 2){
             if(strcmp(lower_string(where->left->name), lower_string(name)) > 0){
@@ -104,7 +105,7 @@ table_symbol *insert(table_symbol *where, char *name[], bool defined, bool funct
                 where = rl_rotate(where);
             }
         }
-    }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){
+    }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){ //symbol is in the right child
         where->right = insert(where->right, name, defined, function);
         if(get_balance(where) == -2){
             if(strcmp(lower_string(where->right->name), lower_string(name)) < 0){
@@ -114,12 +115,13 @@ table_symbol *insert(table_symbol *where, char *name[], bool defined, bool funct
             }
         }
     }
-    where->height = compare_height(where->left, where->right);
-    return where; //dosáhneme pokud se přiřadí nebo při nalezení přiřazeného symbolu
+    where->height = compare_height(where->left, where->right); //calculate height
+    return where; //reached after inserting or finding already inserted symbol with the same name, thus we search first
 };
 
-table_symbol *delete_tree(table_symbol *top){
+table_symbol *delete_tree(table_symbol *top){ //get rid of all the symbols in all trees
     if(top != NULL){
+        delete_tree(top->subtree);
         delete_tree(top->left);
         delete_tree(top->right);
         free(top);
