@@ -14,7 +14,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body){
     return;
 };
 
-void analyze(symtable_stack *stack, Func *analyzed_code){
+void analyze(symtable_stack *stack, Func *analyzed_code, ast_tree *ast_tree){
     //analyze first func, push global scope
     //analyze inside func, push func scope
     //pop func scope, analyze second func, push second func scope
@@ -49,13 +49,12 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
     return;
 };
 
-semantics_return build_table(){
+ast_tree build_table(){
     Func *analyzed_code = parse_program();
     symtable_stack *stack = sym_init_stack();
-    analyze(stack, analyzed_code);
-    analyze(stack, analyzed_code); //pass 2
-    semantics_return return_value;
-    return_value.return_symtable = sym_top(stack)->top_symbol;
+    ast_tree return_ast_tree;
+    analyze(stack, analyzed_code, &return_ast_tree);
+    analyze(stack, analyzed_code, &return_ast_tree); //pass 2
     sym_delete_stack(stack);
-    return return_value;
+    return return_ast_tree;
 }
