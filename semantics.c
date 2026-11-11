@@ -2,7 +2,6 @@
 #include "semantics.h"
 #include "symtable.h"
 #include "symtable_stack.h"
-#include "ast_tree.h"
 #include "parser.h"
 
 void analyze_body(symtable_stack *stack, Statement *func_body){
@@ -48,10 +47,10 @@ void analyze(symtable_stack *stack, Func *analyzed_code, ast_tree *ast_tree){
     return;
 };
 
-ast_tree build_table(){
+struct ast_tree build_table(){
     Func *analyzed_code = parse_program();
     symtable_stack *stack = sym_init_stack();
-    ast_tree return_ast_tree;
+    struct ast_tree return_ast_tree;
     analyze(stack, analyzed_code, &return_ast_tree);
     analyze(stack, analyzed_code, &return_ast_tree); //pass 2
     sym_delete_stack(stack);
