@@ -19,7 +19,7 @@ struct ast_tree{
         char string[100];
         char operator;
         struct{
-            char name[20];
+            char name[50];
             char operands[50][100];
         }func_call;
         struct{
