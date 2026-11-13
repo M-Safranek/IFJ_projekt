@@ -20,6 +20,9 @@ enum{
 
 struct ast_tree{
     enum{
+        FUNC_DEF,
+        FUNC_CALL,
+        RETURN,
         CONSTANT,
         VARIABLE,
         UNARY,
@@ -29,16 +32,25 @@ struct ast_tree{
         WHILE
     }type;
     union{
+        char *return_var;
         int value_i;
         double value_d;
         char *string;
         bool bolean;
         int unit;
-        operator;
+        struct{
+            char *name;
+            char *operands;
+            struct ast_tree *body;
+        }func_def;
         struct{
             char *name;
             char *operands;
         }func_call;
+        struct{
+            operator;
+            struct ast_tree *var;
+        }unary;
         struct{
             operator;
             struct ast_tree *left;
