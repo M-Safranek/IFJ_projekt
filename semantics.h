@@ -4,26 +4,43 @@
 char builtin_func_list[10][11] = {"print", "readLine", "readInt", "readDouble", "toStr", "toInt", "strLength", "subStr", "ord", "chr"};
 
 enum{
-    CONSTANT,
-    UNARY,
-    BINARY,
-    IFTHENELSE,
-    FOR,
-    WHILE
-}ast_type;
+    PLUS_UN,
+    MINUS_UN,
+    MUL,
+    DIV,
+    PLUS_BI,
+    MIN_BI,
+    LESS,
+    LESS_EQ,
+    MORE,
+    MORE_EQ,
+    IS,
+    NOT
+}operator;
 
 struct ast_tree{
-    ast_type;
+    enum{
+        CONSTANT,
+        VARIABLE,
+        UNARY,
+        BINARY,
+        IFTHENELSE,
+        FOR,
+        WHILE
+    }type;
     union{
-        int value;
-        char string[100];
-        char operator;
+        int value_i;
+        double value_d;
+        char *string;
+        bool bolean;
+        int unit;
+        operator;
         struct{
-            char name[50];
-            char operands[50][100];
+            char *name;
+            char *operands;
         }func_call;
         struct{
-            char operator;
+            operator;
             struct ast_tree *left;
             struct ast_tree *right;
         }binary;
@@ -40,7 +57,7 @@ struct ast_tree{
             struct ast_tree *condition;
             struct ast_tree *body;
         }ast_while;
-    };
+    }properties;
 };
 
 #endif //SEMANTICS_ANALYZER
