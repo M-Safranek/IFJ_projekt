@@ -3,7 +3,7 @@
 
 char builtin_func_list[10][11] = {"print", "readLine", "readInt", "readDouble", "toStr", "toInt", "strLength", "subStr", "ord", "chr"};
 
-enum{
+enum ast_operator{
     PLUS_UN,
     MINUS_UN,
     MUL,
@@ -16,27 +16,33 @@ enum{
     MORE_EQ,
     IS,
     NOT
-}operator;
+};
 
 struct ast_tree{
-    enum{
+    enum type{
         FUNC_DEF,
         FUNC_CALL,
         RETURN,
-        CONSTANT,
-        VARIABLE,
+        CON_INT,
+        CON_DOUBLE,
+        CON_STRING,
+        CON_UNIT,
+        VAR_INT,
+        VAR_DOUBLE,
+        VAR_STRING,
+        VAR_UNIT,
         UNARY,
         BINARY,
+        ASSIGNMENT,
         IFTHENELSE,
         FOR,
         WHILE
-    }type;
+    };
     union{
         char *return_var;
         int value_i;
         double value_d;
         char *string;
-        bool bolean;
         int unit;
         struct{
             char *name;
@@ -48,11 +54,11 @@ struct ast_tree{
             char *operands;
         }func_call;
         struct{
-            operator;
+            ast_operator;
             struct ast_tree *var;
         }unary;
         struct{
-            operator;
+            ast_operator;
             struct ast_tree *left;
             struct ast_tree *right;
         }binary;

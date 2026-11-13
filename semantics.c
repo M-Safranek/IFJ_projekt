@@ -4,6 +4,58 @@
 #include "symtable_stack.h"
 #include "parser.h"
 
+struct ast_tree ast_create_int(struct ast_tree *where, bool var){
+
+};
+
+struct ast_tree ast_create_double(struct ast_tree *where, bool var){
+
+};
+
+struct ast_tree ast_create_string(struct ast_tree *where, bool var){
+
+};
+
+struct ast_tree ast_create_unit(struct ast_tree *where, bool var){
+
+};
+
+struct ast_tree ast_create_unary(struct ast_tree *where, enum ast_operator){
+
+};
+
+struct ast_tree ast_create_binary(struct ast_tree *where, enum ast_operator){
+
+};
+
+struct ast_tree ast_create_assignment(struct ast_tree *where){
+
+};
+
+struct ast_tree ast_create_ifthenelse(struct ast_tree *where){
+
+};
+
+struct ast_tree ast_create_for(struct ast_tree *where){
+
+};
+
+struct ast_tree ast_create_while(struct ast_tree *where){
+
+};
+
+struct ast_tree ast_create_func_def(struct ast_tree *where, char *name, char *operands){
+
+};
+
+struct ast_tree ast_create_func_call(struct ast_tree *where, char *name, char *operands){
+
+};
+
+struct ast_tree ast_create_return(struct ast_tree *where){
+
+};
+
 void analyze_body(symtable_stack *stack, Statement *func_body){
     if(func_body->name != "if" || func_body->name != "for" || func_body->name != "while"){ //statement is not if, for or while
         stack->top_symbol = insert(stack->top_symbol, func_body->name, false, true); //get statement into tree in func scope
