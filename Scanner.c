@@ -30,6 +30,7 @@ Scanner scanner_init(FILE *source) {
   scanner.block_comment_depth = 0;
   scanner.after_block_comment_check_flag = false;
   scanner.count_indent_flag = true;
+  scanner.comment_at_line_start = false;
 
   scanner.paren_depth = 0;
   scanner.pending_dedents = 0;
@@ -624,6 +625,7 @@ Token get_next_token(Scanner *scanner) {
       else if (c == '*') {
         scanner->has_newline = false;
         scanner->block_comment_depth = 1;
+        scanner->comment_at_line_start = false;
         state = ML_COMMENT;
       } else {
         forget_char(c, scanner);
@@ -682,23 +684,29 @@ Token get_next_token(Scanner *scanner) {
     case ML_COMMENT_STAR:
       if (c == EOF) {
         create_token(T_ERROR, &current_token, scanner);
-      }
+      } else if (c == '/') {
 
-      else if (c == '/') {
         scanner->block_comment_depth--;
+
         if (scanner->block_comment_depth == 0) {
-          if (scanner->has_newline) {
-            if (scanner->paren_depth == 0)
-              create_token(T_EOL, &current_token, scanner);
-            scanner->after_block_comment_check_flag = true;
-          } else {
-            scanner->current_attr.attr_length = 0;
-            state = START;
-          }
+
+          scanner->current_attr.attr_length = 0;
+
+          if (!scanner->has_newline)
+            state = START; // single-line comment
+
+          else if (scanner->comment_at_line_start)
+            state = L_START; // comment-only line: no EOL
+
+          else
+            state = ML_COMMENT_END_CHECK; // comment after code: one EOL
+
         } else {
           state = ML_COMMENT;
         }
-      } else {
+      }
+
+      else {
         state = ML_COMMENT;
         forget_char(c, scanner);
       }
@@ -707,11 +715,11 @@ Token get_next_token(Scanner *scanner) {
     case ML_COMMENT_END_CHECK:
       if (c == EOF) {
         create_token(T_EOF, &current_token, scanner);
-      }
-
-      else if (c == '\n') {
-        forget_char(c, scanner);
+      } else if (c == '\n') {
+        forget_char(c, scanner); // START emits the EOL, bumps line_number, sets
+                                 // count_indent_flag
         state = START;
+
       }
 
       else if (isspace((unsigned char)c)) {
@@ -788,6 +796,7 @@ Token get_next_token(Scanner *scanner) {
       }
 
       else if (c == '*') {
+        scanner->comment_at_line_start = true;
         scanner->block_comment_depth = 1;
         scanner->has_newline = false;
         scanner->current_attr.attr_length -= 2;
@@ -995,6 +1004,7 @@ void forget_char(char c, Scanner *scanner) {
   scanner->current_attr.attr_length -= 1;
 }
 
+/*
 int main(void) {
   FILE *test_file = fopen("id_test", "r");
 
@@ -1033,3 +1043,4 @@ int main(void) {
   fclose(test_file);
   return 0;
 }
+*/

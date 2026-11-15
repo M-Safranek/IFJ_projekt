@@ -32,6 +32,7 @@ typedef struct {
   bool count_indent_flag;
   int paren_depth;
   int is_running;
+  bool comment_at_line_start;
 
   int pending_dedents;
 
