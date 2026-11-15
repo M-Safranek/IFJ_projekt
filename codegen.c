@@ -194,11 +194,11 @@ void codegen_print_builtin() {
     // toStr
     printf("LABEL $builtin_toStr\n");
     printf("PUSHFRAME\n");
-    printf("DEFVAR TF@arg_type\n");
-    printf("TYPE TF@arg_type LF@arg1\n");
-    printf("JUMPIFEQ $tostr_int TF@arg_type string@int\n");
-    printf("JUMPIFEQ $tostr_double TF@arg_type string@double\n");
-    printf("JUMPIFEQ $tostr_string TF@arg_type string@string\n");
+    printf("DEFVAR LF@arg_type\n");
+    printf("TYPE LF@arg_type LF@arg1\n");
+    printf("JUMPIFEQ $tostr_int LF@arg_type string@int\n");
+    printf("JUMPIFEQ $tostr_double LF@arg_type string@float\n");
+    printf("JUMPIFEQ $tostr_string LF@arg_type string@string\n");
     printf("LABEL $tostr_int\n");
     printf("INT2STR GF@%%retval LF@arg1\n");
     printf("JUMP $tostr_end\n");
@@ -225,23 +225,23 @@ void codegen_print_builtin() {
     // subStr
     printf("LABEL $builtin_subStr\n");
     printf("PUSHFRAME\n");
-    printf("DEFVAR TF@subStr_len\n");
-    printf("DEFVAR TF@subStr_end_idx\n");
-    printf("DEFVAR TF@subStr_cond\n");
+    printf("DEFVAR LF@subStr_len\n");
+    printf("DEFVAR LF@subStr_end_idx\n");
+    printf("DEFVAR LF@subStr_cond\n");
     printf("DEFVAR LF@subStr_result\n");
     printf("DEFVAR LF@subStr_char\n");
-    printf("STRLEN TF@subStr_len LF@arg1\n");
-    printf("LT TF@subStr_cond int@0 LF@arg2\n");
-    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
+    printf("STRLEN LF@subStr_len LF@arg1\n");
+    printf("LT LF@subStr_cond int@0 LF@arg2\n");
+    printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
     printf("LT LF@subStr_cond int@0 LF@arg3\n");
-    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
-    printf("GT TF@subStr_cond LF@arg2 LF@arg3\n");
-    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
-    printf("LT LF@subStr_cond TF@subStr_len LF@arg2\n");
-    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
-    printf("GT TF@subStr_cond LF@arg3 TF@subStr_len\n");
-    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
-    printf("ADD TF@subStr_end_idx LF@arg2 LF@arg3\n");
+    printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
+    printf("GT LF@subStr_cond LF@arg2 LF@arg3\n");
+    printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
+    printf("LT LF@subStr_cond LF@subStr_len LF@arg2\n");
+    printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
+    printf("GT LF@subStr_cond LF@arg3 LF@subStr_len\n");
+    printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
+    printf("ADD LF@subStr_end_idx LF@arg2 LF@arg3\n");
     printf("MOVE LF@subStr_result string@\n");
     printf("LABEL $subStr_loop\n");
     printf("LT LF@cond LF@arg2 LF@subStr_end_idx\n");
@@ -261,15 +261,15 @@ void codegen_print_builtin() {
     // ord
     printf("LABEL $builtin_ord\n");
     printf("PUSHFRAME\n");
-    printf("DEFVAR TF@ord_len\n");
-    printf("DEFVAR TF@ord_cond\n");
-    printf("STRLEN TF@ord_len LF@arg1\n");
-    printf("JUMPIFEQ $ord_is_invalid TF@ord_len int@0\n");
-    printf("LT TF@ord_cond LF@arg2 TF@ord_len\n");
-    printf("JUMPIFEQ $ord_is_invalid TF@ord_cond bool@false\n");
-    printf("LT TF@ord_cond  LF@arg2 int@0 \n");
-    printf("JUMPIFEQ $ord_is_invalid TF@ord_cond bool@true\n");
-    printf("STRI2INT GF@%%retval LF@arg1 TF@arg2\n");
+    printf("DEFVAR LF@ord_len\n");
+    printf("DEFVAR LF@ord_cond\n");
+    printf("STRLEN LF@ord_len LF@arg1\n");
+    printf("JUMPIFEQ $ord_is_invalid LF@ord_len int@0\n");
+    printf("LT LF@ord_cond LF@arg2 LF@ord_len\n");
+    printf("JUMPIFEQ $ord_is_invalid LF@ord_cond bool@false\n");
+    printf("LT LF@ord_cond  LF@arg2 int@0 \n");
+    printf("JUMPIFEQ $ord_is_invalid LF@ord_cond bool@true\n");
+    printf("STRI2INT GF@%%retval LF@arg1 LF@arg2\n");
     printf("JUMP $ord_end\n");
     printf("LABEL $ord_is_invalid\n");
     printf("MOVE GF@%%retval int@-1\n");
@@ -296,7 +296,7 @@ void codegen_print_call(Expression *expr){
             codegen_print_expr(arg);
         }
         printf("CREATEFRAME\n");
-        for(int idx = argc; idx >= 0; idx--) {
+        for(int idx = argc; idx >= 1; idx--) {
             printf("DEFVAR TF@arg%d\n", idx);
             printf("POPS TF@arg%d\n", idx);
 
