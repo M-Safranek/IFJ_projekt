@@ -1,3 +1,10 @@
+/*
+ * Parser for the IFJ26 language.
+ * Checks syntax of the code from tokens given by Scanner.c
+ * and makes an AST tree
+ * Author: Martin Šafránek
+ */
+
 #include "parser.h"
 #include "Scanner.h"
 #include <ctype.h>
@@ -10,11 +17,6 @@
  * remove debug things
  *
  * add comments
- *
- * Make it so this is valid:
- * var a = (10+
- *         4+
- *         25)
  */
 Token tok;
 Scanner scanner;
@@ -318,6 +320,14 @@ int top_terminal_idx(Stack* s)
     syntax_error("top_terminal_idx - stack is empty."); // Should not ever happen
     return 0; // Will never happen because syntax error does exit(2), but it is a warning if it is not there
 }
+// Does syntax_error, if the given expression is call expression
+// Used so the call expression can never be inside of an expression
+void reject_if_call(Expression* e)
+{
+    if (e != NULL && e->kind == E_CALL) {
+        syntax_error("Function call inside an expression.");
+    }
+}
 
 char prec_table[9][9] = {
     // U   M/D  P/M  REL  EQ   L_P  R_P  ID   DOLL
@@ -463,7 +473,6 @@ void insert_handle(Stack* s, int idx)
     s->data[idx].has_handle_after = true;
 }
 // Reduces expressions on the stack using precedence analyzator rules
-// TODO Check if E is E_CALL because function call has to be a whole expression (not func(a) + 4)
 void reduce(Stack* s)
 {
     int n = 0; // Tracks how many items are before a handle
@@ -494,6 +503,8 @@ void reduce(Stack* s)
                     }
                 } else if (!(s->data[i + 1].is_expression) && s->data[i + 2].is_expression) {
                     if (s->data[i + 1].symbol == P_UNARY) { // Rule UNARY E -> E
+                        reject_if_call(s->data[i + 2].node);
+
                         PrecItem item = { 0 };
                         item.is_expression = true;
                         item.has_handle_after = false;
@@ -514,6 +525,8 @@ void reduce(Stack* s)
             case 3:
                 if (!(s->data[i + 1].is_expression) && s->data[i + 2].is_expression && !(s->data[i + 3].is_expression)) {
                     if (s->data[i + 1].symbol == P_LPAREN && s->data[i + 3].symbol == P_RPAREN) { // Rule (E) -> E
+                        reject_if_call(s->data[i + 2].node);
+
                         PrecItem item = { 0 };
                         item.is_expression = true;
                         item.has_handle_after = false;
@@ -526,6 +539,9 @@ void reduce(Stack* s)
                         syntax_error("Reduce function err - expected (E).");
                     }
                 } else if (s->data[i + 1].is_expression && !(s->data[i + 2].is_expression) && s->data[i + 3].is_expression) {
+                    reject_if_call(s->data[i + 1].node);
+                    reject_if_call(s->data[i + 3].node);
+
                     PrecItem item = { 0 };
                     item.is_expression = true;
                     item.has_handle_after = false;

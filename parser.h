@@ -1,3 +1,8 @@
+/*
+ * Header file for the Parser for the IFJ26 language.
+ * Author: Martin Šafránek
+ */
+
 #ifndef PARSER_H
 #define PARSER_H
 
