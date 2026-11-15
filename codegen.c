@@ -1,13 +1,11 @@
 // codegen
-// TODO comment functions, errors
+// TODO comment functions,  handle errors?, handle shadoing
 #include <stdio.h>
 #include "parser.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 
-
-int temp_count = 0;
 int lbl_counter = 0;
 Func *program_root = NULL;
 static DataType cur_return_type;
@@ -42,14 +40,10 @@ void codegen_print_string_literal(const char *str) {
 }
 
 void codegen_print_concat(void) {
-    int id = temp_count++;
-    printf("DEFVAR TF@concat1_%d\n", id);
-    printf("DEFVAR TF@concat2_%d\n", id);
-    printf("DEFVAR TF@concat_subStr_result_%d\n", id);
-    printf("POPS TF@concat2_%d\n", id);
-    printf("POPS TF@concat1_%d\n", id);
-    printf("CONCAT TF@concat_subStr_result_%d TF@concat1_%d TF@concat2_%d\n", id, id, id);
-    printf("PUSHS TF@concat_subStr_result_%d\n", id);
+    printf("POPS GF@concat2\n");
+    printf("POPS GF@concat1\n");
+    printf("CONCAT GF@concat_subStr_result GF@concat1 GF@concat2\n");
+    printf("PUSHS GF@concat_subStr_result\n");
 }
 
 void codegen_print_binary(Expression *expr) {
@@ -163,6 +157,7 @@ bool codegen_is_builtin(const char *func_name) {
     }
     return false;
 }
+
 // builtin functions
 void codegen_print_builtin() {
     // print
@@ -201,6 +196,7 @@ void codegen_print_builtin() {
     printf("LABEL $readInt_end\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     // readDouble
     printf("LABEL $builtin_readDouble\n");
     printf("PUSHFRAME\n");
@@ -221,16 +217,21 @@ void codegen_print_builtin() {
     printf("DEFVAR LF@arg_type\n");
     printf("TYPE LF@arg_type LF@arg1\n");
     printf("JUMPIFEQ $tostr_int LF@arg_type string@int\n");
-    printf("JUMPIFEQ $tostr_double LF@arg_type string@float\n");
+    printf("JUMPIFEQ $tostr_float LF@arg_type string@float\n");
     printf("JUMPIFEQ $tostr_string LF@arg_type string@string\n");
+    printf("JUMPIFEQ $tostr_nil LF@arg_type string@nil\n");
     printf("LABEL $tostr_int\n");
     printf("INT2STR GF@%%retval LF@arg1\n");
     printf("JUMP $tostr_end\n");
-    printf("LABEL $tostr_double\n");
+    printf("LABEL $tostr_float\n");
     printf("FLOAT2STR GF@%%retval LF@arg1\n");
     printf("JUMP $tostr_end\n");
     printf("LABEL $tostr_string\n");
     printf("MOVE GF@%%retval LF@arg1\n");
+    printf("JUMP $tostr_end\n");
+    printf("LABEL $tostr_nil\n");
+    printf("MOVE GF@%%retval string@()\n");
+
     printf("LABEL $tostr_end\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
@@ -241,12 +242,14 @@ void codegen_print_builtin() {
     printf("FLOAT2INT GF@%%retval LF@arg1\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     //strLength
     printf("LABEL $builtin_strLength\n");
     printf("PUSHFRAME\n");
     printf("STRLEN GF@%%retval LF@arg1\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     // subStr
     printf("LABEL $builtin_subStr\n");
     printf("PUSHFRAME\n");
@@ -256,9 +259,9 @@ void codegen_print_builtin() {
     printf("DEFVAR LF@subStr_result\n");
     printf("DEFVAR LF@subStr_char\n");
     printf("STRLEN LF@subStr_len LF@arg1\n");
-    printf("LT LF@subStr_cond int@0 LF@arg2\n");
+    printf("LT LF@subStr_cond LF@arg2 int@0 \n");
     printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
-    printf("LT LF@subStr_cond int@0 LF@arg3\n");
+    printf("LT LF@subStr_cond LF@arg3 int@0\n");
     printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
     printf("GT LF@subStr_cond LF@arg2 LF@arg3\n");
     printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
@@ -266,13 +269,13 @@ void codegen_print_builtin() {
     printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
     printf("GT LF@subStr_cond LF@arg3 LF@subStr_len\n");
     printf("JUMPIFEQ $subStr_invalid LF@subStr_cond bool@true\n");
-    printf("ADD LF@subStr_end_idx LF@arg2 LF@arg3\n");
+    printf("MOVE LF@subStr_end_idx LF@arg3\n");
     printf("MOVE LF@subStr_result string@\n");
     printf("LABEL $subStr_loop\n");
-    printf("LT LF@cond LF@arg2 LF@subStr_end_idx\n");
-    printf("JUMPIFEQ $subStr_done LF@cond bool@false\n");
-    printf("GETCHAR LF@char LF@arg1 LF@arg2\n");
-    printf("CONCAT LF@subStr_result LF@subStr_result LF@char\n");
+    printf("LT LF@subStr_cond LF@arg2 LF@subStr_end_idx\n");
+    printf("JUMPIFEQ $subStr_done LF@subStr_cond bool@false\n");
+    printf("GETCHAR LF@subStr_char LF@arg1 LF@arg2\n");
+    printf("CONCAT LF@subStr_result LF@subStr_result LF@subStr_char\n");
     printf("ADD LF@arg2 LF@arg2 int@1\n");
     printf("JUMP $subStr_loop\n");
     printf("LABEL $subStr_done\n");
@@ -321,7 +324,11 @@ void codegen_print_call(Expression *expr){
         
         for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
             codegen_print_expr(arg);
+            if(strcmp(expr->name, "toInt") == 0 && arg->type == D_INT) {
+                codegen_int_to_double(D_INT,D_DOUBLE);
+            }
         }
+        
         printf("CREATEFRAME\n");
         for(int idx = argc; idx >= 1; idx--) {
             printf("DEFVAR TF@arg%d\n", idx);
@@ -428,12 +435,14 @@ void codegen_print_stmt(Statement *stmt, bool is_tail) {
 
         case S_ASSIGN:
             codegen_print_expr(stmt->expr);
+            codegen_int_to_double(stmt->expr->type, stmt->type);
             printf("POPS LF@%s\n", stmt->name);
             break;
         
         case S_RETURN:
             if(stmt->expr) {
                 codegen_print_expr(stmt->expr);
+                codegen_int_to_double(stmt->expr->type, cur_return_type);
                 if(cur_return_type != D_UNIT) {
                     printf("POPS GF@%%retval\n");
                 } else {
@@ -461,10 +470,10 @@ void codegen_print_stmt(Statement *stmt, bool is_tail) {
             codegen_print_expr(stmt->expr);
             printf("PUSHS bool@false\n");
             printf("JUMPIFEQS $L_%d\n", lbl_else);
-            codegen_print_body(stmt->body, false);
+            codegen_print_body(stmt->body, is_tail);
             printf("JUMP $L_%d\n", lbl_end);
             printf("LABEL $L_%d\n", lbl_else);
-            codegen_print_body(stmt->else_body, false);
+            codegen_print_body(stmt->else_body, is_tail);
             printf("LABEL $L_%d\n", lbl_end);
             break;
         }
@@ -507,6 +516,9 @@ void codegen_print(Func *ast_root) {
     }
 
     printf(".IFJcode26\n");
+    printf("DEFVAR GF@concat1\n");
+    printf("DEFVAR GF@concat2\n");
+    printf("DEFVAR GF@concat_subStr_result\n");
     printf("DEFVAR GF@%%retval\n");
 
     codegen_print_builtin();
