@@ -82,7 +82,7 @@ table_symbol *create_symbol(char *name[], bool defined, bool function){ //record
     if(new_symbol == NULL){
         return NULL;
     }
-    *new_symbol->name = name;
+    strcpy(new_symbol->name, name);
     new_symbol->defined = defined;
     new_symbol->function = function;
     new_symbol->left = NULL;

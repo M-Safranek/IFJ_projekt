@@ -61,14 +61,16 @@ struct ast_tree *ast_create_while(){
 
 };
 
-struct ast_tree *ast_create_func_def(struct ast_tree *where, char *name, char *operands){
-    struct ast_tree *func_def = malloc(sizeof(struct ast_tree));
-    func_def->node_type = FUNC_DEF;
-    func_def->properties.func_def.name = name;
-    func_def->properties.func_def.operands = operands;
-    func_def->properties.func_def.body = NULL;
-    struct ast_tree *temp = realloc(where->properties.func_list, sizeof(where->properties.func_list + sizeof(struct ast_tree)));
-    //add created func_def to where->properties.func_list
+struct ast_tree ast_create_func_def(struct ast_tree *where, char *name, char *operands){
+    struct ast_tree func_def;
+    func_def.node_type = FUNC_DEF;
+    strcpy(func_def.properties.func_def.name, name);
+    strcpy(func_def.properties.func_def.operands, operands);
+    func_def.properties.func_def.body = NULL;
+    struct ast_tree *temp = realloc(where->properties.func_list, sizeof(where->properties.func_list + sizeof(struct ast_tree))); //make space for one more
+    if(temp != NULL){
+        where->properties.func_list[sizeof(where->properties.func_list) / sizeof(struct ast_tree) - 1] = *temp; //get the last space possible
+    }
     return func_def;
 };
 
@@ -95,17 +97,18 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree *top_of
     //pop func scope, analyze second func, push second func scope
     //analyze block inside second func, push block scope
     //outside block, pop block scope
-
     if(analyzed_code == NULL){
         return;
     }
     
     Func *func = analyzed_code;
-    struct ast_tree *ast_position = &top_of_tree;
-
+    
     while(func != NULL){ //analyze all funcs in code
-        if(search(func->func_name, stack->top_symbol) == NULL){
+        struct ast_tree *ast_position = &top_of_tree; //reset pos to top of tree
+        if(search(func->func_name, stack->top_symbol) == NULL){ //second pass or double definition?
             stack->top_symbol = insert(stack->top_symbol, func->func_name, true, true); //get func into tree in global scope
+        }else{
+
         }
         table_symbol *func_symbol = search(func->func_name, sym_top(stack)->top_symbol); //get the inserted func
         func_symbol->type = func->return_type; //record type
@@ -119,7 +122,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree *top_of
         }else{
             sym_push(stack, func_symbol->subtree); //push the completed func symtable to stack for checking
         }
-        ast_create_func_def(top_of_tree->properties.func_list, func->func_name, func->param_types); //insert function into top of ast tree
+        ast_position = ast_create_func_def(top_of_tree->properties.func_list, func->func_name, func->param_types); //insert function into top of ast tree
 
         while(func_body != NULL){ //analyze all statements in func
             analyze_body(stack, func_body);
