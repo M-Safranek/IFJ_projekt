@@ -17,13 +17,14 @@
  *         25)
  */
 Token tok;
+Scanner scanner;
 
 // for debug
 const char* token_names[] = {
     // keywords
     "T_DEF", // 0
     "T_DO", // 1
-    "TK_FLOAT", // 2
+    "TK_DOUBLE", // 2
     "T_ELSE", // 3
     "T_IF", // 4
     "T_IMPORT", // 5
@@ -51,7 +52,7 @@ const char* token_names[] = {
 
     "T_INT", // 25
     "T_STRING", // 26
-    "T_FLOAT", // 27
+    "T_DOUBLE", // 27
     "T_UNIT", // 28
 
     // operators
@@ -88,13 +89,14 @@ void print_token()
 void next_token()
 {
     token_destroy(&tok);
-    tok = get_next_token();
+    tok = get_next_token(&scanner);
     token_count++;
 }
 
 void syntax_error(char* str)
 {
     fprintf(stderr, "Syntax error: %s\n", str);
+    exit(2);
 }
 
 void expect_syntax_error(TokenType t)
@@ -351,7 +353,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
         case T_INT:
             prev_int_value = tok.attr.int_value;
             break;
-        case T_FLOAT:
+        case T_DOUBLE:
             prev_double_value = tok.attr.double_value;
             break;
         case T_STRING:
@@ -384,7 +386,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
                 item.node->int_val = prev_int_value;
                 item.node->type = D_INT;
                 break;
-            case T_FLOAT:
+            case T_DOUBLE:
                 item.node = new_expr(E_DOUBLE);
                 item.node->double_val = prev_double_value;
                 item.node->type = D_DOUBLE;
@@ -582,7 +584,7 @@ PrecSym tok_to_sym(bool prev_is_operand, int depth)
         break;
     case T_IDENTIFIER:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
         symbol = P_ID;
         break;
@@ -761,7 +763,7 @@ Statement* parse_func_body()
     switch (tok.type) {
     case T_IDENTIFIER:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_PLUS:
@@ -808,7 +810,7 @@ DataType parse_type()
     case TK_INT:
         d = D_INT;
         break;
-    case TK_FLOAT:
+    case TK_DOUBLE:
         d = D_DOUBLE;
         break;
     case TK_STRING:
@@ -845,7 +847,7 @@ Statement* parse_statement()
     case T_WHILE:
     case T_RETURN:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_VAL:
@@ -872,7 +874,7 @@ Statement* parse_statement_n()
     case T_WHILE:
     case T_RETURN:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_VAL:
@@ -900,7 +902,7 @@ Statement* parse_statement_line()
     case T_IDENTIFIER:
     case T_RETURN:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_VAL:
@@ -929,7 +931,7 @@ Statement* parse_simple_statement()
     case T_IDENTIFIER:
     case T_RETURN:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_VAL:
@@ -983,7 +985,7 @@ Statement* parse_simple_s()
         break;
     }
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_PLUS:
@@ -1047,7 +1049,7 @@ Expression* parse_condition()
     switch (tok.type) {
     case T_IDENTIFIER:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_PLUS:
@@ -1080,7 +1082,7 @@ Statement* parse_return_val()
     switch (tok.type) {
     case T_IDENTIFIER:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_PLUS:
@@ -1103,7 +1105,7 @@ Expression* parse_arguments()
     switch (tok.type) {
     case T_IDENTIFIER:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_MINUS:
@@ -1142,7 +1144,7 @@ Expression* parse_arguments_nn()
     switch (tok.type) {
     case T_IDENTIFIER:
     case T_INT:
-    case T_FLOAT:
+    case T_DOUBLE:
     case T_STRING:
     case T_LPAREN:
     case T_MINUS:
@@ -1169,7 +1171,7 @@ Expression* parse_term()
         e->int_val = tok.attr.int_value;
         next_token();
         break;
-    case T_FLOAT:
+    case T_DOUBLE:
         e = new_expr(E_DOUBLE);
         e->double_val = tok.attr.double_value;
         next_token();
@@ -1206,7 +1208,7 @@ Expression* parse_num_lit()
         e->int_val = tok.attr.int_value;
         next_token();
         break;
-    case T_FLOAT:
+    case T_DOUBLE:
         e = new_expr(E_DOUBLE);
         e->double_val = tok.attr.double_value;
         next_token();
@@ -1326,7 +1328,7 @@ int main()
     if (test_file == NULL) {
         return -1;
     }
-    scanner_init(test_file);
+    scanner = scanner_init(test_file);
 
     next_token();
 
@@ -1334,6 +1336,7 @@ int main()
     f = parse_program();
 
     token_destroy(&tok);
+    scanner_destroy(&scanner);
     free_func(f);
 
     // for debug

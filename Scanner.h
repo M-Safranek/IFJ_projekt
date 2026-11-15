@@ -5,15 +5,24 @@
 
 #ifndef SCANNER_H
 #define SCANNER_H
+#include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #define MAX_INDENT_LEVELS 1024
+
+typedef struct {
+  char *data;
+  unsigned long attr_length;
+  unsigned long capacity;
+} attr;
 
 typedef struct {
   FILE *file;
 
-  unsigned long attr_size;
-  char attr[1000];
+  attr current_attr;
 
   int line_number;
 
@@ -23,18 +32,19 @@ typedef struct {
   bool count_indent_flag;
   int paren_depth;
   int is_running;
+  bool comment_at_line_start;
 
   int pending_dedents;
 
-  int indent_stack[MAX_INDENT_LEVELS];
-  int indent_top;
+  long unsigned int indent_stack[MAX_INDENT_LEVELS];
+  unsigned int indent_top;
 } Scanner;
 
 typedef enum {
   // keywords
   T_DEF,
   T_DO,
-  TK_FLOAT,
+  TK_DOUBLE,
   T_ELSE,
   T_IF,
   T_IMPORT,
@@ -62,7 +72,7 @@ typedef enum {
 
   T_INT,
   T_STRING,
-  T_FLOAT,
+  T_DOUBLE,
   T_UNIT,
 
   // operators
@@ -101,12 +111,12 @@ typedef enum {
   ZERO,
   DOT,
   DECIMAL_START,
-  FLOAT,
-  FLOAT_LAST_UNDERSCORE,
-  FLOAT_EXPONENT_START,
-  FLOAT_SIGNED_EXPONENT_START,
-  FLOAT_EXPONENT,
-  FLOAT_EXPONENT_LAST_UNDERSCORE,
+  DOUBLE,
+  DOUBLE_LAST_UNDERSCORE,
+  DOUBLE_EXPONENT_START,
+  DOUBLE_SIGNED_EXPONENT_START,
+  DOUBLE_EXPONENT,
+  DOUBLE_EXPONENT_LAST_UNDERSCORE,
 
   /* Strings */
   STRING_START,
@@ -145,6 +155,11 @@ typedef enum {
   ML_COMMENT_END_CHECK,
 
   L_START,
+  L_START_SLASH,
+  L_START_L_COMMENT,
+  L_START_ML_COMMENT,
+  L_START_ML_COMMENT_SLASH,
+  L_START_ML_COMMENT_STAR,
 
   FALSE
 
@@ -164,9 +179,9 @@ typedef struct {
   TokenValue attr;
 } Token;
 
-
-void create_token(TokenType new_type, Token *token);
-void scanner_init(FILE *source);
+Scanner scanner_init(FILE *source);
+void scanner_destroy(Scanner *s);
+Token get_next_token(Scanner *s);
+void create_token(TokenType new_type, Token *current_token, Scanner *scanner);
 void token_destroy(Token *token);
-Token get_next_token(void);
 #endif
