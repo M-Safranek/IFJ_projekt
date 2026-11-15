@@ -20,6 +20,7 @@ enum ast_operator{
 
 struct ast_tree{
     enum type{
+        TOP, //top of tree
         FUNC_DEF, //func_def
         FUNC_CALL, //func_call
         RETURN, //return_var
@@ -38,8 +39,9 @@ struct ast_tree{
         FOR, //ast_for
         WHILE, //ast_while
         INT_TO_DOUBLE //value_i
-    };
+    }node_type;
     union{
+        struct ast_tree *func_list;
         char *return_var;
         int value_i;
         double value_d;
