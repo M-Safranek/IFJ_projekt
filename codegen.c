@@ -168,29 +168,53 @@ void codegen_print_builtin() {
     // print
     printf("LABEL $builtin_print\n");
     printf("PUSHFRAME\n");
+    printf("DEFVAR LF@print_type\n");
+    printf("TYPE LF@print_type LF@arg1\n");
+    printf("JUMPIFEQ $print_return_nil LF@print_type string@nil\n");
     printf("WRITE LF@arg1\n");
+    printf("JUMP $print_end\n");
+    printf("LABEL $print_return_nil\n");
+    printf("WRITE string@()\n");
+    printf("LABEL $print_end\n");
     printf("PUSHS nil@nil\n");
     printf("POPS GF@%%retval\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     // readLine
     printf("LABEL $builtin_readLine\n");
     printf("PUSHFRAME\n");
     printf("READ GF@%%retval string\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     // readInt
     printf("LABEL $builtin_readInt\n");
     printf("PUSHFRAME\n");
     printf("READ GF@%%retval int\n");
+    printf("DEFVAR LF@readInt_is_nil\n");
+    printf("EQ LF@readInt_is_nil GF@%%retval nil@nil\n");
+    printf("JUMPIFEQ $readInt_return_zero LF@readInt_is_nil bool@true\n");
+    printf("JUMP $readInt_end\n");
+    printf("LABEL $readInt_return_zero\n");
+    printf("MOVE GF@%%retval int@0\n");
+    printf("LABEL $readInt_end\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
     // readDouble
     printf("LABEL $builtin_readDouble\n");
     printf("PUSHFRAME\n");
     printf("READ GF@%%retval float\n");
+    printf("DEFVAR LF@readDouble_is_nil\n");
+    printf("EQ LF@readDouble_is_nil GF@%%retval nil@nil\n");
+    printf("JUMPIFEQ $readDouble_return_zero LF@readDouble_is_nil bool@true\n");
+    printf("JUMP $readDouble_end\n");
+    printf("LABEL $readDouble_return_zero\n");
+    printf("MOVE GF@%%retval float@0x0p+0\n");
+    printf("LABEL $readDouble_end\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     // toStr
     printf("LABEL $builtin_toStr\n");
     printf("PUSHFRAME\n");
@@ -210,6 +234,7 @@ void codegen_print_builtin() {
     printf("LABEL $tostr_end\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     //toInt
     printf("LABEL $builtin_toInt\n");
     printf("PUSHFRAME\n");
@@ -254,10 +279,11 @@ void codegen_print_builtin() {
     printf("MOVE GF@%%retval LF@subStr_result\n");
     printf("JUMP $subStr_end\n");
     printf("LABEL $subStr_invalid\n");
-    printf("MOVE GF@%%retval int@40\n");
+    printf("EXIT int@40\n");
     printf("LABEL $subStr_end\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     // ord
     printf("LABEL $builtin_ord\n");
     printf("PUSHFRAME\n");
@@ -276,6 +302,7 @@ void codegen_print_builtin() {
     printf("LABEL $ord_end\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
+
     // chr
     printf("LABEL $builtin_chr\n");
     printf("PUSHFRAME\n");
