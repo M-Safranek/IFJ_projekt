@@ -33,7 +33,7 @@ struct ast_tree{
         VAR_UNIT, //unit
         UNARY, //unary
         BINARY, //binary
-        ASSIGNMENT, //
+        ASSIGNMENT, //assignment
         IFTHENELSE, //ifthenelse
         FOR, //ast_for
         WHILE, //ast_while
@@ -63,6 +63,10 @@ struct ast_tree{
             struct ast_tree *left;
             struct ast_tree *right;
         }binary;
+        struct{
+            struct ast_tree *left;
+            struct ast_tree *right;
+        }assignment;
         struct{
             struct ast_tree *condition;
             struct ast_tree *body;
