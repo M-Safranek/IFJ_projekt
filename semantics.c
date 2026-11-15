@@ -13,43 +13,51 @@ struct ast_tree ast_create_tree(){
     return top_of_tree;
 };
 
-struct ast_tree *ast_create_int(struct ast_tree *where, bool var){
+struct ast_tree *ast_create_const_int(){
 
 };
 
-struct ast_tree *ast_create_double(struct ast_tree *where, bool var){
+struct ast_tree *ast_create_const_double(){
 
 };
 
-struct ast_tree *ast_create_string(struct ast_tree *where, bool var){
+struct ast_tree *ast_create_const_string(){
 
 };
 
-struct ast_tree *ast_create_unit(struct ast_tree *where, bool var){
+struct ast_tree *ast_create_const_unit(){
 
 };
 
-struct ast_tree *ast_create_unary(struct ast_tree *where, enum ast_operator){
+struct ast_tree *ast_create_var(char *var_name){
 
 };
 
-struct ast_tree *ast_create_binary(struct ast_tree *where, enum ast_operator){
+struct ast_tree *ast_create_int_to_double(){
 
 };
 
-struct ast_tree *ast_create_assignment(struct ast_tree *where){
+struct ast_tree *ast_create_unary(enum ast_operator){
 
 };
 
-struct ast_tree *ast_create_ifthenelse(struct ast_tree *where){
+struct ast_tree *ast_create_binary(enum ast_operator){
 
 };
 
-struct ast_tree *ast_create_for(struct ast_tree *where){
+struct ast_tree *ast_create_assignment(){
 
 };
 
-struct ast_tree *ast_create_while(struct ast_tree *where){
+struct ast_tree *ast_create_ifthenelse(){
+
+};
+
+struct ast_tree *ast_create_for(){
+
+};
+
+struct ast_tree *ast_create_while(){
 
 };
 
@@ -64,11 +72,11 @@ struct ast_tree *ast_create_func_def(struct ast_tree *where, char *name, char *o
     return func_def;
 };
 
-struct ast_tree *ast_create_func_call(struct ast_tree *where, char *name, char *operands){
+struct ast_tree *ast_create_func_call(char *name, char *operands){
 
 };
 
-struct ast_tree *ast_create_return(struct ast_tree *where){
+struct ast_tree *ast_create_return(){
 
 };
 

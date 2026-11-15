@@ -38,7 +38,7 @@ struct ast_tree{
         IFTHENELSE, //ifthenelse
         FOR, //ast_for
         WHILE, //ast_while
-        INT_TO_DOUBLE //value_i
+        INT_TO_DOUBLE //link
     }node_type;
     union{
         struct ast_tree *func_list;
@@ -48,6 +48,7 @@ struct ast_tree{
         char *string;
         int unit;
         char *var_name;
+        struct ast_tree *link;
         struct{
             char *name;
             char *operands;
