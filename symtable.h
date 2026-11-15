@@ -6,12 +6,13 @@
 typedef struct symbol{
     char name[21];
     DataType type;
-    bool function;
     bool defined;
     bool modifiable;
+    bool function;
     DataType *param_types;
     int param_count;
     bool is_main;
+    table_symbol *subtree;
     table_symbol *left;
     table_symbol *right;
     int height;

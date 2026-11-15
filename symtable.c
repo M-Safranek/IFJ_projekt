@@ -88,6 +88,7 @@ table_symbol *create_symbol(char *name[], bool defined, bool function){ //record
     new_symbol->left = NULL;
     new_symbol->right = NULL;
     new_symbol->height = 0;
+    new_symbol->subtree = NULL;
     return new_symbol;
 }
 
@@ -120,6 +121,7 @@ table_symbol *insert(table_symbol *where, char *name[], bool defined, bool funct
 
 table_symbol *delete_tree(table_symbol *top){ //get rid of all the symbols in all trees
     if(top != NULL){
+        delete_tree(top->subtree);
         delete_tree(top->left);
         delete_tree(top->right);
         free(top);
