@@ -27,10 +27,10 @@ struct ast_tree{
         CON_DOUBLE, //value_d
         CON_STRING, //string
         CON_UNIT, //unit
-        VAR_INT, //value_i
-        VAR_DOUBLE, //value_d
-        VAR_STRING, //string
-        VAR_UNIT, //unit
+        VAR_INT, //var_name
+        VAR_DOUBLE, //var_name
+        VAR_STRING, //var_name
+        VAR_UNIT, //var_name
         UNARY, //unary
         BINARY, //binary
         ASSIGNMENT, //assignment
@@ -45,6 +45,7 @@ struct ast_tree{
         double value_d;
         char *string;
         int unit;
+        char *var_name;
         struct{
             char *name;
             char *operands;
