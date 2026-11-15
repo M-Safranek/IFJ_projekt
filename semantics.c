@@ -78,11 +78,40 @@ struct ast_tree *ast_create_return(){
 
 };
 
-void analyze_body(symtable_stack *stack, Statement *func_body){
-    if(func_body->name != "if" || func_body->name != "while"){ //statement is not if or while
-        stack->top_symbol = insert(stack->top_symbol, func_body->name, false, true); //get statement into tree in func scope
-    }else{
+void analyze_if(){
 
+};
+
+void analyze_else(){
+
+};
+
+void analyze_while(){
+
+};
+
+void analyze_body(symtable_stack *stack, Statement *func_body, struct ast_tree *ast_position){   
+    if(func_body->name == "if"){ //statement is if
+        //get all vars in condition, check against symtable and insert into ast
+        Statement *if_body = func_body->body;
+        while(if_body != NULL){
+            analyze_if();
+            if_body = if_body->next;
+        }
+        Statement *if_else_body = func_body->else_body;
+        while(if_else_body != NULL){
+            analyze_if();
+            if_else_body = if_else_body->next;
+        }
+    }else if(func_body->name == "while"){ //statement is while
+        //get all vars in condition, check against symtable and insert into ast
+        Statement *while_body = func_body->body;
+        while(while_body != NULL){
+            analyze_while();
+            while_body = while_body->next;
+        }
+    }else{
+        
     }
     return;
 };
@@ -125,7 +154,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree *top_of
         ast_position = ast_create_func_def(top_of_tree->properties.func_list, func->func_name, func->param_types); //insert function into top of ast tree
 
         while(func_body != NULL){ //analyze all statements in func
-            analyze_body(stack, func_body);
+            analyze_body(stack, func_body, ast_position);
             func_body = func_body->next; //move on
         }
         func_symbol->subtree = stack->top_symbol; //archive contents of stack for checking in second pass
