@@ -20,23 +20,24 @@ enum ast_operator{
 
 struct ast_tree{
     enum type{
-        FUNC_DEF,
-        FUNC_CALL,
-        RETURN,
-        CON_INT,
-        CON_DOUBLE,
-        CON_STRING,
-        CON_UNIT,
-        VAR_INT,
-        VAR_DOUBLE,
-        VAR_STRING,
-        VAR_UNIT,
-        UNARY,
-        BINARY,
-        ASSIGNMENT,
-        IFTHENELSE,
-        FOR,
-        WHILE
+        FUNC_DEF, //func_def
+        FUNC_CALL, //func_call
+        RETURN, //return_var
+        CON_INT, //value_i
+        CON_DOUBLE, //value_d
+        CON_STRING, //string
+        CON_UNIT, //unit
+        VAR_INT, //value_i
+        VAR_DOUBLE, //value_d
+        VAR_STRING, //string
+        VAR_UNIT, //unit
+        UNARY, //unary
+        BINARY, //binary
+        ASSIGNMENT, //
+        IFTHENELSE, //ifthenelse
+        FOR, //ast_for
+        WHILE, //ast_while
+        INT_TO_DOUBLE //value_i
     };
     union{
         char *return_var;
