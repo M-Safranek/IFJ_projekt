@@ -61,12 +61,12 @@ struct ast_tree *ast_create_while(){
 
 };
 
-struct ast_tree ast_create_func_def(struct ast_tree *where, char *name, char *operands){
-    struct ast_tree func_def;
-    func_def.node_type = FUNC_DEF;
-    strcpy(func_def.properties.func_def.name, name);
-    strcpy(func_def.properties.func_def.operands, operands);
-    func_def.properties.func_def.body = NULL;
+struct ast_tree *ast_create_func_def(struct ast_tree *where, char *name, char *operands){
+    struct ast_tree *func_def;
+    func_def->node_type = FUNC_DEF;
+    strcpy(func_def->properties.func_def.name, name);
+    strcpy(func_def->properties.func_def.operands, operands);
+    func_def->properties.func_def.body = NULL;
     struct ast_tree *temp = realloc(where->properties.func_list, sizeof(where->properties.func_list + sizeof(struct ast_tree))); //make space for one more
     if(temp != NULL){
         where->properties.func_list[sizeof(where->properties.func_list) / sizeof(struct ast_tree) - 1] = *temp; //get the last space possible
