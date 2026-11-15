@@ -1,5 +1,5 @@
 // codegen
-// TODO implement buildin functions, comment functions
+// TODO comment functions, errors
 #include <stdio.h>
 #include "parser.h"
 #include <stdbool.h>
@@ -16,7 +16,7 @@ void codegen_print_expr(Expression *expr);
 void codegen_print_stmt(Statement *stmt, bool is_tail);
 void codegen_push_param(Func *f, Expression *arg);
 
-//maybe not necessary?
+// TODO
 void print_error(int error_code, char *msg) {
     fprintf(stderr, "Error %d: %s\n ", error_code, msg);
     exit(error_code);
@@ -45,11 +45,11 @@ void codegen_print_concat(void) {
     int id = temp_count++;
     printf("DEFVAR TF@concat1_%d\n", id);
     printf("DEFVAR TF@concat2_%d\n", id);
-    printf("DEFVAR TF@concat_res_%d\n", id);
+    printf("DEFVAR TF@concat_subStr_result_%d\n", id);
     printf("POPS TF@concat2_%d\n", id);
     printf("POPS TF@concat1_%d\n", id);
-    printf("CONCAT TF@concat_res_%d TF@concat1_%d TF@concat2_%d\n", id, id, id);
-    printf("PUSHS TF@concat_res_%d\n", id);
+    printf("CONCAT TF@concat_subStr_result_%d TF@concat1_%d TF@concat2_%d\n", id, id, id);
+    printf("PUSHS TF@concat_subStr_result_%d\n", id);
 }
 
 void codegen_print_binary(Expression *expr) {
@@ -163,11 +163,146 @@ bool codegen_is_builtin(const char *func_name) {
     }
     return false;
 }
+// builtin functions
+void codegen_print_builtin() {
+    // print
+    printf("LABEL $builtin_print\n");
+    printf("PUSHFRAME\n");
+    printf("WRITE LF@arg1\n");
+    printf("PUSHS nil@nil\n");
+    printf("POPS GF@%%retval\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    // readLine
+    printf("LABEL $builtin_readLine\n");
+    printf("PUSHFRAME\n");
+    printf("READ GF@%%retval string\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    // readInt
+    printf("LABEL $builtin_readInt\n");
+    printf("PUSHFRAME\n");
+    printf("READ GF@%%retval int\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    // readDouble
+    printf("LABEL $builtin_readDouble\n");
+    printf("PUSHFRAME\n");
+    printf("READ GF@%%retval float\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    // toStr
+    printf("LABEL $builtin_toStr\n");
+    printf("PUSHFRAME\n");
+    printf("DEFVAR TF@arg_type\n");
+    printf("TYPE TF@arg_type LF@arg1\n");
+    printf("JUMPIFEQ $tostr_int TF@arg_type string@int\n");
+    printf("JUMPIFEQ $tostr_double TF@arg_type string@double\n");
+    printf("JUMPIFEQ $tostr_string TF@arg_type string@string\n");
+    printf("LABEL $tostr_int\n");
+    printf("INT2STR GF@%%retval LF@arg1\n");
+    printf("JUMP $tostr_end\n");
+    printf("LABEL $tostr_double\n");
+    printf("FLOAT2STR GF@%%retval LF@arg1\n");
+    printf("JUMP $tostr_end\n");
+    printf("LABEL $tostr_string\n");
+    printf("MOVE GF@%%retval LF@arg1\n");
+    printf("LABEL $tostr_end\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    //toInt
+    printf("LABEL $builtin_toInt\n");
+    printf("PUSHFRAME\n");
+    printf("FLOAT2INT GF@%%retval LF@arg1\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    //strLength
+    printf("LABEL $builtin_strLength\n");
+    printf("PUSHFRAME\n");
+    printf("STRLEN GF@%%retval LF@arg1\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    // subStr
+    printf("LABEL $builtin_subStr\n");
+    printf("PUSHFRAME\n");
+    printf("DEFVAR TF@subStr_len\n");
+    printf("DEFVAR TF@subStr_end_idx\n");
+    printf("DEFVAR TF@subStr_cond\n");
+    printf("DEFVAR LF@subStr_result\n");
+    printf("DEFVAR LF@subStr_char\n");
+    printf("STRLEN TF@subStr_len LF@arg1\n");
+    printf("LT TF@subStr_cond int@0 LF@arg2\n");
+    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
+    printf("LT LF@subStr_cond int@0 LF@arg3\n");
+    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
+    printf("GT TF@subStr_cond LF@arg2 LF@arg3\n");
+    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
+    printf("LT LF@subStr_cond TF@subStr_len LF@arg2\n");
+    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
+    printf("GT TF@subStr_cond LF@arg3 TF@subStr_len\n");
+    printf("JUMPIFEQ $subStr_invalid TF@subStr_cond bool@true\n");
+    printf("ADD TF@subStr_end_idx LF@arg2 LF@arg3\n");
+    printf("MOVE LF@subStr_result string@\n");
+    printf("LABEL $subStr_loop\n");
+    printf("LT LF@cond LF@arg2 LF@subStr_end_idx\n");
+    printf("JUMPIFEQ $subStr_done LF@cond bool@false\n");
+    printf("GETCHAR LF@char LF@arg1 LF@arg2\n");
+    printf("CONCAT LF@subStr_result LF@subStr_result LF@char\n");
+    printf("ADD LF@arg2 LF@arg2 int@1\n");
+    printf("JUMP $subStr_loop\n");
+    printf("LABEL $subStr_done\n");
+    printf("MOVE GF@%%retval LF@subStr_result\n");
+    printf("JUMP $subStr_end\n");
+    printf("LABEL $subStr_invalid\n");
+    printf("MOVE GF@%%retval int@40\n");
+    printf("LABEL $subStr_end\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    // ord
+    printf("LABEL $builtin_ord\n");
+    printf("PUSHFRAME\n");
+    printf("DEFVAR TF@ord_len\n");
+    printf("DEFVAR TF@ord_cond\n");
+    printf("STRLEN TF@ord_len LF@arg1\n");
+    printf("JUMPIFEQ $ord_is_invalid TF@ord_len int@0\n");
+    printf("LT TF@ord_cond LF@arg2 TF@ord_len\n");
+    printf("JUMPIFEQ $ord_is_invalid TF@ord_cond bool@false\n");
+    printf("LT TF@ord_cond  LF@arg2 int@0 \n");
+    printf("JUMPIFEQ $ord_is_invalid TF@ord_cond bool@true\n");
+    printf("STRI2INT GF@%%retval LF@arg1 TF@arg2\n");
+    printf("JUMP $ord_end\n");
+    printf("LABEL $ord_is_invalid\n");
+    printf("MOVE GF@%%retval int@-1\n");
+    printf("LABEL $ord_end\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+    // chr
+    printf("LABEL $builtin_chr\n");
+    printf("PUSHFRAME\n");
+    printf("INT2CHAR GF@%%retval LF@arg1\n");
+    printf("POPFRAME\n");
+    printf("RETURN\n");
+}
 
 void codegen_print_call(Expression *expr){
 
     if(codegen_is_builtin(expr->name)) {
-        //TODO Builtin functions
+        int argc = 0;
+        for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+            argc++;
+        }
+        
+        for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+            codegen_print_expr(arg);
+        }
+        printf("CREATEFRAME\n");
+        for(int idx = argc; idx >= 0; idx--) {
+            printf("DEFVAR TF@arg%d\n", idx);
+            printf("POPS TF@arg%d\n", idx);
+
+        }
+        printf("CALL $builtin_%s\n", expr->name);
+        printf("PUSHS GF@%%retval\n");
         return;
     }
 
@@ -347,6 +482,8 @@ void codegen_print(Func *ast_root) {
     printf(".IFJcode26\n");
     printf("DEFVAR GF@%%retval\n");
 
+    codegen_print_builtin();
+
     printf("JUMP $main\n");
 
     for(Func *f = ast_root; f != NULL; f = f->next) {
@@ -357,11 +494,7 @@ void codegen_print(Func *ast_root) {
     printf("CREATEFRAME\n");
     printf("CALL $F_%s\n", main_f->func_name);
 
-    printf("EXIT int@0\n");
-
-    
+    printf("EXIT int@0\n");    
 }
-
-
 
 
