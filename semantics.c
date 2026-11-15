@@ -69,7 +69,7 @@ struct ast_tree *ast_create_func_def(struct ast_tree *where, char *name, char *o
     func_def->properties.func_def.body = NULL;
     struct ast_tree *temp = realloc(where->properties.func_list, sizeof(where->properties.func_list + sizeof(struct ast_tree))); //make space for one more
     if(temp != NULL){
-        where->properties.func_list[sizeof(where->properties.func_list) / sizeof(struct ast_tree) - 1] = *temp; //get the last space possible
+        where->properties.func_list[(sizeof(where->properties.func_list) / sizeof(struct ast_tree)) - 1] = *temp; //get the last space possible
     }
     return func_def;
 };
@@ -108,7 +108,11 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree *top_of
         if(search(func->func_name, stack->top_symbol) == NULL){ //second pass or double definition?
             stack->top_symbol = insert(stack->top_symbol, func->func_name, true, true); //get func into tree in global scope
         }else{
-
+            for(int i; i < (sizeof(top_of_tree->properties.func_list) / sizeof(struct ast_tree)); i++){
+                if(strcmp(func->func_name, top_of_tree->properties.func_list->properties.func_def.name) == 0){
+                    //error, second definition of func
+                }
+            }
         }
         table_symbol *func_symbol = search(func->func_name, sym_top(stack)->top_symbol); //get the inserted func
         func_symbol->type = func->return_type; //record type
