@@ -53,10 +53,6 @@ struct ast_tree *ast_create_ifthenelse(){
 
 };
 
-struct ast_tree *ast_create_for(){
-
-};
-
 struct ast_tree *ast_create_while(){
 
 };
@@ -83,7 +79,7 @@ struct ast_tree *ast_create_return(){
 };
 
 void analyze_body(symtable_stack *stack, Statement *func_body){
-    if(func_body->name != "if" || func_body->name != "for" || func_body->name != "while"){ //statement is not if, for or while
+    if(func_body->name != "if" || func_body->name != "while"){ //statement is not if or while
         stack->top_symbol = insert(stack->top_symbol, func_body->name, false, true); //get statement into tree in func scope
     }else{
 

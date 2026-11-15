@@ -36,7 +36,6 @@ struct ast_tree{
         BINARY, //binary
         ASSIGNMENT, //assignment
         IFTHENELSE, //ifthenelse
-        FOR, //ast_for
         WHILE, //ast_while
         INT_TO_DOUBLE //link
     }node_type;
@@ -76,10 +75,6 @@ struct ast_tree{
             struct ast_tree *body;
             struct ast_tree *elsebody;
         }ifthenelse;
-        struct{
-            struct ast_tree *condition;
-            struct ast_tree *body;
-        }ast_for;
         struct{
             struct ast_tree *condition;
             struct ast_tree *body;
