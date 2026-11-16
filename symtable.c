@@ -32,10 +32,11 @@ int get_balance(table_symbol *where){ //tree balance calculation
     }
 };
 
-char *lower_string(char *string){ //makes string lowercase
+void *lower_string(char *string){ //makes string lowercase
     for(int i = 0; string[i]; i++){
         string[i] = tolower(string[i]);
     }
+    return string;
 };
 
 table_symbol *search(char *what[], table_symbol *where){ //searches for a symbol, returns NULL if nonexistent
@@ -120,7 +121,7 @@ table_symbol *insert(table_symbol *where, char *name[], bool defined, bool funct
     return where; //reached after inserting or finding already inserted symbol with the same name, thus we search first
 };
 
-table_symbol *delete_tree(table_symbol *top){ //get rid of all the symbols in all trees
+void delete_tree(table_symbol *top){ //get rid of all the symbols in all trees
     if(top != NULL){
         delete_tree(top->subtree);
         delete_tree(top->left);

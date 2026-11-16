@@ -20,6 +20,6 @@ typedef struct symbol{
 
 table_symbol *search(char *what[], table_symbol *where);
 table_symbol *insert(table_symbol *where, char *name[], bool defined, bool function);
-table_symbol *delete_tree(table_symbol *top);
+void delete_tree(table_symbol *top);
 
 #endif //SYMTABLE_STRUCT
