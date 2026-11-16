@@ -1,9 +1,11 @@
 #ifndef SEMANTICS_ANALYZER
 #define SEMANTICS_ANALYZER
 
+#include "parser.h"
+
 char builtin_func_list[10][11] = {"print", "readLine", "readInt", "readDouble", "toStr", "toInt", "strLength", "subStr", "ord", "chr"};
 
-enum ast_operator{
+typedef enum{
     PLUS_UN,
     MINUS_UN,
     MUL,
@@ -16,11 +18,11 @@ enum ast_operator{
     MORE_EQ,
     IS,
     NOT
-};
+}ast_operator;
 
-struct ast_tree{
+struct ast_tree_node{
     enum type{
-        TOP, //top of tree
+        TOP, //func_def
         FUNC_DEF, //func_def
         FUNC_CALL, //func_call
         RETURN, //return_var
@@ -40,46 +42,46 @@ struct ast_tree{
         INT_TO_DOUBLE //link
     }node_type;
     union{
-        struct ast_tree *func_list;
         char *return_var;
         int value_i;
         double value_d;
         char *string;
         int unit;
         char *var_name;
-        struct ast_tree *link;
+        struct ast_tree_node *link;
         struct{
             char *name;
-            char *operands;
-            struct ast_tree *body;
+            DataType *operands;
+            struct ast_tree_node *body;
+            struct ast_tree_node *next;
         }func_def;
         struct{
             char *name;
-            char *operands;
+            DataType *operands;
         }func_call;
         struct{
-            ast_operator;
-            struct ast_tree *var;
+            ast_operator operator;
+            struct ast_tree_node *var;
         }unary;
         struct{
-            ast_operator;
-            struct ast_tree *left;
-            struct ast_tree *right;
+            ast_operator operator;
+            struct ast_tree_node *left;
+            struct ast_tree_node *right;
         }binary;
         struct{
-            struct ast_tree *left;
-            struct ast_tree *right;
+            struct ast_tree_node *left;
+            struct ast_tree_node *right;
         }assignment;
         struct{
-            struct ast_tree *condition;
-            struct ast_tree *body;
-            struct ast_tree *elsebody;
+            struct ast_tree_node *condition;
+            struct ast_tree_node *body;
+            struct ast_tree_node *elsebody;
         }ifthenelse;
         struct{
-            struct ast_tree *condition;
-            struct ast_tree *body;
+            struct ast_tree_node *condition;
+            struct ast_tree_node *body;
         }ast_while;
     }properties;
-};
+}ast_tree;
 
 #endif //SEMANTICS_ANALYZER
