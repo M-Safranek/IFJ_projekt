@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "symtable_stack.h"
 #include "symtable.h"
 
@@ -9,7 +10,7 @@ symtable_stack *sym_init_stack(){ //allocate momory for stack
     return first;
 };
 
-symtable_stack *sym_is_empty(symtable_stack *stack){ //check if stack only contains the header
+bool sym_is_empty(symtable_stack *stack){ //check if stack only contains the header
     if(stack->top_symbol == NULL && stack->prev == NULL){
         return true;
     }else{
@@ -21,19 +22,21 @@ symtable_stack *sym_push(symtable_stack *stack ,table_symbol *item){ //push onto
     symtable_stack *pushed = malloc(sizeof(symtable_stack));
     pushed->top_symbol = item;
     pushed->prev = stack;
-    return pushed;
+    stack = pushed;
+    return stack;
 };
 
 symtable_stack *sym_pop(symtable_stack *stack){ //pop stack
-    if(sym_is_empty == false){
+    if(sym_is_empty(stack) == false){
         symtable_stack *previous = stack->prev;
         free(stack);
         return previous;
     }
+    return stack;
 }
 
 symtable_stack *sym_top(symtable_stack *stack){ //get first item on stack
-    if(sym_is_empty == false){
+    if(sym_is_empty(stack) == false){
         return stack;
     }else{
         return NULL;
@@ -41,7 +44,7 @@ symtable_stack *sym_top(symtable_stack *stack){ //get first item on stack
 };
 
 void sym_delete_stack(symtable_stack *stack){ //delete whole stack
-    while(sym_is_empty == false){
+    while(sym_is_empty(stack) == false){
         sym_pop(stack);
     }
     free(stack);

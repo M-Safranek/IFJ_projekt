@@ -1,13 +1,15 @@
 #ifndef SYMTABLE_STACK
 #define SYMTABLE_STACK
 
+#include "symtable.h"
+
 typedef struct symtable_stack_item{
     table_symbol *top_symbol;
-    table_symbol *prev;
+    struct symtable_stack_item *prev;
 }symtable_stack;
 
 symtable_stack *sym_init_stack();
-symtable_stack *sym_is_empty(symtable_stack *stack);
+bool sym_is_empty(symtable_stack *stack);
 symtable_stack *sym_push(symtable_stack *stack, table_symbol *item);
 symtable_stack *sym_pop(symtable_stack *stack);
 symtable_stack *sym_top(symtable_stack *stack);
