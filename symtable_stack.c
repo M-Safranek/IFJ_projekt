@@ -54,7 +54,7 @@ symtable_stack *sym_top(symtable_stack *stack){ //get first item on stack
 
 void sym_delete_stack(symtable_stack *stack){ //delete whole stack
     while(sym_is_empty(stack) == false){
-        sym_pop(stack);
+        stack = sym_pop(stack);
     }
     free(stack);
 };

@@ -10,7 +10,10 @@ struct ast_tree_node ast_create_tree(){
     struct ast_tree_node top_of_tree;
     top_of_tree.node_type = TOP;
     char tree_top_name[9] = "TREE_TOP";
-    top_of_tree.properties.func_def.name = malloc(sizeof(tree_top_name));
+    top_of_tree.properties.func_def.name = malloc(sizeof(strlen(tree_top_name) + 1));
+    if(top_of_tree.properties.func_def.name == NULL){
+        return NULL;
+    }
     strcpy(top_of_tree.properties.func_def.name, tree_top_name);
     top_of_tree.properties.func_def.body = NULL;
     top_of_tree.properties.func_def.next = NULL;
@@ -35,8 +38,14 @@ struct ast_tree_node *ast_create_const_unit(){
 
 struct ast_tree_node *ast_create_var(char *var_name){
     struct ast_tree_node *new_var = malloc(sizeof(struct ast_tree_node));
+    if(new_var == NULL){
+        return NULL;
+    }
     //type
-    new_var->properties.var_name = malloc(sizeof(var_name));
+    new_var->properties.var_name = malloc(sizeof(strlen(var_name) + 1));
+    if(new_var->properties.var_name == NULL){
+        return NULL;
+    }
     strcpy(new_var->properties.var_name, var_name);
     return new_var;
 };
@@ -67,8 +76,14 @@ struct ast_tree_node *ast_create_while(){
 
 struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *name, DataType *operands){
     struct ast_tree_node *func_def = malloc(sizeof(struct ast_tree_node));
+    if(func_def == NULL){
+        return NULL;
+    }
     func_def->node_type = FUNC_DEF;
-    func_def->properties.func_def.name = malloc(sizeof(name));
+    func_def->properties.func_def.name = malloc(sizeof(strlen(name) + 1));
+    if(func_def->properties.func_def.name == NULL){
+        return NULL;
+    }
     strcpy(func_def->properties.func_def.name, name);
     func_def->properties.func_def.operands = operands;
     func_def->properties.func_def.body = NULL;

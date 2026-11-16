@@ -77,7 +77,10 @@ table_symbol *create_symbol(char *name, bool defined, bool function){ //record n
     if(new_symbol == NULL){
         return NULL;
     }
-    new_symbol->name = malloc(sizeof(name));
+    new_symbol->name = malloc(sizeof(strlen(name) + 1));
+    if(new_symbol->name == NULL){
+        return NULL;
+    }
     strcpy(new_symbol->name, name);
     new_symbol->defined = defined;
     new_symbol->function = function;
@@ -85,6 +88,7 @@ table_symbol *create_symbol(char *name, bool defined, bool function){ //record n
     new_symbol->right = NULL;
     new_symbol->height = 0;
     new_symbol->subtree = NULL;
+    new_symbol->param_types = NULL;
     return new_symbol;
 }
 
