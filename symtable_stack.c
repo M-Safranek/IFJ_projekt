@@ -5,6 +5,9 @@
 
 symtable_stack *sym_init_stack(){ //allocate momory for stack
     symtable_stack *first = malloc(sizeof(symtable_stack)); //header
+    if(first == NULL){
+        return NULL;
+    }
     first->top_symbol = NULL; 
     first->prev = NULL;
     return first;
@@ -20,6 +23,9 @@ bool sym_is_empty(symtable_stack *stack){ //check if stack only contains the hea
 
 symtable_stack *sym_push(symtable_stack *stack ,table_symbol *item){ //push onto stack
     symtable_stack *pushed = malloc(sizeof(symtable_stack));
+    if(pushed == NULL){
+        return NULL;
+    }
     pushed->top_symbol = item;
     pushed->prev = stack;
     stack = pushed;
