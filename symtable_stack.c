@@ -14,11 +14,14 @@ symtable_stack *sym_init_stack(){ //allocate momory for stack
 };
 
 bool sym_is_empty(symtable_stack *stack){ //check if stack only contains the header
-    if(stack->top_symbol == NULL && stack->prev == NULL){
-        return true;
-    }else{
-        return false;
+    if(stack != NULL){
+        if(stack->top_symbol == NULL && stack->prev == NULL){
+            return true;
+        }else{
+            return false;
+        }
     }
+    return NULL;
 };
 
 symtable_stack *sym_push(symtable_stack *stack ,table_symbol *item){ //push onto stack
@@ -56,10 +59,10 @@ void sym_delete_stack(symtable_stack *stack){ //delete whole stack
     free(stack);
 };
 
-table_symbol *sym_stack_search(symtable_stack *stack, char *name[]){ //search all trees in the stack
+table_symbol *sym_stack_search(symtable_stack *stack, char *name){ //search all trees in the stack
     symtable_stack *searched_pos = stack;
     table_symbol *searched_sym = NULL;
-    while(searched_pos->top_symbol != NULL && searched_pos->prev != NULL && searched_sym == NULL){
+    while(searched_pos->prev != NULL && searched_sym == NULL){
         searched_sym = search(name, searched_pos->top_symbol);
         searched_pos = searched_pos->prev;
     }
