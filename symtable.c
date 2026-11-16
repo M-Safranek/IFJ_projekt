@@ -32,19 +32,12 @@ int get_balance(table_symbol *where){ //tree balance calculation
     }
 };
 
-void *lower_string(char *string){ //makes string lowercase
-    for(int i = 0; string[i]; i++){
-        string[i] = tolower(string[i]);
-    }
-    return string;
-};
-
-table_symbol *search(char *what[], table_symbol *where){ //searches for a symbol, returns NULL if nonexistent
+table_symbol *search(char *what, table_symbol *where){ //searches for a symbol, returns NULL if nonexistent
     if(where == NULL){
         return NULL;
-    }else if(strcmp(lower_string(where->name), lower_string(*what)) == 0){
+    }else if(strcmp(where->name, what) == 0){
         return where;
-    }else if(strcmp(lower_string(where->name), lower_string(*what)) > 0){
+    }else if(strcmp(where->name, what) > 0){
         return search(what, where->left);
     }else{
         return search(what, where->right);
@@ -79,12 +72,12 @@ table_symbol *rl_rotate(table_symbol *top){ //right, then left
     return rr_rotate(top);
 };
 
-table_symbol *create_symbol(char *name[], bool defined, bool function){ //record necessary values for symbol creation
+table_symbol *create_symbol(char *name, bool defined, bool function){ //record necessary values for symbol creation
     table_symbol *new_symbol = malloc(sizeof(table_symbol));
     if(new_symbol == NULL){
         return NULL;
     }
-    strcpy(new_symbol->name, *name);
+    strcpy(new_symbol->name, name);
     new_symbol->defined = defined;
     new_symbol->function = function;
     new_symbol->left = NULL;
@@ -94,23 +87,26 @@ table_symbol *create_symbol(char *name[], bool defined, bool function){ //record
     return new_symbol;
 }
 
-table_symbol *insert(table_symbol *where, char *name[], bool defined, bool function){ //insert a symbol into a tree, search first
+table_symbol *insert(table_symbol *where, char *name, bool defined, bool function){ //insert a symbol into a tree, search first
     if(where == NULL){ //symbol doesn't exist yet, create
         table_symbol *new_symbol = create_symbol(name, defined, function);
+        if(new_symbol == NULL){
+            return NULL;
+        }
         where = new_symbol;
-    }else if(strcmp(lower_string(where->name), lower_string(*name)) > 0){ //symbol is in the left child
+    }else if(strcmp(where->name, name) > 0){ //symbol is in the left child
         where->left = insert(where->left, name, defined, function);
         if(get_balance(where) == 2){
-            if(strcmp(lower_string(where->left->name), lower_string(*name)) > 0){
+            if(strcmp(where->left->name, name) > 0){
                 where = ll_rotate(where);
             }else{
                 where = rl_rotate(where);
             }
         }
-    }else if(strcmp(lower_string(where->name), lower_string(*name)) < 0){ //symbol is in the right child
+    }else if(strcmp(where->name, name) < 0){ //symbol is in the right child
         where->right = insert(where->right, name, defined, function);
         if(get_balance(where) == -2){
-            if(strcmp(lower_string(where->right->name), lower_string(*name)) < 0){
+            if(strcmp(where->right->name, name) < 0){
                 where = rr_rotate(where);
             }else{
                 where = lr_rotate(where);
@@ -123,6 +119,7 @@ table_symbol *insert(table_symbol *where, char *name[], bool defined, bool funct
 
 void delete_tree(table_symbol *top){ //get rid of all the symbols in all trees
     if(top != NULL){
+        free(top->param_types);
         delete_tree(top->subtree);
         delete_tree(top->left);
         delete_tree(top->right);

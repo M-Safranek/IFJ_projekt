@@ -18,8 +18,8 @@ typedef struct symbol{
     int height;
 }table_symbol;
 
-table_symbol *search(char *what[], table_symbol *where);
-table_symbol *insert(table_symbol *where, char *name[], bool defined, bool function);
+table_symbol *search(char *what, table_symbol *where);
+table_symbol *insert(table_symbol *where, char *name, bool defined, bool function);
 void delete_tree(table_symbol *top);
 
 #endif //SYMTABLE_STRUCT
