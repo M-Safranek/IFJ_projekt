@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "symtable.h"
@@ -31,7 +32,7 @@ int get_balance(table_symbol *where){ //tree balance calculation
     }
 };
 
-char *lower_string(char *string[]){ //makes string lowercase
+char *lower_string(char *string){ //makes string lowercase
     for(int i = 0; string[i]; i++){
         string[i] = tolower(string[i]);
     }
@@ -40,9 +41,9 @@ char *lower_string(char *string[]){ //makes string lowercase
 table_symbol *search(char *what[], table_symbol *where){ //searches for a symbol, returns NULL if nonexistent
     if(where == NULL){
         return NULL;
-    }else if(strcmp(lower_string(where->name), lower_string(what)) == 0){
+    }else if(strcmp(lower_string(where->name), lower_string(*what)) == 0){
         return where;
-    }else if(strcmp(lower_string(where->name), lower_string(what)) > 0){
+    }else if(strcmp(lower_string(where->name), lower_string(*what)) > 0){
         return search(what, where->left);
     }else{
         return search(what, where->right);
@@ -63,7 +64,7 @@ table_symbol *rr_rotate(table_symbol *top){ //left_rotate
     top->right = right_symbol->left;
     right_symbol->left = top;
     top->height = compare_height(top->left, top->right);
-    right_symbol = compare_height(right_symbol->right, top);
+    right_symbol->height = compare_height(right_symbol->right, top);
     return right_symbol;
 };
 
@@ -82,7 +83,7 @@ table_symbol *create_symbol(char *name[], bool defined, bool function){ //record
     if(new_symbol == NULL){
         return NULL;
     }
-    strcpy(new_symbol->name, name);
+    strcpy(new_symbol->name, *name);
     new_symbol->defined = defined;
     new_symbol->function = function;
     new_symbol->left = NULL;
@@ -96,19 +97,19 @@ table_symbol *insert(table_symbol *where, char *name[], bool defined, bool funct
     if(where == NULL){ //symbol doesn't exist yet, create
         table_symbol *new_symbol = create_symbol(name, defined, function);
         where = new_symbol;
-    }else if(strcmp(lower_string(where->name), lower_string(name)) > 0){ //symbol is in the left child
+    }else if(strcmp(lower_string(where->name), lower_string(*name)) > 0){ //symbol is in the left child
         where->left = insert(where->left, name, defined, function);
         if(get_balance(where) == 2){
-            if(strcmp(lower_string(where->left->name), lower_string(name)) > 0){
+            if(strcmp(lower_string(where->left->name), lower_string(*name)) > 0){
                 where = ll_rotate(where);
             }else{
                 where = rl_rotate(where);
             }
         }
-    }else if(strcmp(lower_string(where->name), lower_string(name)) < 0){ //symbol is in the right child
+    }else if(strcmp(lower_string(where->name), lower_string(*name)) < 0){ //symbol is in the right child
         where->right = insert(where->right, name, defined, function);
         if(get_balance(where) == -2){
-            if(strcmp(lower_string(where->right->name), lower_string(name)) < 0){
+            if(strcmp(lower_string(where->right->name), lower_string(*name)) < 0){
                 where = rr_rotate(where);
             }else{
                 where = lr_rotate(where);

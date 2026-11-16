@@ -12,9 +12,9 @@ typedef struct symbol{
     DataType *param_types;
     int param_count;
     bool is_main;
-    table_symbol *subtree;
-    table_symbol *left;
-    table_symbol *right;
+    struct symbol *subtree;
+    struct symbol *left;
+    struct symbol *right;
     int height;
 }table_symbol;
 
