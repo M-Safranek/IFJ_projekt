@@ -9,7 +9,9 @@
 struct ast_tree_node ast_create_tree(){
     struct ast_tree_node top_of_tree;
     top_of_tree.node_type = TOP;
-    strcpy(top_of_tree.properties.func_def.name, "TREE_TOP");
+    char tree_top_name[9] = "TREE_TOP";
+    top_of_tree.properties.func_def.name = malloc(sizeof(tree_top_name));
+    strcpy(top_of_tree.properties.func_def.name, tree_top_name);
     top_of_tree.properties.func_def.body = NULL;
     top_of_tree.properties.func_def.next = NULL;
     return top_of_tree;
@@ -32,7 +34,11 @@ struct ast_tree_node *ast_create_const_unit(){
 };
 
 struct ast_tree_node *ast_create_var(char *var_name){
-
+    struct ast_tree_node *new_var = malloc(sizeof(struct ast_tree_node));
+    //type
+    new_var->properties.var_name = malloc(sizeof(var_name));
+    strcpy(new_var->properties.var_name, var_name);
+    return new_var;
 };
 
 struct ast_tree_node *ast_create_int_to_double(){
@@ -60,8 +66,9 @@ struct ast_tree_node *ast_create_while(){
 };
 
 struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *name, DataType *operands){
-    struct ast_tree_node *func_def;
+    struct ast_tree_node *func_def = malloc(sizeof(struct ast_tree_node));
     func_def->node_type = FUNC_DEF;
+    func_def->properties.func_def.name = malloc(sizeof(name));
     strcpy(func_def->properties.func_def.name, name);
     func_def->properties.func_def.operands = operands;
     func_def->properties.func_def.body = NULL;
@@ -129,8 +136,8 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree_node *t
     
     while(func != NULL){ //analyze all funcs in code
         struct ast_tree_node *ast_position = top_of_tree; //reset pos to top of tree
-        if(search(&func->func_name, stack->top_symbol) == NULL){ //second pass or double definition?
-            stack->top_symbol = insert(stack->top_symbol, &func->func_name, true, true); //get func into tree in global scope
+        if(search(func->func_name, stack->top_symbol) == NULL){ //second pass or double definition?
+            stack->top_symbol = insert(stack->top_symbol, func->func_name, true, true); //get func into tree in global scope
         }else{
             struct ast_tree_node *tree_check = top_of_tree;
             while(tree_check->properties.func_def.next != NULL){
@@ -141,7 +148,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree_node *t
                 }
             }
         }
-        table_symbol *func_symbol = search(&func->func_name, sym_top(stack)->top_symbol); //get the inserted func
+        table_symbol *func_symbol = search(func->func_name, sym_top(stack)->top_symbol); //get the inserted func
         func_symbol->type = func->return_type; //record type
         func_symbol->param_types = func->param_types; //record params
         func_symbol->param_count = func->param_count;
@@ -175,7 +182,7 @@ struct ast_tree_node build_table(){
     analyze(stack, analyzed_code, &return_ast_tree); //pass 2
     delete_tree(stack->top_symbol); //delete symtable
     symtable_stack *tree_delete_check = stack;
-    for(int i = 0; tree_delete_check != NULL; i++){
+    while(tree_delete_check != NULL){
         delete_tree(tree_delete_check->top_symbol);
         tree_delete_check = tree_delete_check->prev;
     }
