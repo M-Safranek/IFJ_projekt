@@ -4,7 +4,7 @@
 #include "parser.h"
 
 typedef struct symbol{
-    char name[21];
+    char *name;
     DataType type;
     bool defined;
     bool modifiable;

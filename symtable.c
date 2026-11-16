@@ -77,6 +77,7 @@ table_symbol *create_symbol(char *name, bool defined, bool function){ //record n
     if(new_symbol == NULL){
         return NULL;
     }
+    new_symbol->name = malloc(sizeof(name));
     strcpy(new_symbol->name, name);
     new_symbol->defined = defined;
     new_symbol->function = function;
@@ -119,6 +120,7 @@ table_symbol *insert(table_symbol *where, char *name, bool defined, bool functio
 
 void delete_tree(table_symbol *top){ //get rid of all the symbols in all trees
     if(top != NULL){
+        free(top->name);
         free(top->param_types);
         delete_tree(top->subtree);
         delete_tree(top->left);
