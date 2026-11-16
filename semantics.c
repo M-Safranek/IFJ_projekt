@@ -6,17 +6,20 @@
 #include "symtable_stack.h"
 #include "parser.h"
 
-struct ast_tree_node ast_create_tree(){
-    struct ast_tree_node top_of_tree;
-    top_of_tree.node_type = TOP;
-    char tree_top_name[9] = "TREE_TOP";
-    top_of_tree.properties.func_def.name = malloc(sizeof(strlen(tree_top_name) + 1));
-    if(top_of_tree.properties.func_def.name == NULL){
+struct ast_tree_node *ast_create_tree(){
+    struct ast_tree_node *top_of_tree = malloc(sizeof(struct ast_tree_node));
+    if(top_of_tree == NULL){
         return NULL;
     }
-    strcpy(top_of_tree.properties.func_def.name, tree_top_name);
-    top_of_tree.properties.func_def.body = NULL;
-    top_of_tree.properties.func_def.next = NULL;
+    top_of_tree->node_type = TOP;
+    char tree_top_name[9] = "TREE_TOP";
+    top_of_tree->properties.func_def.name = malloc(sizeof(strlen(tree_top_name) + 1));
+    if(top_of_tree->properties.func_def.name == NULL){
+        return NULL;
+    }
+    strcpy(top_of_tree->properties.func_def.name, tree_top_name);
+    top_of_tree->properties.func_def.body = NULL;
+    top_of_tree->properties.func_def.next = NULL;
     return top_of_tree;
 };
 
@@ -188,13 +191,13 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree_node *t
     return;
 };
 
-struct ast_tree_node build_table(){
+struct ast_tree_node *build_table(){
     Func *analyzed_code = parse_program(); //get the parsed code
     symtable_stack *stack = sym_init_stack(); //make stack
     sym_push(stack, NULL); //push global scope
-    struct ast_tree_node return_ast_tree = ast_create_tree();
-    analyze(stack, analyzed_code, &return_ast_tree);
-    analyze(stack, analyzed_code, &return_ast_tree); //pass 2
+    struct ast_tree_node *return_ast_tree = ast_create_tree();
+    analyze(stack, analyzed_code, return_ast_tree);
+    analyze(stack, analyzed_code, return_ast_tree); //pass 2
     delete_tree(stack->top_symbol); //delete symtable
     symtable_stack *tree_delete_check = stack;
     while(tree_delete_check != NULL){
