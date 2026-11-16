@@ -1,7 +1,7 @@
 // codegen
-// TODO comment functions,  handle errors?, handle shadoing
+// TODO comment functions, name mangling
 #include <stdio.h>
-#include "parser.h"
+#include "codegen.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -10,11 +10,6 @@ int lbl_counter = 0;
 Func *program_root = NULL;
 static DataType cur_return_type;
 
-void codegen_print_expr(Expression *expr);
-void codegen_print_stmt(Statement *stmt, bool is_tail);
-void codegen_push_param(Func *f, Expression *arg);
-
-// TODO
 void print_error(int error_code, char *msg) {
     fprintf(stderr, "Error %d: %s\n ", error_code, msg);
     exit(error_code);
@@ -129,7 +124,7 @@ void codegen_push_param(Func *f, Expression *arg) {
     }
 }
 
-void codegen_pop_param(Func *f, int argc){
+void codegen_pop_param(Func *f, int argc) {
     for(int i = argc - 1; i >= 0; i--) {
         printf("DEFVAR TF@%s\n", f->param_names[i]);
         printf("POPS TF@%s\n", f->param_names[i]);
@@ -159,7 +154,7 @@ bool codegen_is_builtin(const char *func_name) {
 }
 
 // builtin functions
-void codegen_print_builtin() {
+void codegen_print_builtin(void) {
     // print
     printf("LABEL $builtin_print\n");
     printf("PUSHFRAME\n");
@@ -314,7 +309,7 @@ void codegen_print_builtin() {
     printf("RETURN\n");
 }
 
-void codegen_print_call(Expression *expr){
+void codegen_print_call(Expression *expr) {
 
     if(codegen_is_builtin(expr->name)) {
         int argc = 0;
