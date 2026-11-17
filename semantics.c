@@ -83,13 +83,13 @@ struct ast_tree_node *ast_create_var_declaration(char *var_name){
     if(new_var == NULL){
         return NULL;
     }
-    //type
-    new_var->properties.var_declaration.var_name = malloc(sizeof(strlen(var_name) + 1));
-    if(new_var->properties.var_declaration.var_name == NULL){
+    new_var->node_type = D_UNKNOWN;
+    new_var->properties.var_name = malloc(sizeof(strlen(var_name) + 1));
+    if(new_var->properties.var_name == NULL){
         free(new_var);
         return NULL;
     }
-    strcpy(new_var->properties.var_declaration.var_name, var_name);
+    strcpy(new_var->properties.var_name, var_name);
     return new_var;
 };
 
