@@ -19,7 +19,7 @@ void analyze_while(symtable_stack *stack, Statement *while_body){
 };
 
 void analyze_body(symtable_stack *stack, Statement *func_body){   
-    if(strcmp(func_body->name, "if") == 0){ //statement is if
+    if(func_body->kind == S_IF){ //statement is if
         //get all vars in condition, check against symtable and insert into ast
         Statement *if_body = func_body->body;
         while(if_body != NULL){
@@ -31,14 +31,20 @@ void analyze_body(symtable_stack *stack, Statement *func_body){
             analyze_if(stack, if_else_body);
             if_else_body = if_else_body->next;
         }
-    }else if(strcmp(func_body->name, "while")){ //statement is while
+    }else if(func_body->kind == S_WHILE){ //statement is while
         //get all vars in condition, check against symtable and insert into ast
         Statement *while_body = func_body->body;
         while(while_body != NULL){
             analyze_while(stack, while_body);
             while_body = while_body->next;
         }
-    }else{
+    }else if(func_body->kind == S_VAR_DEF){
+
+    }else if(func_body->kind == S_ASSIGN){
+
+    }else if(func_body->kind == S_RETURN){
+
+    }else if(func_body->kind == S_EXPR){
         
     }
     return;
