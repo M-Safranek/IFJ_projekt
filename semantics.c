@@ -15,6 +15,7 @@ struct ast_tree_node *ast_create_tree(){
     char tree_top_name[9] = "TREE_TOP";
     top_of_tree->properties.func_def.name = malloc(sizeof(strlen(tree_top_name) + 1));
     if(top_of_tree->properties.func_def.name == NULL){
+        free(top_of_tree);
         return NULL;
     }
     strcpy(top_of_tree->properties.func_def.name, tree_top_name);
@@ -47,6 +48,7 @@ struct ast_tree_node *ast_create_var_declaration(char *var_name){
     //type
     new_var->properties.var_declaration.var_name = malloc(sizeof(strlen(var_name) + 1));
     if(new_var->properties.var_declaration.var_name == NULL){
+        free(new_var);
         return NULL;
     }
     strcpy(new_var->properties.var_declaration.var_name, var_name);
@@ -60,6 +62,7 @@ struct ast_tree_node *ast_create_var_reference(char *var_name){
     }
     new_var->properties.var_name = malloc(sizeof(strlen(var_name)));
     if(new_var->properties.var_name == NULL){
+        free(new_var);
         return NULL;
     }
     strcpy(new_var->properties.var_name, var_name);
@@ -103,6 +106,7 @@ struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *nam
     func_def->node_type = FUNC_DEF;
     func_def->properties.func_def.name = malloc(sizeof(strlen(name) + 1));
     if(func_def->properties.func_def.name == NULL){
+        free(func_def);
         return NULL;
     }
     strcpy(func_def->properties.func_def.name, name);
@@ -112,11 +116,13 @@ struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *nam
         arg_pos->arg_type = param_types[i];
         arg_pos->arg_name = malloc(sizeof(strlen(param_names[i])));
         if(arg_pos->arg_name == NULL){
+            //free previous params
             return NULL;
         }
         if(i < param_count - 1){
             arg_pos->next = malloc(sizeof(struct func_arguments));
             if(arg_pos->next == NULL){
+                //free previous params
                 return NULL;
             }
             arg_pos = arg_pos->next;
