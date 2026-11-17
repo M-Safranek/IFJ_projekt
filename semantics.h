@@ -94,12 +94,12 @@ struct ast_tree_node{
         }assignment;
         struct{
             struct ast_tree_node *condition;
-            struct ast_tree_node *body;
-            struct ast_tree_node *elsebody;
+            struct compound_block *body;
+            struct compound_block *elsebody;
         }ifthenelse;
         struct{
             struct ast_tree_node *condition;
-            struct ast_tree_node *body;
+            struct compound_block *body;
         }ast_while;
     }properties;
 };

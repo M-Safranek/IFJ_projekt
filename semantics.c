@@ -29,7 +29,7 @@ struct ast_tree_node *ast_create_tree(){
         return NULL;
     }
     strcpy(top_of_tree->properties.func_def.name, tree_top_name);
-    top_of_tree->properties.func_def.body = NULL;
+    top_of_tree->properties.func_def.body = ast_create_compound();
     top_of_tree->properties.func_def.next = NULL;
     return top_of_tree;
 };
@@ -142,11 +142,26 @@ struct ast_tree_node *ast_create_assignment(){
 };
 
 struct ast_tree_node *ast_create_ifthenelse(){
-
+    struct ast_tree_node *new_ite = malloc(sizeof(struct ast_tree_node));
+    if(new_ite == NULL){
+        return NULL;
+    }
+    new_ite->node_type = IFTHENELSE;
+    new_ite->properties.ifthenelse.condition = NULL;
+    new_ite->properties.ifthenelse.body = NULL;
+    new_ite->properties.ifthenelse.elsebody = NULL;
+    return new_ite;
 };
 
 struct ast_tree_node *ast_create_while(){
-
+    struct ast_tree_node *new_while = malloc(sizeof(struct ast_tree_node));
+    if(new_while == NULL){
+        return NULL;
+    }
+    new_while->node_type = WHILE;
+    new_while->properties.ast_while.condition = NULL;
+    new_while->properties.ast_while.body = NULL;
+    return new_while;
 };
 
 struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *name, char **param_names, DataType *param_types, int param_count){
@@ -184,7 +199,7 @@ struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *nam
     }else{
         func_def->properties.func_def.arguments.arg_type = NULL;
     }
-    func_def->properties.func_def.body = NULL;
+    func_def->properties.func_def.body = ast_create_compound();
     where->properties.func_def.next = func_def;
     return func_def;
 };
