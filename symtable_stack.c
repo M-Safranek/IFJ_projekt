@@ -25,8 +25,8 @@ bool sym_is_empty(
   return NULL;
 }
 
-symtable_stack *sym_push(symtable_stack *stack,
-                         table_symbol *item) { // push onto stack
+symtable_stack *sym_push(symtable_stack *stack, table_symbol *item) {
+  // push onto stack
   symtable_stack *pushed = malloc(sizeof(symtable_stack));
   if (pushed == NULL) {
     return NULL;
@@ -61,8 +61,8 @@ void sym_delete_stack(symtable_stack *stack) { // delete whole stack
   free(stack);
 }
 
-table_symbol *sym_stack_search(symtable_stack *stack,
-                               char *name) { // search all trees in the stack
+table_symbol *sym_stack_search(symtable_stack *stack, char *name) {
+  // search all trees in the stack
   symtable_stack *searched_pos = stack;
   table_symbol *searched_sym = NULL;
   while (searched_pos != NULL && searched_pos->prev != NULL &&

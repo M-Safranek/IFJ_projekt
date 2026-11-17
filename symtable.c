@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-int max(int a, int b) { // return max value out of the two provided
+int max(int a, int b) {
+  // return max value out of the two provided
   if (a < b) {
     return b;
   } else {
@@ -12,7 +13,8 @@ int max(int a, int b) { // return max value out of the two provided
   }
 }
 
-int get_height(table_symbol *where) { // get height of symbol if it exists
+int get_height(table_symbol *where) {
+  // get height of symbol if it exists
   if (where == NULL) {
     return 0;
   } else {
@@ -20,13 +22,13 @@ int get_height(table_symbol *where) { // get height of symbol if it exists
   }
 }
 
-int compare_height(
-    table_symbol *one,
-    table_symbol *two) { // quick comparison of height between two symbols
+int compare_height(table_symbol *one, table_symbol *two) {
+  // quick comparison of height between two symbols
   return max(get_height(one), get_height(two)) + 1;
 }
 
-int get_balance(table_symbol *where) { // tree balance calculation
+int get_balance(table_symbol *where) {
+  // tree balance calculation
   if (where == NULL) {
     return 0;
   } else {
@@ -34,9 +36,8 @@ int get_balance(table_symbol *where) { // tree balance calculation
   }
 }
 
-table_symbol *search(
-    char *what,
-    table_symbol *where) { // searches for a symbol, returns NULL if nonexistent
+table_symbol *search(char *what, table_symbol *where) {
+  // searches for a symbol, returns NULL if nonexistent
   if (where == NULL) {
     return NULL;
   } else if (strcmp(where->name, what) == 0) {
@@ -76,9 +77,8 @@ table_symbol *rl_rotate(table_symbol *top) { // right, then left
   return rr_rotate(top);
 }
 
-table_symbol *
-create_symbol(char *name, bool defined,
-              bool function) { // record necessary values for symbol creation
+table_symbol *create_symbol(char *name, bool defined, bool function) {
+  // record necessary values for symbol creation
   table_symbol *new_symbol = malloc(sizeof(table_symbol));
   if (new_symbol == NULL) {
     return NULL;
@@ -100,10 +100,10 @@ create_symbol(char *name, bool defined,
   return new_symbol;
 }
 
-table_symbol *
-insert(table_symbol *where, char *name, bool defined,
-       bool function) { // insert a symbol into a tree, search first
-  if (where == NULL) {  // symbol doesn't exist yet, create
+table_symbol *insert(table_symbol *where, char *name, bool defined,
+                     bool function) {
+  // insert a symbol into a tree, search first
+  if (where == NULL) { // symbol doesn't exist yet, create
     table_symbol *new_symbol = create_symbol(name, defined, function);
     if (new_symbol == NULL) {
       return NULL;
