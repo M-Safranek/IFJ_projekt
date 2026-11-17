@@ -69,6 +69,11 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
     }else if(func_body->kind == S_VAR_DEF){
 
     }else if(func_body->kind == S_ASSIGN){
+        if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
+            //error 7
+        }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
+            //error 6
+        }
 
     }else if(func_body->kind == S_RETURN){
         if(search(func_body->expr->name, stack->top_symbol) == NULL){
@@ -78,7 +83,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
         }
 
     }else if(func_body->kind == S_EXPR){
-        
+
     }
     return;
 };
