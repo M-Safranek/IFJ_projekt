@@ -6,6 +6,171 @@
 #include "symtable_stack.h"
 #include "parser.h"
 
+typedef struct {
+    const char *names;
+    DataType return_type;
+    int param_count;
+    DataType param_types[3];
+} BuiltinSpec;
+
+static const BuiltinSpec builtins[] = {
+    { "print",      D_UNIT,   1, { D_UNKNOWN } },
+    { "readLine",   D_STRING, 0, { 0 } },
+    { "readInt",    D_INT,    0, { 0 } },
+    { "readDouble", D_DOUBLE, 0, { 0 } },
+    { "toStr",      D_STRING, 1, { D_UNKNOWN } },
+    { "toInt",      D_INT,    1, { D_DOUBLE } },
+    { "strLength",  D_INT,    1, { D_STRING } },
+    { "subStr",     D_STRING, 3, { D_STRING, D_INT, D_INT } },
+    { "ord",        D_INT,    2, { D_STRING, D_INT } },
+    { "chr",        D_STRING, 1, { D_INT } },
+    { NULL,         D_UNKNOWN, 0, { 0 } }
+};
+
+void analyze_expression(symtable_stack *stack, Expression *expr) {
+    if(!expr) return;
+
+    switch (expr->kind) {
+        case E_INT:
+            expr->type = D_INT;
+            break;
+
+        case E_DOUBLE:
+            expr->type = D_DOUBLE;
+            break;
+
+        case E_STRING:
+            expr->type = D_STRING;
+            break;
+
+        case E_UNIT:
+            expr->type = D_UNIT;
+            break;
+
+        case E_VAR: {
+            table_symbol *sym_var = sym_stack_search(stack, expr->name);
+            if(sym_var == NULL) {
+                // error var not defined
+            }
+            expr->type = sym_var->type;
+            break;
+        }
+
+        case E_BINARY: {
+            analyze_expression(stack,expr->left);
+            analyze_expression(stack, expr->right);
+
+            DataType left_type = expr->left->type;
+            DataType right_type = expr->right->type;
+
+            switch(expr->op) {
+                case O_PLUS:
+                    if(expr->op == O_PLUS && left_type == D_STRING && right_type == D_STRING) {
+                        expr->type = D_STRING;
+                        break;
+                    }
+                case O_MINUS:
+                case O_DIVIDE:
+                case O_MULTIPLY:
+                    if((left_type == D_INT || left_type == D_DOUBLE) && (right_type == D_INT || right_type == D_DOUBLE)) {
+                        expr->type = (left_type == D_DOUBLE || right_type == D_DOUBLE) ? D_DOUBLE: D_INT;
+                    } else {
+                        // error incompatible types at arithmetic op
+                    }
+                    break;
+                case O_LESS:   
+                case O_LESS_EQUAL:
+                case O_GREATER:
+                case O_GREATER_EQUAL:
+                    if(((left_type == D_INT || left_type == D_DOUBLE) && (right_type == D_INT || right_type == D_DOUBLE)) ||
+                        (left_type == D_STRING && right_type == D_STRING)) {
+                        expr->type = D_INT;
+                        break;
+                        } else {
+                            // error incompatible types at relation op
+                        }
+                case O_EQUAL_EQUAL:
+                case O_NOT_EQUAL:
+                    if((left_type == right_type) || 
+                        ((left_type == D_INT || left_type == D_DOUBLE) && (right_type == D_INT || right_type == D_DOUBLE))) {
+                        expr->type = D_INT;
+                        break;
+                        } else {
+                        // error incompatible types at equality comparison op
+                    }
+                default:
+                    // error not binary operator
+                    break;
+            }
+            break;
+        }
+        case E_CALL: {
+            for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+                analyze_expression(stack, arg);
+            }
+            const BuiltinSpec *is_builtin = NULL;
+            for(int idx = 0; builtins[idx].names != NULL; idx++) {
+                if(strcmp(expr->name, builtins[idx].names) == 0) {
+                    is_builtin = &builtins[idx];
+                    break;
+            }
+            }
+            if(is_builtin != NULL) {
+                int idx = 0;
+                for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+                    if(idx >= is_builtin->param_count) {
+                        // error too many arguments at builtin
+                    }
+                    DataType expected = is_builtin->param_types[idx];
+                    if((expected != D_UNKNOWN) && (arg->type != expected) &&
+                        !(expected == D_DOUBLE && arg->type == D_INT)) {
+                            // error wrong argument type at builtin
+                    }
+                    idx++;
+                }
+                if(idx != is_builtin->param_count) {
+                    // error too few arguments at builtin
+                }
+                expr->type = is_builtin->return_type;
+                break;
+            }
+            table_symbol *func = sym_stack_search(stack, expr->name);
+            if(func == NULL) {
+                // call to undefined function
+            }
+            int idx = 0;
+                    for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+                        if(idx >= func->param_count) {
+                            // error too many arguments at function
+                        }
+                        DataType expected = func->param_types[idx];
+                        if((expected != D_UNKNOWN) && (arg->type != expected) &&
+                            !(expected == D_DOUBLE && arg->type == D_INT)) {
+                                // error wrong argument type at function
+                        }
+                        idx++;
+                    }
+                    if(idx != func->param_count) {
+                        // error too few arguments at function
+                    }
+                    expr->type = func->type;
+                    break;
+        }
+        case E_UNARY:
+            analyze_expression(stack, expr->left);
+            if(expr->left->type != D_DOUBLE && expr->left->type != D_INT) {
+                // error invalid operand for unary
+            }
+            expr->type = expr->left->type;
+            break;
+
+        default:
+            break;
+        
+    }
+
+}
+
 void analyze_condition(symtable_stack *stack, Expression *condition){
 
 };
@@ -74,7 +239,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
         }
 
     }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
-        if(sym_stack_search(stack->top_symbol, func_body->expr->left->name) == NULL){ //is var defined
+        if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
             //error 3
         }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
             //error 6
