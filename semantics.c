@@ -24,20 +24,38 @@ struct ast_tree_node *ast_create_tree(){
     return top_of_tree;
 };
 
-struct ast_tree_node *ast_create_const_int(){
+struct ast_tree_node *ast_create_const_int(int value){
+    struct ast_tree_node *new_const_int = malloc(sizeof(struct ast_tree_node));
+    if(new_const_int == NULL){
+        return NULL;
+    }
+    new_const_int->node_type = CON_INT;
+    new_const_int->properties.value_i = value;
+    return new_const_int;
+};
+
+struct ast_tree_node *ast_create_const_double(double value){
+    struct ast_tree_node *new_const_double = malloc(sizeof(struct ast_tree_node));
+    if(new_const_double == NULL){
+        return NULL;
+    }
+    new_const_double->node_type = CON_DOUBLE;
+    new_const_double->properties.value_d = value;
+    return new_const_double;
+};
+
+struct ast_tree_node *ast_create_const_string(char *string){
 
 };
 
-struct ast_tree_node *ast_create_const_double(){
-
-};
-
-struct ast_tree_node *ast_create_const_string(){
-
-};
-
-struct ast_tree_node *ast_create_const_unit(){
-
+struct ast_tree_node *ast_create_const_unit(int unit){
+    struct ast_tree_node *new_const_unit = malloc(sizeof(struct ast_tree_node));
+    if(new_const_unit == NULL){
+        return NULL;
+    }
+    new_const_unit->node_type = CON_INT;
+    new_const_unit->properties.value_i = unit;
+    return new_const_unit;
 };
 
 struct ast_tree_node *ast_create_var_declaration(char *var_name){
@@ -162,7 +180,12 @@ struct ast_tree_node *ast_create_func_call(char *name, Expression *arguments){
 };
 
 struct ast_tree_node *ast_create_return(){
-
+    struct ast_tree_node *new_return = malloc(sizeof(struct ast_tree_node));
+    if(new_return == NULL){
+        return NULL;
+    }
+    new_return->node_type = RETURN;
+    return new_return;
 };
 
 void analyze_if(){
