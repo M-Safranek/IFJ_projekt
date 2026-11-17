@@ -67,23 +67,23 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
         stack = sym_pop(stack);
 
     }else if(func_body->kind == S_VAR_DEF){
+        if(search(func_body->expr->left->name, stack->top_symbol) != NULL){ //defined in the same block twice
+            //error 4
+        }
 
-    }else if(func_body->kind == S_ASSIGN){
+    }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
         if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
-            //error 7
+            //error 3
         }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
             //error 6
         }
 
     }else if(func_body->kind == S_RETURN){
-        if(search(func_body->expr->name, stack->top_symbol) == NULL){
-            //throw error if not
-        }else if(func->return_type != search(func_body->expr->name, stack->top_symbol)->type){
-            //throw error if true
+        if(search(func_body->expr->name, stack->top_symbol) == NULL){ //is return value defined
+            //error 3
+        }else if(func->return_type != search(func_body->expr->name, stack->top_symbol)->type){ //wrong type
+            //
         }
-
-    }else if(func_body->kind == S_EXPR){
-
     }
     return;
 };
