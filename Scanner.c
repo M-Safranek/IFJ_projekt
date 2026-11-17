@@ -486,6 +486,7 @@ Token get_next_token(Scanner *scanner) {
         state = MULTILINE_STRING;
 
       else {
+        scanner->current_attr.attr_length = 0;
         create_token(T_STRING, &current_token, scanner);
         forget_char(c, scanner);
       }
