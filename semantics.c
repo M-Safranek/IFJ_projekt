@@ -60,6 +60,11 @@ struct ast_tree_node *ast_create_const_string(char *string){
         return NULL;
     }
     new_const_string->node_type = CON_STRING;
+    new_const_string->properties.string = malloc(sizeof(strlen(string)));
+    if(new_const_string->properties.string == NULL){
+        free(new_const_string);
+        return NULL;
+    }
     strcpy(new_const_string->properties.string, string);
     return new_const_string;
 };
@@ -197,7 +202,7 @@ struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *nam
             }
         }
     }else{
-        func_def->properties.func_def.arguments.arg_type = NULL;
+        func_def->properties.func_def.arguments.arg_type = D_UNKNOWN;
     }
     func_def->properties.func_def.body = ast_create_compound();
     where->properties.func_def.next = func_def;
@@ -210,7 +215,13 @@ struct ast_tree_node *ast_create_func_call(char *name, Expression *arguments){
         return NULL;
     }
     new_call->node_type = FUNC_CALL;
-    new_call->properties.func_call.arguments.arg_type = NULL;
+    new_call->properties.func_call.name = malloc(sizeof(strlen(name)));
+    if(new_call->properties.func_call.name == NULL){
+        free(new_call);
+        return NULL;
+    }
+    strcpy(new_call->properties.func_call.name, name);
+    new_call->properties.func_call.arguments.arg_type = D_UNKNOWN;
     struct func_arguments *arg_pos = &new_call->properties.func_call.arguments;
     while(arguments != NULL){
         arg_pos->arg_type = arguments->type;
