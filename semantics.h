@@ -20,7 +20,13 @@ typedef enum{
     NOT
 }ast_operator;
 
-struct ast_tree_node{
+struct func_arguments{
+    char *arg_name;
+    DataType arg_type;
+    struct func_arguments *next;
+};
+
+typedef struct ast_tree_node{
     enum type{
         TOP, //func_def
         FUNC_DEF, //func_def
@@ -51,13 +57,14 @@ struct ast_tree_node{
         struct ast_tree_node *link;
         struct{
             char *name;
-            DataType *operands;
+            struct func_arguments arguments;
+            int arg_count;
             struct ast_tree_node *body;
             struct ast_tree_node *next;
         }func_def;
         struct{
             char *name;
-            DataType *operands;
+            struct func_arguments arguments;
         }func_call;
         struct{
             ast_operator operator;

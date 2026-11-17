@@ -77,7 +77,7 @@ struct ast_tree_node *ast_create_while(){
 
 };
 
-struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *name, DataType *operands){
+struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *name, char **param_names, DataType *param_types, int param_count){
     struct ast_tree_node *func_def = malloc(sizeof(struct ast_tree_node));
     if(func_def == NULL){
         return NULL;
@@ -88,7 +88,22 @@ struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *nam
         return NULL;
     }
     strcpy(func_def->properties.func_def.name, name);
-    func_def->properties.func_def.operands = operands;
+    func_def->properties.func_def.arg_count = param_count;
+    struct func_arguments *arg_pos = &func_def->properties.func_def.arguments;
+    for(int i = 0; i < param_count; i++){
+        arg_pos->arg_type = param_types[i];
+        arg_pos->arg_name = malloc(sizeof(strlen(param_names[i])));
+        if(arg_pos->arg_name == NULL){
+            return NULL;
+        }
+        if(i < param_count - 1){
+            arg_pos->next = malloc(sizeof(struct func_arguments));
+            if(arg_pos->next == NULL){
+                return NULL;
+            }
+            arg_pos = arg_pos->next;
+        }
+    }
     func_def->properties.func_def.body = NULL;
     where->properties.func_def.next = func_def;
     return func_def;
@@ -178,7 +193,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code, struct ast_tree_node *t
         }else{
             sym_push(stack, func_symbol->subtree); //push the completed func symtable to stack for checking
         }
-        ast_position = ast_create_func_def(top_of_tree->properties.func_def.next, func->func_name, func->param_types); //insert function into top of ast tree
+        ast_position = ast_create_func_def(top_of_tree->properties.func_def.next, func->func_name, func->param_names, func->param_types, func->param_count); //insert function into top of ast tree
 
         while(func_body != NULL){ //analyze all statements in func
             analyze_body(stack, func_body, ast_position);
