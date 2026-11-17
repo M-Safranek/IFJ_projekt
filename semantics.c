@@ -6,6 +6,10 @@
 #include "symtable_stack.h"
 #include "parser.h"
 
+void analyze_condition(symtable_stack *stack, Expression *condition){
+
+};
+
 void analyze_if(symtable_stack *stack, Statement *if_body){
 
 };
@@ -18,31 +22,60 @@ void analyze_while(symtable_stack *stack, Statement *while_body){
 
 };
 
-void analyze_body(symtable_stack *stack, Statement *func_body){   
+void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){   
     if(func_body->kind == S_IF){ //statement is if
-        //get all vars in condition, check against symtable and insert into ast
+        //get all vars in condition and check against symtable
+        stack = sym_push(stack, NULL);
+
+        Expression *condition = func_body->expr;
+        while(condition != NULL){
+            analyze_condition(stack, condition);
+            condition = condition->next;
+        }
+
         Statement *if_body = func_body->body;
         while(if_body != NULL){
             analyze_if(stack, if_body);
             if_body = if_body->next;
         }
+
         Statement *if_else_body = func_body->else_body;
         while(if_else_body != NULL){
             analyze_if(stack, if_else_body);
             if_else_body = if_else_body->next;
         }
+
+        stack = sym_pop(stack);
+
     }else if(func_body->kind == S_WHILE){ //statement is while
-        //get all vars in condition, check against symtable and insert into ast
+        //get all vars in condition and check against symtable
+        stack = sym_push(stack, NULL);
+
+        Expression *condition = func_body->expr;
+        while(condition != NULL){
+            analyze_condition(stack, condition);
+            condition = condition->next;
+        }
+
+
         Statement *while_body = func_body->body;
         while(while_body != NULL){
             analyze_while(stack, while_body);
             while_body = while_body->next;
         }
+
+        stack = sym_pop(stack);
+
     }else if(func_body->kind == S_VAR_DEF){
 
     }else if(func_body->kind == S_ASSIGN){
 
     }else if(func_body->kind == S_RETURN){
+        if(search(func_body->expr->name, stack->top_symbol) == NULL){
+            //throw error if not
+        }else if(func->return_type != search(func_body->expr->name, stack->top_symbol)->type){
+            //throw error if true
+        }
 
     }else if(func_body->kind == S_EXPR){
         
@@ -85,7 +118,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
         }
 
         while(func_body != NULL){ //analyze all statements in func
-            analyze_body(stack, func_body);
+            analyze_body(stack, func_body, func);
             func_body = func_body->next; //move on
         }
         func_symbol->subtree = stack->top_symbol; //archive contents of stack for checking in second pass
