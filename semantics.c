@@ -6,6 +6,16 @@
 #include "symtable_stack.h"
 #include "parser.h"
 
+struct compound_block *ast_create_compound(){
+    struct compound_block *new_compound = malloc(sizeof(struct ast_tree_node));
+    if(new_compound == NULL){
+        return NULL;
+    }
+    new_compound->current = NULL;
+    new_compound->next = NULL;
+    return new_compound;
+}
+
 struct ast_tree_node *ast_create_tree(){
     struct ast_tree_node *top_of_tree = malloc(sizeof(struct ast_tree_node));
     if(top_of_tree == NULL){
@@ -94,7 +104,12 @@ struct ast_tree_node *ast_create_var_reference(char *var_name){
 };
 
 struct ast_tree_node *ast_create_int_to_double(){
-
+    struct ast_tree_node *new_itd = malloc(sizeof(struct ast_tree_node));
+    if(new_itd == NULL){
+        return NULL;
+    }
+    new_itd->node_type = INT_TO_DOUBLE;
+    return new_itd;
 };
 
 struct ast_tree_node *ast_create_unary(ast_operator operator){
@@ -108,11 +123,22 @@ struct ast_tree_node *ast_create_unary(ast_operator operator){
 };
 
 struct ast_tree_node *ast_create_binary(ast_operator operator){
-
+    struct ast_tree_node *new_binary = malloc(sizeof(struct ast_tree_node));
+    if(new_binary == NULL){
+        return NULL;
+    }
+    new_binary->node_type = BINARY;
+    new_binary->properties.binary.operator = operator;
+    return new_binary;
 };
 
 struct ast_tree_node *ast_create_assignment(){
-
+    struct ast_tree_node *new_ass = malloc(sizeof(struct ast_tree_node));
+    if(new_ass == NULL){
+        return NULL;
+    }
+    new_ass->node_type = ASSIGNMENT;
+    return new_ass;
 };
 
 struct ast_tree_node *ast_create_ifthenelse(){

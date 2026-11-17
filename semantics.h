@@ -26,7 +26,12 @@ struct func_arguments{
     struct func_arguments *next;
 };
 
-typedef struct ast_tree_node{
+struct compound_block{
+    struct ast_tree_node *current;
+    struct ast_tree_node *next;
+};
+
+struct ast_tree_node{
     enum type{
         TOP, //func_def
         FUNC_DEF, //func_def
@@ -67,7 +72,7 @@ typedef struct ast_tree_node{
             char *name;
             struct func_arguments arguments;
             int arg_count;
-            struct ast_tree_node *body;
+            struct compound_block *body;
             struct ast_tree_node *next;
         }func_def;
         struct{
