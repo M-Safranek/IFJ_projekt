@@ -31,7 +31,7 @@ typedef struct ast_tree_node{
         TOP, //func_def
         FUNC_DEF, //func_def
         FUNC_CALL, //func_call
-        RETURN, //return_var
+        RETURN, //link
         CON_INT, //value_i
         CON_DOUBLE, //value_d
         CON_STRING, //string
@@ -48,7 +48,6 @@ typedef struct ast_tree_node{
         INT_TO_DOUBLE //link
     }node_type;
     union{
-        char *return_var;
         int value_i;
         double value_d;
         char *string;
