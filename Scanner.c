@@ -342,6 +342,9 @@ Token get_next_token(Scanner *scanner) {
       if (isdigit(c))
         state = INT;
 
+      else if (c == '_')
+        state = INT_LAST_UNDERSCORE;
+
       else {
         state = FALSE;
         forget_char(c, scanner);
@@ -408,6 +411,9 @@ Token get_next_token(Scanner *scanner) {
       if (isdigit(c))
         state = DOUBLE;
 
+      else if (c == '_')
+        state = DOUBLE_LAST_UNDERSCORE;
+
       else {
         state = FALSE;
         forget_char(c, scanner);
@@ -456,6 +462,10 @@ Token get_next_token(Scanner *scanner) {
     case DOUBLE_EXPONENT_LAST_UNDERSCORE:
       if (isdigit(c))
         state = DOUBLE_EXPONENT;
+
+      else if (c == '_')
+        state = DOUBLE_EXPONENT_LAST_UNDERSCORE;
+
       else {
         state = FALSE;
         forget_char(c, scanner);
