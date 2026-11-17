@@ -36,10 +36,11 @@ typedef struct ast_tree_node{
         CON_DOUBLE, //value_d
         CON_STRING, //string
         CON_UNIT, //unit
-        VAR_INT, //var_name
-        VAR_DOUBLE, //var_name
-        VAR_STRING, //var_name
-        VAR_UNIT, //var_name
+        VAR_INT, //var_declaration
+        VAR_DOUBLE, //var_declaration
+        VAR_STRING, //var_declaration
+        VAR_UNIT, //var_declaration
+        VAR_REF, //var_name
         UNARY, //unary
         BINARY, //binary
         ASSIGNMENT, //assignment
@@ -98,6 +99,6 @@ typedef struct ast_tree_node{
             struct ast_tree_node *body;
         }ast_while;
     }properties;
-}ast_tree;
+};
 
 #endif //SEMANTICS_ANALYZER

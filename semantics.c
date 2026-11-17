@@ -60,6 +60,7 @@ struct ast_tree_node *ast_create_var_reference(char *var_name){
     if(new_var == NULL){
         return NULL;
     }
+    new_var->node_type = VAR_REF;
     new_var->properties.var_name = malloc(sizeof(strlen(var_name)));
     if(new_var->properties.var_name == NULL){
         free(new_var);
@@ -78,6 +79,7 @@ struct ast_tree_node *ast_create_unary(ast_operator operator){
     if(new_unary == NULL){
         return NULL;
     }
+    new_unary->node_type = UNARY;
     new_unary->properties.unary.operator = operator;
     return new_unary;
 };
@@ -111,30 +113,52 @@ struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *nam
     }
     strcpy(func_def->properties.func_def.name, name);
     func_def->properties.func_def.arg_count = param_count;
-    struct func_arguments *arg_pos = &func_def->properties.func_def.arguments;
-    for(int i = 0; i < param_count; i++){
-        arg_pos->arg_type = param_types[i];
-        arg_pos->arg_name = malloc(sizeof(strlen(param_names[i])));
-        if(arg_pos->arg_name == NULL){
-            //free previous params
-            return NULL;
-        }
-        if(i < param_count - 1){
-            arg_pos->next = malloc(sizeof(struct func_arguments));
-            if(arg_pos->next == NULL){
+    if(param_count > 0){
+        struct func_arguments *arg_pos = &func_def->properties.func_def.arguments;
+        for(int i = 0; i < param_count; i++){
+            arg_pos->arg_type = param_types[i];
+            arg_pos->arg_name = malloc(sizeof(strlen(param_names[i])));
+            if(arg_pos->arg_name == NULL){
                 //free previous params
                 return NULL;
             }
-            arg_pos = arg_pos->next;
+            arg_pos->next = NULL;
+            if(i < param_count - 1){
+                arg_pos->next = malloc(sizeof(struct func_arguments));
+                if(arg_pos->next == NULL){
+                    //free previous params
+                    return NULL;
+                }
+                arg_pos = arg_pos->next;
+            }
         }
+    }else{
+        func_def->properties.func_def.arguments.arg_type = NULL;
     }
     func_def->properties.func_def.body = NULL;
     where->properties.func_def.next = func_def;
     return func_def;
 };
 
-struct ast_tree_node *ast_create_func_call(char *name, DataType *arguments){
-
+struct ast_tree_node *ast_create_func_call(char *name, Expression *arguments){
+    struct ast_tree_node *new_call = malloc(sizeof(struct ast_tree_node));
+    if(new_call == NULL){
+        return NULL;
+    }
+    new_call->node_type = FUNC_CALL;
+    new_call->properties.func_call.arguments.arg_type = NULL;
+    struct func_arguments *arg_pos = &new_call->properties.func_call.arguments;
+    while(arguments != NULL){
+        arg_pos->arg_type = arguments->type;
+        arg_pos->arg_name = malloc(sizeof(strlen(arguments->name)));
+        if(arg_pos->arg_name == NULL){
+            free(new_call);
+            return NULL;
+        }
+        strcpy(arg_pos->arg_name, arguments->name);
+        arguments = arguments->next;
+    }
+    return new_call;
 };
 
 struct ast_tree_node *ast_create_return(){
