@@ -39,13 +39,26 @@ struct ast_tree_node *ast_create_const_unit(){
 
 };
 
-struct ast_tree_node *ast_create_var(char *var_name){
+struct ast_tree_node *ast_create_var_declaration(char *var_name){
     struct ast_tree_node *new_var = malloc(sizeof(struct ast_tree_node));
     if(new_var == NULL){
         return NULL;
     }
     //type
-    new_var->properties.var_name = malloc(sizeof(strlen(var_name) + 1));
+    new_var->properties.var_declaration.var_name = malloc(sizeof(strlen(var_name) + 1));
+    if(new_var->properties.var_declaration.var_name == NULL){
+        return NULL;
+    }
+    strcpy(new_var->properties.var_declaration.var_name, var_name);
+    return new_var;
+};
+
+struct ast_tree_node *ast_create_var_reference(char *var_name){
+    struct ast_tree_node *new_var = malloc(sizeof(struct ast_tree_node));
+    if(new_var == NULL){
+        return NULL;
+    }
+    new_var->properties.var_name = malloc(sizeof(strlen(var_name)));
     if(new_var->properties.var_name == NULL){
         return NULL;
     }
@@ -58,7 +71,12 @@ struct ast_tree_node *ast_create_int_to_double(){
 };
 
 struct ast_tree_node *ast_create_unary(ast_operator operator){
-
+    struct ast_tree_node *new_unary = malloc(sizeof(struct ast_tree_node));
+    if(new_unary == NULL){
+        return NULL;
+    }
+    new_unary->properties.unary.operator = operator;
+    return new_unary;
 };
 
 struct ast_tree_node *ast_create_binary(ast_operator operator){
@@ -109,7 +127,7 @@ struct ast_tree_node *ast_create_func_def(struct ast_tree_node *where, char *nam
     return func_def;
 };
 
-struct ast_tree_node *ast_create_func_call(char *name, char *operands){
+struct ast_tree_node *ast_create_func_call(char *name, DataType *arguments){
 
 };
 

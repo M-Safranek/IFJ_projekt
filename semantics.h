@@ -55,6 +55,16 @@ typedef struct ast_tree_node{
         char *var_name;
         struct ast_tree_node *link;
         struct{
+            char *var_name;
+            union{
+                int value_i;
+                double value_d;
+                char *string;
+                int unit;
+                char *func_name;
+            };
+        }var_declaration;
+        struct{
             char *name;
             struct func_arguments arguments;
             int arg_count;
