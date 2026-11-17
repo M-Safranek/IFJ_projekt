@@ -35,11 +35,11 @@ typedef struct ast_tree_node{
         CON_INT, //value_i
         CON_DOUBLE, //value_d
         CON_STRING, //string
-        CON_UNIT, //unit
+        CON_UNIT,
         VAR_INT, //var_declaration
         VAR_DOUBLE, //var_declaration
         VAR_STRING, //var_declaration
-        VAR_UNIT, //var_declaration
+        VAR_UNIT,
         VAR_REF, //var_name
         UNARY, //unary
         BINARY, //binary
@@ -52,7 +52,6 @@ typedef struct ast_tree_node{
         int value_i;
         double value_d;
         char *string;
-        int unit;
         char *var_name;
         struct ast_tree_node *link;
         struct{
@@ -61,7 +60,6 @@ typedef struct ast_tree_node{
                 int value_i;
                 double value_d;
                 char *string;
-                int unit;
                 char *func_name;
             };
         }var_declaration;
