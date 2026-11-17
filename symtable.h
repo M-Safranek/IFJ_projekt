@@ -11,6 +11,7 @@ typedef struct symbol{
     bool function;
     DataType *param_types;
     int param_count;
+    char **param_names;
     bool is_main;
     struct symbol *subtree;
     struct symbol *left;
