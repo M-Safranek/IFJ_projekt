@@ -1,5 +1,9 @@
-// codegen
-// TODO comment functions, name mangling
+/*
+* Code generator for the IF26 language
+* Traversis the AST and generates the final IFJcode26
+* Author Vojtěch Daniel Eliáš
+*/
+// TODO name mangling
 #include <stdio.h>
 #include "codegen.h"
 #include <stdbool.h>
@@ -15,12 +19,14 @@ void print_error(int error_code, char *msg) {
     exit(error_code);
 }
 
+// Convert integer on top of data stack to a float
 void codegen_int_to_double(DataType from, DataType to) {
     if(from == D_INT && to == D_DOUBLE) {
         printf("INT2FLOATS\n");
     }
 }
 
+// Pushes a string literal to top of data stack with correct escaped special characters
 void codegen_print_string_literal(const char *str) {
     printf("PUSHS string@");
     for(int idx = 0; str[idx] != '\0'; idx++) {
@@ -34,6 +40,7 @@ void codegen_print_string_literal(const char *str) {
     printf("\n");
 }
 
+// Concat two strings on top of data stack
 void codegen_print_concat(void) {
     printf("POPS GF@concat2\n");
     printf("POPS GF@concat1\n");
@@ -41,6 +48,7 @@ void codegen_print_concat(void) {
     printf("PUSHS GF@concat_subStr_result\n");
 }
 
+// Generates code for binary operations
 void codegen_print_binary(Expression *expr) {
     DataType lt = expr->left->type;
     DataType rt = expr->right->type;
@@ -113,6 +121,7 @@ void codegen_print_binary(Expression *expr) {
     }
 }
 
+// Pushes function call arguments onto the data stack
 void codegen_push_param(Func *f, Expression *arg) {
     int idx = 0;
     for(Expression *curr = arg; curr != NULL; curr = curr->next) {
@@ -124,6 +133,7 @@ void codegen_push_param(Func *f, Expression *arg) {
     }
 }
 
+// Pops arguments from the data stack in reverse order onto the TF
 void codegen_pop_param(Func *f, int argc) {
     for(int i = argc - 1; i >= 0; i--) {
         printf("DEFVAR TF@%s\n", f->param_names[i]);
@@ -131,6 +141,7 @@ void codegen_pop_param(Func *f, int argc) {
     }
 }
 
+// Searches the AST tree for user define function by name
 Func *codegen_find_func(const char *name) {
     for(Func *curr_f = program_root; curr_f != NULL; curr_f = curr_f->next) {
         if(strcmp(curr_f->func_name, name) == 0) {
@@ -140,6 +151,7 @@ Func *codegen_find_func(const char *name) {
     return NULL;
 } 
 
+// Evaluates if the given function is builtin
 bool codegen_is_builtin(const char *func_name) {
     static const char *names[] = {
         "print", "readInt", "readDouble", "readLine", "strLength",
@@ -153,7 +165,7 @@ bool codegen_is_builtin(const char *func_name) {
     return false;
 }
 
-// builtin functions
+// Implementation of builtin functions IFJ26
 void codegen_print_builtin(void) {
     // print
     printf("LABEL $builtin_print\n");
@@ -309,6 +321,7 @@ void codegen_print_builtin(void) {
     printf("RETURN\n");
 }
 
+// Generates code for bultin and user defined function calls
 void codegen_print_call(Expression *expr) {
 
     if(codegen_is_builtin(expr->name)) {
@@ -361,7 +374,7 @@ void codegen_print_call(Expression *expr) {
         printf("PUSHS GF@%%retval\n");
     }
 }
-
+// Post-order traversal of an expression node and pushes onto data stack
 void codegen_print_expr(Expression *expr) {
     if(!expr) return;
     switch (expr->kind) {
@@ -411,12 +424,13 @@ void codegen_print_expr(Expression *expr) {
     }
 }
 
+// Generate sequence of statetemets within one block
 void codegen_print_body(Statement *stmt, bool is_tail) {
     for(Statement *curr = stmt; curr != NULL; curr = curr->next){
         codegen_print_stmt(curr, is_tail && curr->next == NULL);
     }
 }
-
+// Generates code for one statement
 void codegen_print_stmt(Statement *stmt, bool is_tail) {
     if(!stmt) return;
 
@@ -490,6 +504,7 @@ void codegen_print_stmt(Statement *stmt, bool is_tail) {
     }
 }
 
+// Generates label, frame, body and return of a function
 void codegen_print_func(Func *f) {
     cur_return_type = f->return_type;
     printf("LABEL $F_%s\n", f->func_name);
@@ -500,6 +515,7 @@ void codegen_print_func(Func *f) {
     printf("RETURN\n");
 }
 
+// Entry point for the codegen
 void codegen_print(Func *ast_root) {
     program_root = ast_root;
     Func *main_f = NULL;

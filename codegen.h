@@ -1,3 +1,8 @@
+/*
+* Header file for the Codegen for the IFJ26 lenguage
+* Author Vojtěch Daniel Eliáš
+*/
+
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
