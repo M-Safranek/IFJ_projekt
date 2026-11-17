@@ -83,7 +83,7 @@ struct ast_tree_node *ast_create_var_declaration(char *var_name){
     if(new_var == NULL){
         return NULL;
     }
-    new_var->node_type = D_UNKNOWN;
+    //type declared after returning either from prefix or function return type
     new_var->properties.var_name = malloc(sizeof(strlen(var_name) + 1));
     if(new_var->properties.var_name == NULL){
         free(new_var);
