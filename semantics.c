@@ -74,7 +74,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
         }
 
     }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
-        if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
+        if(sym_stack_search(stack->top_symbol, func_body->expr->left->name) == NULL){ //is var defined
             //error 3
         }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
             //error 6
