@@ -45,16 +45,21 @@ struct ast_tree_node *ast_create_const_double(double value){
 };
 
 struct ast_tree_node *ast_create_const_string(char *string){
-
+    struct ast_tree_node *new_const_string = malloc(sizeof(struct ast_tree_node));
+    if(new_const_string == NULL){
+        return NULL;
+    }
+    new_const_string->node_type = CON_STRING;
+    strcpy(new_const_string->properties.string, string);
+    return new_const_string;
 };
 
-struct ast_tree_node *ast_create_const_unit(int unit){
+struct ast_tree_node *ast_create_const_unit(){
     struct ast_tree_node *new_const_unit = malloc(sizeof(struct ast_tree_node));
     if(new_const_unit == NULL){
         return NULL;
     }
     new_const_unit->node_type = CON_INT;
-    new_const_unit->properties.value_i = unit;
     return new_const_unit;
 };
 
