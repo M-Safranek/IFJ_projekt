@@ -69,6 +69,8 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
     }else if(func_body->kind == S_VAR_DEF){
         if(search(func_body->expr->left->name, stack->top_symbol) != NULL){ //defined in the same block twice
             //error 4
+        }else if(func_body->expr->type == NULL){ //cannot determine type
+            //error 6
         }
 
     }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
@@ -104,7 +106,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
         if(search(func->func_name, stack->top_symbol) == NULL){ //second pass or double definition?
             stack->top_symbol = insert(stack->top_symbol, func->func_name, true, true); //get func into tree in global scope
         }else if(search(func->func_name, stack->top_symbol)->defined == true){ //defined for the second time, not allowed
-            return; //TODO return some error
+            //error 4
         }
 
         table_symbol *func_symbol = search(func->func_name, sym_top(stack)->top_symbol); //get the inserted func
@@ -117,9 +119,9 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
 
         Statement *func_body = func->body; //get body of func
         if(func_symbol->subtree == NULL){ //are we doing a second pass?
-            sym_push(stack, NULL); //push func scope
+            stack = sym_push(stack, NULL); //push func scope
         }else{
-            sym_push(stack, func_symbol->subtree); //push the completed func symtable to stack for checking
+            stack = sym_push(stack, func_symbol->subtree); //push the completed func symtable to stack for checking
         }
 
         while(func_body != NULL){ //analyze all statements in func
@@ -136,7 +138,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
 Func *build_table(){
     Func *analyzed_code = parse_program(); //get the parsed code
     symtable_stack *stack = sym_init_stack(); //make stack
-    sym_push(stack, NULL); //push global scope
+    stack = sym_push(stack, NULL); //push global scope
 
     analyze(stack, analyzed_code);
     analyze(stack, analyzed_code); //pass 2
