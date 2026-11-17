@@ -469,9 +469,12 @@ Token get_next_token(Scanner *scanner) {
     case STRING_START:
       if (c == '"')
         state = DOUBLE_DOUBLE_QUOTE;
-      else if (c >= 0 && c <= 127)
+      else if (c >= 0 && c <= 127) {
         state = STRING;
-      else {
+        scanner->current_attr.data[0] = scanner->current_attr.data[1];
+        scanner->current_attr.attr_length = 1;
+
+      } else {
         state = FALSE;
         forget_char(c, scanner);
       }
@@ -495,8 +498,10 @@ Token get_next_token(Scanner *scanner) {
       else if (c == '\\')
         state = ESCAPE_SEQUENCE;
 
-      else if (c == '"')
+      else if (c == '"') {
+        scanner->current_attr.attr_length -= 1;
         create_token(T_STRING, &current_token, scanner);
+      }
 
       else {
         state = FALSE;
