@@ -1,6 +1,6 @@
 /*
 * Code generator for the IF26 language
-* Traverses the AST and generates the final IFJcode26
+* Traversis the AST and generates the final IFJcode26
 * Author Vojtěch Daniel Eliáš
 */
 // TODO name mangling
@@ -141,7 +141,7 @@ void codegen_pop_param(Func *f, int argc) {
     }
 }
 
-// Searches the AST tree for user-defined function by name
+// Searches the AST tree for user define function by name
 Func *codegen_find_func(const char *name) {
     for(Func *curr_f = program_root; curr_f != NULL; curr_f = curr_f->next) {
         if(strcmp(curr_f->func_name, name) == 0) {
@@ -424,7 +424,7 @@ void codegen_print_expr(Expression *expr) {
     }
 }
 
-// Generate sequence of statemets within one block
+// Generate sequence of statetemets within one block
 void codegen_print_body(Statement *stmt, bool is_tail) {
     for(Statement *curr = stmt; curr != NULL; curr = curr->next){
         codegen_print_stmt(curr, is_tail && curr->next == NULL);
@@ -467,6 +467,7 @@ void codegen_print_stmt(Statement *stmt, bool is_tail) {
         case S_EXPR:
             codegen_print_expr(stmt->expr);
             if(is_tail && cur_return_type != D_UNIT) {
+                codegen_int_to_double(stmt->expr->type, cur_return_type);
                 printf("POPS GF@%%retval\n");
             } else {
                 printf("CLEARS\n");
@@ -535,7 +536,7 @@ void codegen_print(Func *ast_root) {
     printf("JUMP $main\n");
 
     codegen_print_builtin();
-
+    
     for(Func *f = ast_root; f != NULL; f = f->next) {
         codegen_print_func(f);
     }
