@@ -21,10 +21,11 @@ bool codegen_is_builtin(const char *func_name);
 void codegen_print_builtin(void);
 void codegen_print_call(Expression *expr);
 void codegen_print_expr(Expression *expr);
-void codegen_print_body(Statement *stmt, bool is_tail);
-void codegen_print_stmt(Statement *stmt, bool is_tail);
+void codegen_print_body(Statement *stmt, bool is_tail, bool in_while);
+void codegen_print_stmt(Statement *stmt, bool is_tail, bool in_while);
 void codegen_print_func(Func *f);
 void codegen_print(Func *ast_root);
+void codegen_predeclare_while_var(Statement *stmt);
 
 #endif 
 
