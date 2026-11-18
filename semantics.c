@@ -99,7 +99,7 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
                         exit(6); // error incompatible types at equality comparison op
                     }
                 default:
-                    // error not binary operator
+                    exit(6); // error not binary operator
                     break;
             }
             break;
@@ -159,7 +159,7 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
         case E_UNARY:
             analyze_expression(stack, expr->left);
             if(expr->left->type != D_DOUBLE && expr->left->type != D_INT) {
-                // error invalid operand for unary
+                exit(6); // error invalid operand for unary
             }
             expr->type = expr->left->type;
             break;
@@ -176,7 +176,7 @@ void analyze_condition(symtable_stack *stack, Expression *condition){
 
     if(condition->op != O_EQUAL_EQUAL && condition->op != O_GREATER && condition->op != O_GREATER_EQUAL &&
         condition->op != O_NOT_EQUAL && condition->op != O_LESS && condition->op != O_LESS_EQUAL) {
-        // error condition is not relation expression
+        exit(6); // error condition is not relation expression
         }
 };
 
@@ -232,11 +232,6 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
         }
 
     }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
-//        if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
-//            exit(3); //error 3
-//        }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
-//            exit(6); //error 6
-//        }
         analyze_expression(stack, func_body->expr);
 
     }else if(func_body->kind == S_RETURN){
