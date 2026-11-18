@@ -235,7 +235,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
     DataType var_type = func_body->type;
     if (func_body->expr != NULL) {
       analyze_expression(stack, func_body->expr);
-      DataType rhs_type = func_body->expr->type; //TODO go through expression and get type
+      DataType rhs_type = func_body->expr->type;
       if (rhs_type == D_UNIT || rhs_type == D_UNKNOWN) {
         exit(6);
       }
@@ -265,7 +265,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
         !(var_sym->type == D_DOUBLE && func_body->expr->type == D_INT)) {
       exit(6); // incompatible types at assignment
     }
-    func_body->expr->left->type = var_sym->type;
+    func_body->type = var_sym->type;
   } else if (func_body->kind == S_EXPR) {
     analyze_expression(stack, func_body->expr);
   } else if (func_body->kind == S_RETURN) {
@@ -279,7 +279,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
         exit(6); // error returning a value from unit function
       }
       if (func->return_type != func_body->expr->type &&
-          !(func->return_type == D_DOUBLE && func_body->type == D_INT)) {
+          !(func->return_type == D_DOUBLE && func_body->expr->type == D_INT)) {
         exit(6); // error return value doesnt match function return type
       }
     }
