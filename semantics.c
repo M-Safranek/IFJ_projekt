@@ -168,7 +168,6 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
             break;
         
     }
-
 }
 
 void analyze_condition(symtable_stack *stack, Expression *condition){
@@ -183,27 +182,29 @@ void analyze_condition(symtable_stack *stack, Expression *condition){
 void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){   
     if(func_body->kind == S_IF){ //statement is if
         //get all vars in condition and check against symtable
-        stack = sym_push(stack, NULL);
-
         Expression *condition = func_body->expr;
-        while(condition != NULL){
+        while(condition != NULL){ 
             analyze_condition(stack, condition);
-            condition = condition->next;
+            condition = condition->next;    
         }
-
+        
+        stack = sym_push(stack, NULL);
         Statement *if_body = func_body->body;
-        while(if_body != NULL){
+        while(if_body != NULL) {
             analyze_body(stack, if_body, func);
             if_body = if_body->next;
         }
-
-        Statement *if_else_body = func_body->else_body;
-        while(if_else_body != NULL){
-            analyze_body(stack, if_else_body, func);
-            if_else_body = if_else_body->next;
-        }
-
         stack = sym_pop(stack);
+
+        if(func_body->else_body != NULL) {
+            stack = sym_push(stack, NULL);
+            Statement *if_else_body = func_body->else_body;
+            while(if_else_body != NULL) {
+                analyze_body(stack, if_else_body, func);
+                if_else_body = if_else_body->next;
+            }
+            stack = sym_pop(stack);
+        }
 
     }else if(func_body->kind == S_WHILE){ //statement is while
         //get all vars in condition and check against symtable
@@ -227,18 +228,48 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
     }else if(func_body->kind == S_VAR_DEF){
         if(search(func_body->expr->left->name, stack->top_symbol) != NULL){ //defined in the same block twice
             exit(4); //error 4
-        }else if(func_body->expr->type == D_UNKNOWN){ //cannot determine type
-            exit(6); //error 6
         }
+        DataType var_type = func_body->expr->left->type;
+        if(func_body->expr->right != NULL) {
+            analyze_expression(stack, func_body->expr->right);
+            DataType rhs_type = func_body->expr->right->type;
+            if(rhs_type == D_UNIT || rhs_type == D_UNKNOWN) {
+               exit(6); 
+            }
+            if(var_type == D_UNKNOWN) {
+                var_type = rhs_type;
+            } else if (var_type != rhs_type && !(var_type == D_DOUBLE && rhs_type == D_INT)) {
+               exit(6);// error incompatible types in variable definition
+            }
+            // insert into symtable??
+        }
+    } else if(func_body->kind == S_ASSIGN) {
+        table_symbol *var_sym = sym_stack_search(stack, func_body->expr->left->name);
+        if(var_sym == NULL) {
+            exit(3);    //assignment to undefined variable
+        }
+        analyze_expression(stack, func_body->expr->right);
+        if(var_sym->type != func_body->expr->right->type && !(var_sym->type == D_DOUBLE && func_body->expr->right->type == D_INT)) {
+            exit(6);    //incompatible types at assignment
+        }
+        func_body->expr->left->type = var_sym->type;
 
-    }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
+    } else if(func_body->kind == S_EXPR) {
         analyze_expression(stack, func_body->expr);
 
-    }else if(func_body->kind == S_RETURN){
-        if(search(func_body->expr->name, stack->top_symbol) == NULL){ //is return value defined
-            exit(3); //error 3
-        }else if(func->return_type != search(func_body->expr->name, stack->top_symbol)->type){ //wrong type
-            exit(6); //
+    } else if(func_body->kind == S_RETURN){
+        if(func_body->expr == NULL){
+            if(func->return_type != D_UNIT) {
+                exit(6);    // error missing return from no-unit function
+            } 
+        } else {
+            analyze_expression(stack, func_body->expr);
+            if(func->return_type == D_UNIT) {
+                exit(6);    // error returning a value from unit function
+            }
+            if(func->return_type != func_body->expr->type && !(func->return_type == D_DOUBLE && func_body->expr->type == D_INT) ) {
+                exit(6);    // error return value doesnt match function return type
+            }
         }
     }
     return;
