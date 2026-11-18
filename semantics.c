@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "semantics.h"
 #include "symtable.h"
 #include "symtable_stack.h"
 #include "parser.h"
@@ -298,9 +297,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
         func_symbol->type = func->return_type; //record type
         func_symbol->param_types = func->param_types; //record params
         func_symbol->param_count = func->param_count;
-        func_symbol->param_names = func->param_names;
         func_symbol->is_main = func->is_main; //is main
-        func_symbol->defined = true; //currently defining a function
 
         Statement *func_body = func->body; //get body of func
         if(func_symbol->subtree == NULL){ //are we doing a second pass?
