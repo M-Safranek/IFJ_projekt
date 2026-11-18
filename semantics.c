@@ -239,11 +239,12 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
         }
 
     }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
-        if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
-            exit(3); //error 3
-        }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
-            exit(6); //error 6
-        }
+//        if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
+//            exit(3); //error 3
+//        }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
+//            exit(6); //error 6
+//        }
+        analyze_expression(stack, func_body->expr);
 
     }else if(func_body->kind == S_RETURN){
         if(search(func_body->expr->name, stack->top_symbol) == NULL){ //is return value defined
