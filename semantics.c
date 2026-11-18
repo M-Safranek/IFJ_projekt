@@ -67,8 +67,8 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
       if (expr->op == O_PLUS && left_type == D_STRING &&
           right_type == D_STRING) {
         expr->type = D_STRING;
+        break;
       }
-      break;
     case O_MINUS:
     case O_DIVIDE:
     case O_MULTIPLY:
