@@ -86,7 +86,7 @@ table_symbol* rl_rotate(table_symbol* top)
     return rr_rotate(top);
 }
 
-table_symbol* create_symbol(char* name, bool defined, bool function)
+table_symbol* create_symbol(char* name, char* scope, bool defined, bool function)
 {
     // record necessary values for symbol creation
     table_symbol* new_symbol = malloc(sizeof(table_symbol));
@@ -99,6 +99,12 @@ table_symbol* create_symbol(char* name, bool defined, bool function)
         exit(99);
     }
     strcpy(new_symbol->name, name);
+    new_symbol->scope = malloc(strlen(scope) + 1);
+    if (new_symbol->scope == NULL) {
+        free(new_symbol);
+        exit(99);
+    }
+    strcpy(new_symbol->scope, scope);
     new_symbol->defined = defined;
     new_symbol->function = function;
     new_symbol->left = NULL;
@@ -109,18 +115,18 @@ table_symbol* create_symbol(char* name, bool defined, bool function)
     return new_symbol;
 }
 
-table_symbol* insert(table_symbol* where, char* name, bool defined,
+table_symbol* insert(table_symbol* where, char* name, char* scope, bool defined,
     bool function)
 {
     // insert a symbol into a tree, search first
     if (where == NULL) { // symbol doesn't exist yet, create
-        table_symbol* new_symbol = create_symbol(name, defined, function);
+        table_symbol* new_symbol = create_symbol(name, scope, defined, function);
         if (new_symbol == NULL) {
             return NULL;
         }
         where = new_symbol;
     } else if (strcmp(where->name, name) > 0) { // symbol is in the left child
-        where->left = insert(where->left, name, defined, function);
+        where->left = insert(where->left, name, scope, defined, function);
         if (get_balance(where) == 2) {
             if (strcmp(where->left->name, name) > 0) {
                 where = ll_rotate(where);
@@ -129,7 +135,7 @@ table_symbol* insert(table_symbol* where, char* name, bool defined,
             }
         }
     } else if (strcmp(where->name, name) < 0) { // symbol is in the right child
-        where->right = insert(where->right, name, defined, function);
+        where->right = insert(where->right, name, scope, defined, function);
         if (get_balance(where) == -2) {
             if (strcmp(where->right->name, name) < 0) {
                 where = rr_rotate(where);

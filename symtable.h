@@ -5,6 +5,7 @@
 
 typedef struct symbol {
   char *name;
+  char *scope;
   DataType type;
   bool defined;
   bool modifiable;
