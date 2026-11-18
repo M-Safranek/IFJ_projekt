@@ -185,11 +185,11 @@ void analyze_if(symtable_stack *stack, Statement *if_body, Func *func){
 };
 
 void analyze_else(symtable_stack *stack, Statement *else_body, Func *func){
-    analyze_else(stack, else_body, func);
+    analyze_body(stack, else_body, func);
 };
 
 void analyze_while(symtable_stack *stack, Statement *while_body, Func *func){
-    analyze_while(stack, while_body, func);
+    analyze_body(stack, while_body, func);
 };
 
 void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){   
