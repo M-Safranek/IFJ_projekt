@@ -81,12 +81,12 @@ table_symbol *create_symbol(char *name, bool defined, bool function) {
   // record necessary values for symbol creation
   table_symbol *new_symbol = malloc(sizeof(table_symbol));
   if (new_symbol == NULL) {
-    return NULL;
+    exit(99);
   }
   new_symbol->name = malloc(strlen(name) + 1);
   if (new_symbol->name == NULL) {
     free(new_symbol);
-    return NULL;
+    exit(99);
   }
   strcpy(new_symbol->name, name);
   new_symbol->defined = defined;

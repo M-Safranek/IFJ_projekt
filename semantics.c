@@ -50,7 +50,7 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
         case E_VAR: {
             table_symbol *sym_var = sym_stack_search(stack, expr->name);
             if(sym_var == NULL) {
-                // error var not defined
+                exit(3); // error var not defined
             }
             expr->type = sym_var->type;
             break;
@@ -75,7 +75,7 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
                     if((left_type == D_INT || left_type == D_DOUBLE) && (right_type == D_INT || right_type == D_DOUBLE)) {
                         expr->type = (left_type == D_DOUBLE || right_type == D_DOUBLE) ? D_DOUBLE: D_INT;
                     } else {
-                        // error incompatible types at arithmetic op
+                        exit(6); // error incompatible types at arithmetic op
                     }
                     break;
                 case O_LESS:   
@@ -86,7 +86,7 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
                         (left_type == D_STRING && right_type == D_STRING)) {
                         expr->type = D_INT;
                     } else {
-                        // error incompatible types at relation op
+                        exit(6); // error incompatible types at relation op
                     }
                     break;
                 case O_EQUAL_EQUAL:
@@ -96,7 +96,7 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
                         expr->type = D_INT;
                         break;
                         } else {
-                        // error incompatible types at equality comparison op
+                        exit(6); // error incompatible types at equality comparison op
                     }
                 default:
                     // error not binary operator
@@ -119,39 +119,39 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
                 int idx = 0;
                 for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
                     if(idx >= is_builtin->param_count) {
-                        // error too many arguments at builtin
+                        exit(5); // error too many arguments at builtin
                     }
                     DataType expected = is_builtin->param_types[idx];
                     if((expected != D_UNKNOWN) && (arg->type != expected) &&
                         !(expected == D_DOUBLE && arg->type == D_INT)) {
-                            // error wrong argument type at builtin
+                            exit(5); // error wrong argument type at builtin
                     }
                     idx++;
                 }
                 if(idx != is_builtin->param_count) {
-                    // error too few arguments at builtin
+                    exit(5); // error too few arguments at builtin
                 }
                 expr->type = is_builtin->return_type;
                 break;
             }
             table_symbol *func = sym_stack_search(stack, expr->name);
             if(func == NULL) {
-                // call to undefined function
+                exit(3); // call to undefined function
             }
             int idx = 0;
                     for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
                         if(idx >= func->param_count) {
-                            // error too many arguments at function
+                            exit(5); // error too many arguments at function
                         }
                         DataType expected = func->param_types[idx];
                         if((expected != D_UNKNOWN) && (arg->type != expected) &&
                             !(expected == D_DOUBLE && arg->type == D_INT)) {
-                                // error wrong argument type at function
+                                exit(5); // error wrong argument type at function
                         }
                         idx++;
                     }
                     if(idx != func->param_count) {
-                        // error too few arguments at function
+                        exit(5); // error too few arguments at function
                     }
                     expr->type = func->type;
                     break;
@@ -233,23 +233,23 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
 
     }else if(func_body->kind == S_VAR_DEF){
         if(search(func_body->expr->left->name, stack->top_symbol) != NULL){ //defined in the same block twice
-            //error 4
+            exit(4); //error 4
         }else if(func_body->expr->type == D_UNKNOWN){ //cannot determine type
-            //error 6
+            exit(6); //error 6
         }
 
     }else if(func_body->kind == S_ASSIGN || func_body->kind == S_EXPR){
         if(search(func_body->expr->left->name, stack->top_symbol) == NULL){ //is var defined
-            //error 3
+            exit(3); //error 3
         }else if(func_body->expr->left->type != func_body->expr->right->type && !(func_body->expr->left->type == D_DOUBLE && func_body->expr->right->type == D_INT)){
-            //error 6
+            exit(6); //error 6
         }
 
     }else if(func_body->kind == S_RETURN){
         if(search(func_body->expr->name, stack->top_symbol) == NULL){ //is return value defined
-            //error 3
+            exit(3); //error 3
         }else if(func->return_type != search(func_body->expr->name, stack->top_symbol)->type){ //wrong type
-            //
+            exit(6); //
         }
     }
     return;
@@ -271,7 +271,7 @@ void analyze(symtable_stack *stack, Func *analyzed_code){
         if(search(func->func_name, stack->top_symbol) == NULL){ //second pass or double definition?
             stack->top_symbol = insert(stack->top_symbol, func->func_name, true, true); //get func into tree in global scope
         }else if(search(func->func_name, stack->top_symbol)->defined == true){ //defined for the second time, not allowed
-            //error 4
+            exit(4); //error 4
         }
 
         table_symbol *func_symbol = search(func->func_name, sym_top(stack)->top_symbol); //get the inserted func
