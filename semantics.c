@@ -210,7 +210,6 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
       }
       stack = sym_pop(stack);
     }
-
   } else if (func_body->kind == S_WHILE) { // statement is while
     // get all vars in condition and check against symtable
     stack = sym_push(stack, NULL);
@@ -228,13 +227,12 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
     }
 
     stack = sym_pop(stack);
-
   } else if (func_body->kind == S_VAR_DEF) {
-    if (search(func_body->expr->left->name, stack->top_symbol) !=
+    if (search(func_body->expr->name, stack->top_symbol) !=
         NULL) { // defined in the same block twice
       exit(4);  // error 4
     }
-    DataType var_type = func_body->expr->left->type;
+    DataType var_type = func_body->expr->type;
     if (func_body->expr->right != NULL) {
       analyze_expression(stack, func_body->expr->right);
       DataType rhs_type = func_body->expr->right->type;
@@ -268,10 +266,8 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
       exit(6); // incompatible types at assignment
     }
     func_body->expr->left->type = var_sym->type;
-
   } else if (func_body->kind == S_EXPR) {
     analyze_expression(stack, func_body->expr);
-
   } else if (func_body->kind == S_RETURN) {
     if (func_body->expr == NULL) {
       if (func->return_type != D_UNIT) {
@@ -303,11 +299,10 @@ void analyze(symtable_stack *stack, Func *analyzed_code) {
         NULL) { // second pass or double definition?
       stack->top_symbol = insert(stack->top_symbol, func->func_name, true,
                                  true); // get func into tree in global scope
-    } else if (search(func->func_name, stack->top_symbol)->defined ==
-               true) { // defined for the second time, not allowed
-      exit(4);         // error 4
+    } else {   // defined for the second time, not allowed
+      exit(4); // error 4
     }
-
+    
     table_symbol *func_symbol = search(
         func->func_name, sym_top(stack)->top_symbol); // get the inserted func
     func_symbol->type = func->return_type;            // record type
