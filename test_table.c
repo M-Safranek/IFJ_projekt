@@ -11,5 +11,8 @@ int main() {
   top_of_tree = insert(top_of_tree, "another_function", true, true);
   top_of_tree = insert(top_of_tree, "abcd", true, false);
   printf("%s\n", search("abcd", top_of_tree)->name);
+  table_symbol *search_result = search("y", top_of_tree);
+  search_result->modifiable = true;
+  printf("%i\n", search("y", top_of_tree)->modifiable);
   delete_tree(top_of_tree);
 }
