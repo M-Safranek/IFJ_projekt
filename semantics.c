@@ -244,11 +244,14 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
             stack->top_symbol = insert(stack->top_symbol, func_body->expr->left->name, true, false);
             table_symbol *var_symbol = search(func_body->expr->left->name, stack->top_symbol);
             var_symbol->type = var_type;
+            var_symbol->modifiable = func_body->is_var;
         }
     } else if(func_body->kind == S_ASSIGN) {
         table_symbol *var_sym = sym_stack_search(stack, func_body->expr->left->name);
         if(var_sym == NULL) {
             exit(3);    //assignment to undefined variable
+        }else if(var_sym->modifiable == false){
+            exit(7); //cannot assign to val
         }
         analyze_expression(stack, func_body->expr->right);
         if(var_sym->type != func_body->expr->right->type && !(var_sym->type == D_DOUBLE && func_body->expr->right->type == D_INT)) {
@@ -278,11 +281,6 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
 };
 
 void analyze(symtable_stack *stack, Func *analyzed_code){
-    //analyze first func, push global scope
-    //analyze inside func, push func scope
-    //pop func scope, analyze second func, push second func scope
-    //analyze block inside second func, push block scope
-    //outside block, pop block scope
     if(analyzed_code == NULL){
         return;
     }
