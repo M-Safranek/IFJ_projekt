@@ -276,6 +276,9 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
         func_body->type = var_sym->type;
     } else if (func_body->kind == S_EXPR) {
         analyze_expression(stack, func_body->expr);
+        if(func_body->next == NULL && func_body->expr->type != func->return_type && func->return_type != D_UNIT && (func->return_type != D_DOUBLE || func_body->expr->type != D_INT)) {
+            exit(6); // type of last expression in func is not return type OR is not unit OR cannot convert int to double
+        }
     } else if (func_body->kind == S_RETURN) {
         if (func_body->expr == NULL) {
             if (func->return_type != D_UNIT) {
