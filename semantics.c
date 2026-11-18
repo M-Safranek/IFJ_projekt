@@ -228,14 +228,14 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
 
     stack = sym_pop(stack);
   } else if (func_body->kind == S_VAR_DEF) {
-    if (search(func_body->expr->name, stack->top_symbol) !=
+    if (search(func_body->name, stack->top_symbol) !=
         NULL) { // defined in the same block twice
       exit(4);  // error 4
     }
-    DataType var_type = func_body->expr->type;
-    if (func_body->expr->right != NULL) {
-      analyze_expression(stack, func_body->expr->right);
-      DataType rhs_type = func_body->expr->right->type;
+    DataType var_type = func_body->type;
+    if (func_body->expr != NULL) {
+      analyze_expression(stack, func_body->expr);
+      DataType rhs_type = func_body->expr->type; //TODO go through expression and get type
       if (rhs_type == D_UNIT || rhs_type == D_UNKNOWN) {
         exit(6);
       }
@@ -246,23 +246,23 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
         exit(6); // error incompatible types in variable definition
       }
       stack->top_symbol =
-          insert(stack->top_symbol, func_body->expr->left->name, true, false);
+          insert(stack->top_symbol, func_body->name, true, false);
       table_symbol *var_symbol =
-          search(func_body->expr->left->name, stack->top_symbol);
+          search(func_body->name, stack->top_symbol);
       var_symbol->type = var_type;
       var_symbol->modifiable = func_body->is_var;
     }
   } else if (func_body->kind == S_ASSIGN) {
     table_symbol *var_sym =
-        sym_stack_search(stack, func_body->expr->left->name);
+        sym_stack_search(stack, func_body->name);
     if (var_sym == NULL) {
       exit(3); // assignment to undefined variable
     } else if (var_sym->modifiable == false) {
       exit(7); // cannot assign to val
     }
-    analyze_expression(stack, func_body->expr->right);
-    if (var_sym->type != func_body->expr->right->type &&
-        !(var_sym->type == D_DOUBLE && func_body->expr->right->type == D_INT)) {
+    analyze_expression(stack, func_body->expr);
+    if (var_sym->type != func_body->expr->type &&
+        !(var_sym->type == D_DOUBLE && func_body->expr->type == D_INT)) {
       exit(6); // incompatible types at assignment
     }
     func_body->expr->left->type = var_sym->type;
@@ -279,7 +279,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func) {
         exit(6); // error returning a value from unit function
       }
       if (func->return_type != func_body->expr->type &&
-          !(func->return_type == D_DOUBLE && func_body->expr->type == D_INT)) {
+          !(func->return_type == D_DOUBLE && func_body->type == D_INT)) {
         exit(6); // error return value doesnt match function return type
       }
     }
