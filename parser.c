@@ -5,6 +5,7 @@
  * Author: Martin Šafránek
  */
 
+#define _POSIX_C_SOURCE 200809L // For strdup
 #include "parser.h"
 #include "Scanner.h"
 #include <ctype.h>
@@ -12,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define _POSIX_C_SOURCE 200809L // For strdup
 
 /* TODO
  * remove debug things
