@@ -241,7 +241,9 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
             } else if (var_type != rhs_type && !(var_type == D_DOUBLE && rhs_type == D_INT)) {
                exit(6);// error incompatible types in variable definition
             }
-            // insert into symtable??
+            stack->top_symbol = insert(stack->top_symbol, func_body->expr->left->name, true, false);
+            table_symbol *var_symbol = search(func_body->expr->left->name, stack->top_symbol);
+            var_symbol->type = var_type;
         }
     } else if(func_body->kind == S_ASSIGN) {
         table_symbol *var_sym = sym_stack_search(stack, func_body->expr->left->name);
