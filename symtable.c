@@ -96,7 +96,6 @@ table_symbol *create_symbol(char *name, bool defined, bool function) {
   new_symbol->height = 0;
   new_symbol->subtree = NULL;
   new_symbol->param_types = NULL;
-  new_symbol->param_names = NULL;
   return new_symbol;
 }
 
