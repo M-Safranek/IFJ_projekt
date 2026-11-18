@@ -180,18 +180,6 @@ void analyze_condition(symtable_stack *stack, Expression *condition){
         }
 };
 
-void analyze_if(symtable_stack *stack, Statement *if_body, Func *func){
-    analyze_body(stack, if_body, func);
-};
-
-void analyze_else(symtable_stack *stack, Statement *else_body, Func *func){
-    analyze_body(stack, else_body, func);
-};
-
-void analyze_while(symtable_stack *stack, Statement *while_body, Func *func){
-    analyze_body(stack, while_body, func);
-};
-
 void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){   
     if(func_body->kind == S_IF){ //statement is if
         //get all vars in condition and check against symtable
@@ -205,13 +193,13 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
 
         Statement *if_body = func_body->body;
         while(if_body != NULL){
-            analyze_if(stack, if_body, func);
+            analyze_body(stack, if_body, func);
             if_body = if_body->next;
         }
 
         Statement *if_else_body = func_body->else_body;
         while(if_else_body != NULL){
-            analyze_if(stack, if_else_body, func);
+            analyze_body(stack, if_else_body, func);
             if_else_body = if_else_body->next;
         }
 
@@ -230,7 +218,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
 
         Statement *while_body = func_body->body;
         while(while_body != NULL){
-            analyze_while(stack, while_body, func);
+            analyze_body(stack, while_body, func);
             while_body = while_body->next;
         }
 
