@@ -14,15 +14,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* TODO
- * remove debug things
- *
- * add comments
- */
 Token tok;
 Scanner scanner;
 
-// for debug
+// For converting enum token type to readable format for error messages
 const char* token_names[] = {
     // keywords
     "T_DEF", // 0
@@ -79,39 +74,32 @@ const char* token_names[] = {
     "T_ERROR", // 44
     "T_EOF" // 45
 };
-// for debug
-int token_count = 1;
-
-// for debug
-void print_token()
-{
-    printf("Type: %s, TOKEN NUMBER:%d LINE:%d\n", token_names[tok.type], token_count, tok.line);
-}
 
 // Gets a new token from lexical analyzer
 void next_token()
 {
+    // Frees the previous token
     token_destroy(&tok);
+    // Gets a new token
     tok = get_next_token(&scanner);
     if (tok.type == T_ERROR) {
         fprintf(stderr, "Lexical analyzer error.\n");
         exit(1);
     }
-    token_count++;
 }
-
+// Prints the given string as a syntax error message, then exits the program with 2
 void syntax_error(char* str)
 {
     fprintf(stderr, "Syntax error: %s\n", str);
     exit(2);
 }
-
+// Prints a syntax error message with the given token type
 void expect_syntax_error(TokenType t)
 {
-    fprintf(stderr, "Syntax error, EXPECTED %s, got %s, TOKEN NUMBER:%d, LINE:%d.\n", token_names[t], token_names[tok.type], token_count, tok.line);
+    fprintf(stderr, "Syntax error, EXPECTED %s, got %s, LINE:%d.\n", token_names[t], token_names[tok.type], tok.line);
     exit(2);
 }
-
+// Checks if the current token is the same as the given type
 void expect_type(TokenType t)
 {
     if (tok.type == t) {
@@ -197,13 +185,13 @@ Statement* append_statement(Statement* first, Statement* last)
 Expression* make_ident_expr(char* name)
 {
     Expression* e = { 0 };
-    if (tok.type == T_LPAREN) {
+    if (tok.type == T_LPAREN) { // ID and then (
         e = new_expr(E_CALL);
         e->name = name;
         next_token();
         e->args = parse_arguments();
         expect_type(T_RPAREN);
-    } else {
+    } else { // ID and then not (
         e = new_expr(E_VAR);
         e->name = name;
     }
@@ -333,7 +321,7 @@ void reject_if_call(Expression* e)
         syntax_error("Function call inside an expression.");
     }
 }
-
+// Table for precedence analyzator
 char prec_table[9][9] = {
     // U   M/D  P/M  REL  EQ   L_P  R_P  ID   DOLL
     { '<', '>', '>', '>', '>', '<', '>', '<', '>' }, // UNARY
@@ -349,10 +337,12 @@ char prec_table[9][9] = {
 // Makes a PrecItem out of given symbol and pushes it on the stack
 void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
 {
+    // Initializes a stack item
     PrecItem item = { 0 };
     item.symbol = symbol;
     item.is_expression = false;
     item.has_handle_after = false;
+
     switch (symbol) {
     case P_ID: { // Adds E on the stack
         // Copies the previous token
@@ -390,7 +380,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
             } else {
                 syntax_error("Lit and then (.");
             }
-        } else {
+        } else { // Makes a variable or a value expression
             switch (prev_type) {
             case T_IDENTIFIER:
                 item.node = new_expr(E_VAR);
@@ -472,7 +462,7 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
         next_token();
     }
 }
-// Adds a handle after the given idx on the stack
+// Adds a HANDLE after the given idx on the stack
 void insert_handle(Stack* s, int idx)
 {
     s->data[idx].has_handle_after = true;
@@ -480,12 +470,12 @@ void insert_handle(Stack* s, int idx)
 // Reduces expressions on the stack using precedence analyzator rules
 void reduce(Stack* s)
 {
-    int n = 0; // Tracks how many items are before a handle
-    for (int i = s->top; i > -1; i--) {
+    int n = 0; // Tracks how many items are before a HANDLE
+    for (int i = s->top; i > -1; i--) { // Looks for a HANDLE and counts how many items are before HANDLE
         if (s->data[i].has_handle_after) {
             switch (n) {
-            case 1: // Rule i -> E
-                if (!(s->data[i + 1].is_expression) && s->data[i + 1].symbol == P_ID) {
+            case 1: // Checks if there is HANDLE and then ID
+                if (!(s->data[i + 1].is_expression) && s->data[i + 1].symbol == P_ID) { // Rule i -> E
                     s->data[s->top].is_expression = true;
                 } else {
                     syntax_error("Reduce function err - expected HANDLE then i.");
@@ -500,15 +490,16 @@ void reduce(Stack* s)
 
                         item.node = new_expr(E_UNIT);
                         item.node->type = D_UNIT;
-
+                        // Removes the ( and )
                         popx(s, 2);
+                        // Adds E on the stack
                         push(s, item);
                     } else {
                         syntax_error("Reduce function err - expected ().");
                     }
                 } else if (!(s->data[i + 1].is_expression) && s->data[i + 2].is_expression) {
                     if (s->data[i + 1].symbol == P_UNARY) { // Rule UNARY E -> E
-                        reject_if_call(s->data[i + 2].node);
+                        reject_if_call(s->data[i + 2].node); // Checks if it is a call expression
 
                         PrecItem item = { 0 };
                         item.is_expression = true;
@@ -517,8 +508,9 @@ void reduce(Stack* s)
                         item.node = new_expr(E_UNARY);
                         item.node->op = s->data[i + 1].op;
                         item.node->left = s->data[i + 2].node;
-
+                        // Removes the UNARY and E
                         popx(s, 2);
+                        // Adds E on the stack
                         push(s, item);
                     } else {
                         syntax_error("Reduce function err - expected UNARY E.");
@@ -530,22 +522,23 @@ void reduce(Stack* s)
             case 3:
                 if (!(s->data[i + 1].is_expression) && s->data[i + 2].is_expression && !(s->data[i + 3].is_expression)) {
                     if (s->data[i + 1].symbol == P_LPAREN && s->data[i + 3].symbol == P_RPAREN) { // Rule (E) -> E
-                        reject_if_call(s->data[i + 2].node);
+                        reject_if_call(s->data[i + 2].node); // Checks if it is a call expression
 
                         PrecItem item = { 0 };
                         item.is_expression = true;
                         item.has_handle_after = false;
 
                         item.node = s->data[i + 2].node;
-
+                        // Removes the (E)
                         popx(s, 3);
+                        // Adds E on the stack
                         push(s, item);
                     } else {
                         syntax_error("Reduce function err - expected (E).");
                     }
                 } else if (s->data[i + 1].is_expression && !(s->data[i + 2].is_expression) && s->data[i + 3].is_expression) {
-                    reject_if_call(s->data[i + 1].node);
-                    reject_if_call(s->data[i + 3].node);
+                    reject_if_call(s->data[i + 1].node); // Checks if it is a call expression
+                    reject_if_call(s->data[i + 3].node); // Checks if it is a call expression
 
                     PrecItem item = { 0 };
                     item.is_expression = true;
@@ -561,8 +554,9 @@ void reduce(Stack* s)
                         item.node->op = s->data[i + 2].op;
                         item.node->left = s->data[i + 1].node;
                         item.node->right = s->data[i + 3].node;
-
+                        // Removes the E op E
                         popx(s, 3);
+                        // Adds E on the stack
                         push(s, item);
                         break;
                     default:
@@ -637,7 +631,7 @@ PrecSym tok_to_sym(bool prev_is_operand, int depth)
  * LL TABLE FUNCTIONS
  * =======================
  */
-
+// Checks the syntax of the whole program
 Func* parse_program()
 {
     if (tok.type != T_IMPORT)
@@ -650,7 +644,7 @@ Func* parse_program()
     expect_type(T_EOF);
     return f;
 }
-
+// Checks the syntax of prologue
 void parse_prologue()
 {
     expect_type(T_IMPORT);
@@ -665,7 +659,7 @@ void parse_prologue()
     expect_type(T_DOT);
     expect_type(T_MULTIPLY);
 }
-
+// Checks syntax of all functions
 Func* parse_func_list()
 {
     Func* f = { 0 };
@@ -682,7 +676,7 @@ Func* parse_func_list()
     }
     return f;
 }
-
+// Checks syntax of a function definition
 Func* parse_func_def()
 {
     Func* f = new_func();
@@ -707,7 +701,7 @@ Func* parse_func_def()
     }
     return f;
 }
-
+// Checks syntax of function annotation
 bool parse_annot()
 {
     bool is_main = false;
@@ -731,7 +725,8 @@ bool parse_annot()
     }
     return is_main;
 }
-
+// Checks syntax of function annotation
+// Checks if annotation is on its own line or before def
 void parse_annot_n()
 {
     switch (tok.type) {
@@ -744,7 +739,7 @@ void parse_annot_n()
         syntax_error("Invalid function annotation.");
     }
 }
-
+// Checks syntax of all function parameters
 void parse_params(Func* f)
 {
     switch (tok.type) {
@@ -763,7 +758,7 @@ void parse_params(Func* f)
         syntax_error("Invalid function parameters.");
     }
 }
-
+// Checks syntax of function parameters
 void parse_params_n(Func* f)
 {
     switch (tok.type) {
@@ -794,7 +789,7 @@ void parse_params_n(Func* f)
         syntax_error("Invalid function parameters - Expected a valid parameter after comma.");
     }
 }
-
+// Checks syntax of function body
 Statement* parse_func_body()
 {
     switch (tok.type) {
@@ -819,7 +814,7 @@ Statement* parse_func_body()
     }
     return NULL;
 }
-
+// Checks syntax of function return type declaration
 DataType parse_n_type()
 {
     DataType d;
@@ -836,7 +831,7 @@ DataType parse_n_type()
     }
     return d;
 }
-
+// Checks syntax of function return type declaration
 DataType parse_type()
 {
     DataType d;
@@ -859,7 +854,7 @@ DataType parse_type()
     next_token();
     return d;
 }
-
+// Checks syntax of a block of code
 Statement* parse_block()
 {
     Statement* s = { 0 };
@@ -874,7 +869,7 @@ Statement* parse_block()
     }
     return s;
 }
-
+// Checks syntax of a statement
 Statement* parse_statement()
 {
     Statement* s = { 0 };
@@ -901,7 +896,7 @@ Statement* parse_statement()
     }
     return s;
 }
-
+// Checks syntax of a statement
 Statement* parse_statement_n()
 {
     Statement* s = { 0 };
@@ -931,7 +926,7 @@ Statement* parse_statement_n()
     }
     return s;
 }
-
+// Checks syntax of statement on one line
 Statement* parse_statement_line()
 {
     Statement* s = { 0 };
@@ -960,7 +955,7 @@ Statement* parse_statement_line()
     }
     return s;
 }
-
+// Checks syntax of a statement that is not IF or WHILE
 Statement* parse_simple_statement()
 {
     Statement* s = { 0 };
@@ -983,7 +978,7 @@ Statement* parse_simple_statement()
     }
     return s;
 }
-
+// Checks syntax of a statement that is not IF or WHILE
 Statement* parse_simple_n()
 {
     Statement* s = { 0 };
@@ -1001,7 +996,7 @@ Statement* parse_simple_n()
     }
     return s;
 }
-
+// Checks syntax of a statement that is not IF or WHILE
 Statement* parse_simple_s()
 {
     Statement* s = { 0 };
@@ -1042,7 +1037,7 @@ Statement* parse_simple_s()
     }
     return s;
 }
-
+// Checks syntax of an IF statement
 Statement* parse_if_statement()
 {
     Statement* s = new_stmt(S_IF);
@@ -1062,7 +1057,7 @@ Statement* parse_if_statement()
     }
     return s;
 }
-
+// Checks syntax of a WHILE statement
 Statement* parse_while_statement()
 {
     Statement* s = new_stmt(S_WHILE);
@@ -1079,7 +1074,7 @@ Statement* parse_while_statement()
     }
     return s;
 }
-
+// Checks syntax of condition
 Expression* parse_condition()
 {
     Expression* e = { 0 };
@@ -1098,7 +1093,7 @@ Expression* parse_condition()
     }
     return e;
 }
-
+// Checks syntax of return statement
 Statement* parse_return_statement()
 {
     Statement* s = { 0 };
@@ -1112,7 +1107,7 @@ Statement* parse_return_statement()
     }
     return s;
 }
-
+// Checks syntax of return value
 Statement* parse_return_val()
 {
     Statement* s = new_stmt(S_RETURN);
@@ -1135,7 +1130,7 @@ Statement* parse_return_val()
     }
     return s;
 }
-
+// Checks syntax of function arguments
 Expression* parse_arguments()
 {
     Expression* e = { 0 };
@@ -1157,7 +1152,7 @@ Expression* parse_arguments()
     }
     return e;
 }
-
+// Checks syntax of function arguments
 Expression* parse_arguments_n()
 {
     Expression* e = { 0 };
@@ -1174,7 +1169,7 @@ Expression* parse_arguments_n()
     }
     return e;
 }
-
+// Checks syntax of function arguments
 Expression* parse_arguments_nn()
 {
     Expression* e = { 0 };
@@ -1202,7 +1197,7 @@ Expression* parse_arguments_nn()
     }
     return e;
 }
-
+// Checks syntax of function argument values
 Expression* parse_term()
 {
     Expression* e = { 0 };
@@ -1244,7 +1239,7 @@ Expression* parse_term()
     }
     return e;
 }
-
+// Checks syntax of function arguments that have an UNARY sign
 Expression* parse_num_lit()
 {
     Expression* e = { 0 };
@@ -1264,7 +1259,7 @@ Expression* parse_num_lit()
     }
     return e;
 }
-
+// Checks syntax of variable or value definition
 Statement* parse_var_def()
 {
     Statement* s = new_stmt(S_VAR_DEF);
@@ -1285,7 +1280,7 @@ Statement* parse_var_def()
     }
     return s;
 }
-
+// Checks syntax of variable or value definition
 bool parse_vax()
 {
     bool is_var = false;
@@ -1367,7 +1362,7 @@ Expression* parse_expression_from(Expression* first)
         }
     }
 }
-
+/*
 int main()
 {
     FILE* test_file = fopen("test.txt", "r");
@@ -1385,9 +1380,7 @@ int main()
     scanner_destroy(&scanner);
     free_func(f);
 
-    // for debug
-    printf("No syntax error found\n");
-
     fclose(test_file);
     return 0;
 }
+*/
