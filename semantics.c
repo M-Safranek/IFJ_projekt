@@ -26,7 +26,6 @@ static const BuiltinSpec builtins[] = {
     { NULL, D_UNKNOWN, 0, { 0 } }
 };
 
-<<<<<<< HEAD
 int scope_var_counter = 0;
 
 char *make_scope_name(char *name) {
@@ -40,8 +39,6 @@ char *make_scope_name(char *name) {
     return scope_name;
 }
 
-=======
->>>>>>> 2c03341014ecac8ca28bed7bd3c1292705cacbd5
 static const BuiltinSpec* find_builtin(const char* name)
 {
     for (int idx = 0; builtins[idx].names != NULL; idx++) {
@@ -78,7 +75,8 @@ void analyze_expression(symtable_stack* stack, Expression* expr)
         table_symbol* sym_var = sym_stack_search(stack, expr->name);
         if (sym_var == NULL) {
             exit(3); // error var not defined
-<<<<<<< HEAD
+        } else if (sym_var->function == true) {
+            exit(6); //var is func
         }
         expr->type = sym_var->type;
         if(sym_var->scope != NULL) {
@@ -89,14 +87,9 @@ void analyze_expression(symtable_stack* stack, Expression* expr)
             free(expr->name);
             expr->name = name_copy;
         }
-=======
-        } else if (sym_var->function == true) {
-            exit(6); //var is func
-        }
-        expr->type = sym_var->type;
->>>>>>> 2c03341014ecac8ca28bed7bd3c1292705cacbd5
         break;
-    }
+
+    } 
 
     case E_BINARY: {
         analyze_expression(stack, expr->left);
@@ -107,11 +100,7 @@ void analyze_expression(symtable_stack* stack, Expression* expr)
 
         switch (expr->op) {
         case O_PLUS:
-<<<<<<< HEAD
             if (left_type == D_STRING && right_type == D_STRING) {
-=======
-            if (expr->op == O_PLUS && left_type == D_STRING && right_type == D_STRING) {
->>>>>>> 2c03341014ecac8ca28bed7bd3c1292705cacbd5
                 expr->type = D_STRING;
                 break;
             }
@@ -290,9 +279,8 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
             } else if (var_type != rhs_type && !(var_type == D_DOUBLE && rhs_type == D_INT)) {
                 exit(6); // error incompatible types in variable definition
             }
-<<<<<<< HEAD
         }
-            stack->top_symbol = insert(stack->top_symbol, func_body->name, false, true);
+            stack->top_symbol = insert(stack->top_symbol, func_body->name, true, false);
             table_symbol* var_symbol = search(func_body->name, stack->top_symbol);
             var_symbol->type = var_type;
             var_symbol->modifiable = func_body->is_var;
@@ -322,30 +310,9 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
         }
     } else if (func_body->kind == S_EXPR) {
         analyze_expression(stack, func_body->expr);
-=======
-            stack->top_symbol = insert(stack->top_symbol, func_body->name, true, false);
-            table_symbol* var_symbol = search(func_body->name, stack->top_symbol);
-            var_symbol->type = var_type;
-            var_symbol->modifiable = func_body->is_var;
-        }
-    } else if (func_body->kind == S_ASSIGN) {
-        table_symbol* var_sym = sym_stack_search(stack, func_body->name);
-        if (var_sym == NULL) {
-            exit(3); // assignment to undefined variable
-        } else if (var_sym->modifiable == false) {
-            exit(7); // cannot assign to val
-        }
-        analyze_expression(stack, func_body->expr);
-        if (var_sym->type != func_body->expr->type && !(var_sym->type == D_DOUBLE && func_body->expr->type == D_INT)) {
-            exit(6); // incompatible types at assignment
-        }
-        func_body->type = var_sym->type;
-    } else if (func_body->kind == S_EXPR) {
-        analyze_expression(stack, func_body->expr);
         if(func_body->next == NULL && func_body->expr->type != func->return_type && func->return_type != D_UNIT && (func->return_type != D_DOUBLE || func_body->expr->type != D_INT)) {
             exit(6); // type of last expression in func is not return type OR is not unit OR cannot convert int to double
         }
->>>>>>> 2c03341014ecac8ca28bed7bd3c1292705cacbd5
     } else if (func_body->kind == S_RETURN) {
         if (func_body->expr == NULL) {
             if (func->return_type != D_UNIT) {
@@ -456,10 +423,7 @@ Func* build_table()
     register_functions(stack, analyzed_code);
     analyze_functions(stack, analyzed_code);
 
-<<<<<<< HEAD
-=======
     delete_tree(stack->top_symbol);
->>>>>>> 2c03341014ecac8ca28bed7bd3c1292705cacbd5
     sym_delete_stack(stack);
 
     return analyzed_code;
