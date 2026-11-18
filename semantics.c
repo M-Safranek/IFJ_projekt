@@ -331,7 +331,7 @@ void register_functions(symtable_stack* stack, Func* analyzed_code)
     }
 
     // Check if there is exactly one @main
-    if (main_count == 0) {
+    if (main_count != 1) {
         exit(3);
     }
 }
