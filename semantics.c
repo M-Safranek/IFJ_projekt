@@ -67,8 +67,8 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
                 case O_PLUS:
                     if(expr->op == O_PLUS && left_type == D_STRING && right_type == D_STRING) {
                         expr->type = D_STRING;
-                        break;
                     }
+                    break;
                 case O_MINUS:
                 case O_DIVIDE:
                 case O_MULTIPLY:
@@ -85,10 +85,10 @@ void analyze_expression(symtable_stack *stack, Expression *expr) {
                     if(((left_type == D_INT || left_type == D_DOUBLE) && (right_type == D_INT || right_type == D_DOUBLE)) ||
                         (left_type == D_STRING && right_type == D_STRING)) {
                         expr->type = D_INT;
-                        break;
-                        } else {
-                            // error incompatible types at relation op
-                        }
+                    } else {
+                        // error incompatible types at relation op
+                    }
+                    break;
                 case O_EQUAL_EQUAL:
                 case O_NOT_EQUAL:
                     if((left_type == right_type) || 
@@ -234,7 +234,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func){
     }else if(func_body->kind == S_VAR_DEF){
         if(search(func_body->expr->left->name, stack->top_symbol) != NULL){ //defined in the same block twice
             //error 4
-        }else if(func_body->expr->type == NULL){ //cannot determine type
+        }else if(func_body->expr->type == D_UNKNOWN){ //cannot determine type
             //error 6
         }
 
