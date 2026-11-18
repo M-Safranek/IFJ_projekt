@@ -6,7 +6,7 @@
 symtable_stack *sym_init_stack() { // allocate momory for stack
   symtable_stack *first = malloc(sizeof(symtable_stack)); // header
   if (first == NULL) {
-    return NULL;
+    exit(99);
   }
   first->top_symbol = NULL;
   first->prev = NULL;
@@ -29,7 +29,7 @@ symtable_stack *sym_push(symtable_stack *stack, table_symbol *item) {
   // push onto stack
   symtable_stack *pushed = malloc(sizeof(symtable_stack));
   if (pushed == NULL) {
-    return NULL;
+    exit(99);
   }
   pushed->top_symbol = item;
   pushed->prev = stack;
