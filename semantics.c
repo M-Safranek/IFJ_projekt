@@ -62,6 +62,8 @@ void analyze_expression(symtable_stack* stack, Expression* expr)
         table_symbol* sym_var = sym_stack_search(stack, expr->name);
         if (sym_var == NULL) {
             exit(3); // error var not defined
+        } else if (sym_var->function == true) {
+            exit(6); //var is func
         }
         expr->type = sym_var->type;
         break;
