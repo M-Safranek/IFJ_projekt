@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define _POSIX_C_SOURCE 200809L // For strdup
 
 /* TODO
  * remove debug things
@@ -92,6 +93,10 @@ void next_token()
 {
     token_destroy(&tok);
     tok = get_next_token(&scanner);
+    if (tok.type == T_ERROR) {
+        fprintf(stderr, "Lexical analyzer error.\n");
+        exit(1);
+    }
     token_count++;
 }
 
@@ -103,7 +108,7 @@ void syntax_error(char* str)
 
 void expect_syntax_error(TokenType t)
 {
-    printf("Syntax error, EXPECTED %s, got %s, TOKEN NUMBER:%d, LINE:%d.\n", token_names[t], token_names[tok.type], token_count, tok.line);
+    fprintf(stderr, "Syntax error, EXPECTED %s, got %s, TOKEN NUMBER:%d, LINE:%d.\n", token_names[t], token_names[tok.type], token_count, tok.line);
     exit(2);
 }
 
@@ -188,7 +193,7 @@ Statement* append_statement(Statement* first, Statement* last)
     s->next = last;
     return first;
 }
-
+// Makes a new CALL or VAR Expression when its name was already known
 Expression* make_ident_expr(char* name)
 {
     Expression* e = { 0 };
@@ -755,11 +760,19 @@ void parse_params(Func* f)
 void parse_params_n(Func* f)
 {
     switch (tok.type) {
-    case T_COMMA:
+    case T_COMMA: {
+        int last_token_line = tok.line;
         next_token();
         char* param_name = NULL;
         if (tok.type == T_IDENTIFIER) {
             param_name = strdup_and_check(tok.attr.string_value);
+        }
+        if (tok.type == T_RPAREN) {
+            if (last_token_line == tok.line) {
+                syntax_error("Invalid function parameters - Expected a valid parameter after comma.");
+            } else {
+                break;
+            }
         }
         expect_type(T_IDENTIFIER);
         expect_type(T_COLON);
@@ -767,10 +780,11 @@ void parse_params_n(Func* f)
         add_param(f, param_name, param_type);
         parse_params_n(f);
         break;
+    }
     case T_RPAREN:
         break;
     default:
-        syntax_error("Invalid function parameters.");
+        syntax_error("Invalid function parameters - Expected a valid parameter after comma.");
     }
 }
 
@@ -1142,7 +1156,7 @@ Expression* parse_arguments_n()
     Expression* e = { 0 };
     switch (tok.type) {
     case T_COMMA:
-        next_token();
+        // next_token();  should be here, but the parse_arguments_nn needs the previous token.line value, so it is in there
         e = parse_arguments_nn();
         break;
     case T_RPAREN:
@@ -1157,6 +1171,8 @@ Expression* parse_arguments_n()
 Expression* parse_arguments_nn()
 {
     Expression* e = { 0 };
+    int last_token_line = tok.line;
+    next_token();
     switch (tok.type) {
     case T_IDENTIFIER:
     case T_INT:
@@ -1166,6 +1182,13 @@ Expression* parse_arguments_nn()
     case T_MINUS:
         e = parse_term();
         e->next = parse_arguments_n();
+        break;
+    case T_RPAREN:
+        if (last_token_line == tok.line) {
+            syntax_error("Invalid function arguments - expected valid argument after comma and before ).");
+        } else {
+            e = NULL;
+        }
         break;
     default:
         syntax_error("Invalid function arguments - expected valid argument after comma.");
