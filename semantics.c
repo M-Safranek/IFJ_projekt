@@ -384,6 +384,7 @@ Func* build_table()
     register_functions(stack, analyzed_code);
     analyze_functions(stack, analyzed_code);
 
+    delete_tree(stack->top_symbol);
     sym_delete_stack(stack);
 
     return analyzed_code;
