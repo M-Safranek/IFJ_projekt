@@ -654,7 +654,14 @@ Func* parse_program()
 void parse_prologue()
 {
     expect_type(T_IMPORT);
-    expect_type(T_IDENTIFIER);
+    if (tok.type == T_IDENTIFIER) {
+        if (strcmp(tok.attr.string_value, "ifj26") != 0) {
+            syntax_error("Invalid prologue - expected ifj26 after IMPORT.");
+        }
+    } else {
+        syntax_error("Invalid prologue - expected ifj26 after IMPORT.");
+    }
+    next_token();
     expect_type(T_DOT);
     expect_type(T_MULTIPLY);
 }
