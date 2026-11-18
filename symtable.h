@@ -20,7 +20,7 @@ typedef struct symbol {
 } table_symbol;
 
 table_symbol *search(char *what, table_symbol *where);
-table_symbol *insert(table_symbol *where, char *name, bool defined,
+table_symbol *insert(table_symbol *where, char *name, char *scope, bool defined,
                      bool function);
 void delete_tree(table_symbol *top);
 

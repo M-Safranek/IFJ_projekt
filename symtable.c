@@ -112,6 +112,10 @@ table_symbol* create_symbol(char* name, char* scope, bool defined, bool function
     new_symbol->height = 0;
     new_symbol->subtree = NULL;
     new_symbol->param_types = NULL;
+    new_symbol->param_count = 0;
+    new_symbol->type = D_UNKNOWN;
+    new_symbol->is_main = false;
+    new_symbol->modifiable = false;
     return new_symbol;
 }
 
