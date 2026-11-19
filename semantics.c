@@ -31,12 +31,12 @@ int scope_var_counter = 0;
 char *make_scope_name(char *name) {
     int local_scope_counter = scope_var_counter++;
     size_t len = strlen(name) + 32;
-    char *scope_name = malloc(len * sizeof(char));
-    if(!scope_name) {
+    char *var_scope_name = malloc(len * sizeof(char));
+    if(!var_scope_name) {
         exit(99);
     }
-    snprintf(scope_name, len, "%s$%d", name, local_scope_counter);
-    return scope_name;
+    snprintf(var_scope_name, len, "%s$%d", name, local_scope_counter);
+    return var_scope_name;
 }
 
 static const BuiltinSpec* find_builtin(const char* name)
@@ -271,7 +271,7 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
         if (func_body->expr != NULL) {
             analyze_expression(stack, func_body->expr);
             DataType rhs_type = func_body->expr->type;
-            if (rhs_type == D_UNIT || rhs_type == D_UNKNOWN) {
+            if (rhs_type == D_UNKNOWN) {
                 exit(6);
             }
             if (var_type == D_UNKNOWN) {
@@ -285,8 +285,13 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
             var_symbol->type = var_type;
             var_symbol->modifiable = func_body->is_var;
             var_symbol->scope = make_scope_name(func_body->name);
+
+            char *name_copy = malloc(strlen(var_symbol->scope) + 1);
+            if (!name_copy) exit(99);
+            strcpy(name_copy, var_symbol->scope);
+
             free(func_body->name);
-            func_body->name = var_symbol->scope;
+            func_body->name = name_copy;
             func_body->type = var_type;
     } else if (func_body->kind == S_ASSIGN) {
         table_symbol* sym_var = sym_stack_search(stack, func_body->name);
@@ -320,9 +325,6 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
             }
         } else {
             analyze_expression(stack, func_body->expr);
-            if (func->return_type == D_UNIT) {
-                exit(6); // error returning a value from unit function
-            }
             if (func->return_type != func_body->expr->type && !(func->return_type == D_DOUBLE && func_body->expr->type == D_INT)) {
                 exit(6); // error return value doesnt match function return type
             }
