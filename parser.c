@@ -351,9 +351,9 @@ void shift(Stack* s, PrecSym symbol, bool* prev_is_operand, int* depth)
             name = strdup_and_check(tok.attr.string_value);
         }
         TokenType prev_type = tok.type;
-        int prev_int_value;
-        double prev_double_value;
-        char* prev_string_value;
+        int prev_int_value = 0; // Will always be overwritten if used
+        double prev_double_value = 0; // Will always be overwritten if used
+        char* prev_string_value = NULL; // Will always be overwritten if used
         switch (prev_type) {
         case T_INT:
             prev_int_value = tok.attr.int_value;
@@ -1385,7 +1385,8 @@ int main()
 }
 */
 
-Func* parser_interface(FILE* code_file){
+Func* parser_interface(FILE* code_file)
+{
     scanner = scanner_init(code_file);
 
     next_token();
@@ -1395,6 +1396,6 @@ Func* parser_interface(FILE* code_file){
 
     token_destroy(&tok);
     scanner_destroy(&scanner);
-    
+
     return f;
 }
