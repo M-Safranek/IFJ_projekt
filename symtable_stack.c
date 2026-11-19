@@ -1,11 +1,10 @@
-
 #include "symtable_stack.h"
 #include "symtable.h"
 #include <stdio.h>
 #include <stdlib.h>
 
 symtable_stack* sym_init_stack()
-{ // allocate momory for stack
+{ // allocate memory for stack
     symtable_stack* first = malloc(sizeof(symtable_stack)); // header
     if (first == NULL) {
         exit(99);

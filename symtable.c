@@ -152,6 +152,7 @@ void delete_tree(table_symbol* top)
 {
     if (top != NULL) {
         free(top->name);
+        free(top->scope);
         delete_tree(top->subtree);
         delete_tree(top->left);
         delete_tree(top->right);
