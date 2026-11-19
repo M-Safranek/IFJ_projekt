@@ -12,5 +12,5 @@ int main(void)
     codegen_print(parsed_code);
 
     free_func(parsed_code);
-    return 1;
+    return 0;
 }
