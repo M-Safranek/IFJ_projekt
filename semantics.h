@@ -13,6 +13,6 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func);
 bool func_has_return(Statement *stmt);
 void register_functions(symtable_stack *stack, Func *analyzed_code);
 void analyze_functions(symtable_stack *stack, Func *analyzed_code);
-Func *build_table();
+Func *build_table(Func* analyzed_code);
 
 #endif // SEMANTICS_ANALYZER

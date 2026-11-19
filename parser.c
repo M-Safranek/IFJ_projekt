@@ -1384,3 +1384,17 @@ int main()
     return 0;
 }
 */
+
+Func* parser_interface(FILE* code_file){
+    scanner = scanner_init(code_file);
+
+    next_token();
+
+    Func* f = { 0 };
+    f = parse_program();
+
+    token_destroy(&tok);
+    scanner_destroy(&scanner);
+    
+    return f;
+}

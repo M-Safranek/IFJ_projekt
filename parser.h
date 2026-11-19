@@ -7,6 +7,7 @@
 #define PARSER_H
 
 #include <stdbool.h>
+#include <stdio.h>
 
 /*==================
  * AST tree
@@ -180,5 +181,7 @@ Expression* parse_num_lit();
 Statement* parse_var_def();
 bool parse_vax();
 Expression* parse_expression();
+
+Func* parser_interface(FILE* code_file);
 
 #endif

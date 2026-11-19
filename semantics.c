@@ -551,9 +551,9 @@ void analyze_functions(symtable_stack *stack, Func *analyzed_code)
     }
 }
 
-Func *build_table()
+Func *build_table(Func* analyzed_code)
 {
-    Func *analyzed_code = parse_program(); // AST from parser
+    //Func *analyzed_code = parse_program(); // AST from parser
     if (analyzed_code == NULL)
     {
         exit(3); // Empty code with no @main
