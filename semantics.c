@@ -565,7 +565,7 @@ Func *build_table(Func* analyzed_code)
     register_functions(stack, analyzed_code);
     analyze_functions(stack, analyzed_code);
 
-    delete_tree(stack->top_symbol);
+    //delete_tree(stack->top_symbol);
     sym_delete_stack(stack);
 
     return analyzed_code;
