@@ -6,7 +6,7 @@
 #include "codegen.h"
 
 int main(int argc, char **argv){
-    if(argc != 2){
+    if(argc == 2){
         FILE* code_file = fopen(argv[1], "r");
         if (code_file == NULL) {
             fprintf(stderr, "File couldn't be opened\n");
@@ -24,5 +24,6 @@ int main(int argc, char **argv){
         return 1;
     }else{
         fprintf(stderr, "Provide a file to compile\n");
+        return 0;
     }
 }
