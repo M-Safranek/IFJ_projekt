@@ -1,9 +1,11 @@
+#define _POSIX_C_SOURCE 200809L
 #include "parser.h"
 #include "symtable.h"
 #include "symtable_stack.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 typedef struct {
     const char* names;
@@ -315,9 +317,7 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
         }
     } else if (func_body->kind == S_EXPR) {
         analyze_expression(stack, func_body->expr);
-        if(func_body->next == NULL && func_body->expr->type != func->return_type && func->return_type != D_UNIT && (func->return_type != D_DOUBLE || func_body->expr->type != D_INT)) {
-            exit(6); // type of last expression in func is not return type OR is not unit OR cannot convert int to double
-        }
+
     } else if (func_body->kind == S_RETURN) {
         if (func_body->expr == NULL) {
             if (func->return_type != D_UNIT) {
@@ -325,12 +325,30 @@ void analyze_body(symtable_stack* stack, Statement* func_body, Func* func)
             }
         } else {
             analyze_expression(stack, func_body->expr);
-            if (func->return_type != func_body->expr->type && !(func->return_type == D_DOUBLE && func_body->expr->type == D_INT)) {
+
+            if (func->return_type != D_UNIT && 
+                func->return_type != func_body->expr->type && !(func->return_type == D_DOUBLE && func_body->expr->type == D_INT)) {
                 exit(6); // error return value doesnt match function return type
             }
         }
     }
     return;
+}
+// checks if function has return
+bool func_has_return(Statement *stmt) {
+    if(!stmt) {
+        return false;
+    }
+    Statement *last = stmt;
+    while(last->next != NULL){
+        last = last->next;
+    }
+    if(last->kind == S_RETURN) {
+        return true;
+    } else if(last->kind == S_IF) {
+        return func_has_return(last->body) && func_has_return(last->else_body);
+    }
+    return false;
 }
 
 void register_functions(symtable_stack* stack, Func* analyzed_code)
@@ -400,17 +418,40 @@ void analyze_functions(symtable_stack* stack, Func* analyzed_code)
 
         // Analyzes function body
         Statement* func_body = func->body;
-        while (func_body != NULL) {
+        Statement* last = NULL;
+
+         while (func_body != NULL) {
             analyze_body(stack, func_body, func);
+            last = func_body;
             func_body = func_body->next;
         }
 
+        // checks final statemnt for no-unit function
+        if (func->return_type != D_UNIT && func->return_type != D_UNKNOWN) {
+            if (last == NULL) {
+                exit(6);
+            } else if (last->kind == S_EXPR) {
+                DataType actual = last->expr->type;
+                DataType expected = func->return_type;
+
+                if (actual != expected &&
+                    !(expected == D_DOUBLE && actual == D_INT)) {
+                    exit(6);
+                }
+            } else if (last->kind == S_IF) {
+                if (!func_has_return(last)) {
+                    exit(6);
+                }
+            } else if (last->kind == S_VAR_DEF || last->kind == S_ASSIGN || last->kind == S_WHILE) {
+                exit(6);
+            }
+        } 
         // Frees local tree and makes a new scope
         stack = sym_pop(stack);
-
         func = func->next;
-    }
+    }   
 }
+
 
 Func* build_table()
 {
