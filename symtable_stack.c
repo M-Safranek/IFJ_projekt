@@ -8,15 +8,14 @@ symtable_stack *sym_init_stack() { // allocate memory for stack
   if (first == NULL) {
     exit(99);
   }
-  first->top_symbol = NULL;
+  first->top_symbol = NULL; //both items are NULL to create the stack's header
   first->prev = NULL;
   return first;
 }
 
-bool sym_is_empty(
-    symtable_stack *stack) { // check if stack only contains the header
+bool sym_is_empty(symtable_stack *stack) {
   if (stack != NULL) {
-    if (stack->top_symbol == NULL && stack->prev == NULL) {
+    if (stack->top_symbol == NULL && stack->prev == NULL) { // check if stack only contains the header
       return true;
     } else {
       return false;
@@ -26,9 +25,9 @@ bool sym_is_empty(
 }
 
 symtable_stack *sym_push(symtable_stack *stack, table_symbol *item) {
-  // push onto stack
+  // push a symtable onto stack
   symtable_stack *pushed = malloc(sizeof(symtable_stack));
-  if (pushed == NULL) {
+  if (pushed == NULL) { //allocation failed
     exit(99);
   }
   pushed->top_symbol = item;
@@ -39,7 +38,7 @@ symtable_stack *sym_push(symtable_stack *stack, table_symbol *item) {
 
 symtable_stack *sym_pop(symtable_stack *stack)
 {
-    if (stack != NULL && stack->prev != NULL) {
+    if (stack != NULL && stack->prev != NULL) { //checks if the stack has more items than only the header
         symtable_stack *previous = stack->prev;
 
         delete_tree(stack->top_symbol);
@@ -70,7 +69,7 @@ table_symbol *sym_stack_search(symtable_stack *stack, char *name) {
   // search all trees in the stack
   symtable_stack *searched_pos = stack;
   table_symbol *searched_sym = NULL;
- while (searched_pos != NULL && searched_sym == NULL && searched_pos->prev != NULL) {
+ while (searched_pos != NULL && searched_sym == NULL && searched_pos->prev != NULL) { //search until the stack header is reached OR until the item is found
     searched_sym = search(name, searched_pos->top_symbol);
     searched_pos = searched_pos->prev;
 }

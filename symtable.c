@@ -32,7 +32,7 @@ int compare_height(table_symbol* one, table_symbol* two)
 
 int get_balance(table_symbol* where)
 {
-    // tree balance calculation
+    // AVL tree branch balance calculation
     if (where == NULL) {
         return 0;
     } else {
@@ -42,7 +42,7 @@ int get_balance(table_symbol* where)
 
 table_symbol* search(char* what, table_symbol* where)
 {
-    // searches for a symbol, returns NULL if nonexistent
+    // searches for a symbol, returns NULL if nonexistent, else pointer
     if (where == NULL) {
         return NULL;
     } else if (strcmp(where->name, what) == 0) {
@@ -126,7 +126,7 @@ table_symbol* insert(table_symbol* where, char* name, bool defined,
         where = new_symbol;
     } else if (strcmp(where->name, name) > 0) { // symbol is in the left child
         where->left = insert(where->left, name, defined, function);
-        if (get_balance(where) == 2) {
+        if (get_balance(where) == 2) { //tree unbalanced, rotation necessary
             if (strcmp(where->left->name, name) > 0) {
                 where = ll_rotate(where);
             } else {
@@ -135,7 +135,7 @@ table_symbol* insert(table_symbol* where, char* name, bool defined,
         }
     } else if (strcmp(where->name, name) < 0) { // symbol is in the right child
         where->right = insert(where->right, name, defined, function);
-        if (get_balance(where) == -2) {
+        if (get_balance(where) == -2) { //tree unbalanced, rotation necessary
             if (strcmp(where->right->name, name) < 0) {
                 where = rr_rotate(where);
             } else {
