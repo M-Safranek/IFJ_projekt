@@ -19,7 +19,7 @@
     \Large \textbf{a (25 \%)} \\
     b (25 \%)\\
     c (25 \%)\\
-    d (25 \%)\\
+    Václav Tomaník, xtomanv00, 282594 (25 \%)\\
     \vspace{0.1em}
     \vspace{\stretch{0.618}}
     \end{center}
@@ -40,10 +40,38 @@
 
 \section{Diagramy}
 \label{sec:diagramy}
-
+\begin{figure}[h]
+    \centering
+    \scalebox{0.6}{\includegraphics{diagram.png}}
+    \caption{Blokové schéma architektury překladače}
+    \label{fig:schema}
+\end{figure}
 
 \section{Popis modulů}
 \label{sec:moduly}
+\subsection{Lexikální analyzátor}
+\label{sub:scanner}
+
+\subsection{Syntaktický analyzátor}
+\label{sub:parser}
+
+\subsection{Sémantícký analyzátor}
+\label{sub:semantics}
+
+\subsection{Tabulka symbolů}
+\label{sub:symtable}
+Tabulka symbolů, skládající se z dvojice \texttt{symtable.c} a \texttt{symtable.h}, obsahuje názvy, typy a jiné důležité informace o proměnných a funkcích v IFJ26 programu. Tyto informace uchovává v podobě AVL stromu pro použití během sémantické analýzy.
+
+\subsection{Stack tabulek symbolů}
+\label{sub:symtablestack}
+Stack (\texttt{symtable\_stack.c} a \texttt{symtable\_stack.h}) hlídá scope programu, který překladač analyzuje a uchovává pro každý scope novou tabulku symbolů aby např. proměnné byly v každém scopu správně definované.
+
+\subsection{Generátor kódu}
+\label{sub:codegen}
+
+\subsection{Hlavní program}
+\label{sub:compiler}
+\texttt{Compiler.c} postupně volá funkce ze syntaktického analyzátoru, sémantického analyzátoru a generátoru kódu a uchovává mezivýsledky aby mohl IFJ26 program být úspěšně přeložen.
 
 \section{Citace}
 \label{sec:citace}
@@ -52,4 +80,3 @@
 \label{sec:ai}
 
 \end{document}
-
