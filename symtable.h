@@ -1,3 +1,9 @@
+/**
+ * @file symtable.h
+ * @brief Header file for the symbol table for the IFJ26 language
+ * @author Václav Tomaník, xtomanv00
+ */
+
 #ifndef SYMTABLE_STRUCT
 #define SYMTABLE_STRUCT
 
@@ -19,29 +25,66 @@ typedef struct symbol {
   int height;             // height for balancing
 } table_symbol;
 
-table_symbol *search(char *what,
-                     table_symbol *where); // searches a symbol in a symtable,
-                                           // if not found, return NULL
-table_symbol *insert(table_symbol *where, char *name, bool defined,
-                     bool function); // inserts a symbol into a table, returns
-                                     // address of inserted symbol
-void delete_tree(table_symbol *top); // deletes an entire symtable
+/**
+ * @brief Searches through a symbol table to find a symbol with a given name. If not found, returns NULL
+ */
+table_symbol *search(char *what, table_symbol *where);
 
-int max(int a, int b); // returns the integer that's higher in value
-int get_height(table_symbol *where); // returns the height value of passed
-                                     // symbol
-int compare_height(table_symbol *one,
-                   table_symbol *two); // compares the height of the symbols
-int get_balance(
-    table_symbol *where); // calculates the balance of two AVL tree branches
-table_symbol *ll_rotate(table_symbol *top); // right rotation
-table_symbol *rr_rotate(table_symbol *top); // left rotation
-table_symbol *lr_rotate(table_symbol *top); // left rotation, then right
-                                            // rotation
-table_symbol *rl_rotate(table_symbol *top); // right rotation, then left
-                                            // rotation
-table_symbol *
-create_symbol(char *name, bool defined,
-              bool function); // symbol creator to be used by insert()
+/**
+ * @brief Inserts a symbol into a symbol table and performs the necessary adjustments. Returns address of the newly created symbol or NULL in case of error.
+ */
+table_symbol *insert(table_symbol *where, char *name, bool defined, bool function);
+
+/**
+ * @brief Deletes a symbol table.
+ */
+void delete_tree(table_symbol *top);
+
+
+
+/**
+ * @brief Returns the higher value.
+ */
+int max(int a, int b);
+
+/**
+ * @brief Returns the height value of a given symbol.
+ */
+int get_height(table_symbol *where);
+
+/**
+ * @brief Compares the height of two given symbols.
+ */
+int compare_height(table_symbol *one, table_symbol *two);
+
+/**
+ * @brief Calculates the balance of two AVL tree branches.
+ */
+int get_balance(table_symbol *where);
+
+/**
+ * @brief Performs a right rotation.
+ */
+table_symbol *ll_rotate(table_symbol *top);
+
+/**
+ * @brief Performs a left rotation.
+ */
+table_symbol *rr_rotate(table_symbol *top);
+
+/**
+ * @brief First performs a left rotation, then performs a right rotation.
+ */
+table_symbol *lr_rotate(table_symbol *top);
+
+/**
+ * @brief First performs a right rotation, then performs a left rotation.
+ */
+table_symbol *rl_rotate(table_symbol *top);
+
+/**
+ * @brief Symbol creator used by insert().
+ */
+table_symbol *create_symbol(char *name, bool defined, bool function);
 
 #endif // SYMTABLE_STRUCT
