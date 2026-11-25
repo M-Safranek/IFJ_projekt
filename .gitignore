@@ -3,3 +3,12 @@ test_table
 codegen
 test_generator
 compiler
+codegen.o
+compiler.o
+ifj26compiler
+parser.o
+Scanner.o
+.gitignore
+semantics.o
+symtable_stack.o
+symtable.o
