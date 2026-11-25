@@ -4,12 +4,12 @@
  * @author Vojtěch Daniel Eliáš, xeliasv00
  * @author Václav Tomaník, xtomanv00
  */
+
 #ifndef SEMANTICS_ANALYZER
 #define SEMANTICS_ANALYZER
 
 #include <stdbool.h>
 #include "parser.h"
-#include "symtable.h"
 #include "symtable_stack.h"
 
 /**
