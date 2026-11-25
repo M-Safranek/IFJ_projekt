@@ -1,4 +1,6 @@
 \documentclass[a4paper, 12pt]{article}
+\usepackage{pdfpages}
+\usepackage{eso-pic}
 \usepackage[text={18cm, 24.2cm}, left=1.8cm, top=1.8cm]{geometry}
 \usepackage{times}
 \usepackage[czech]{babel}
@@ -47,11 +49,40 @@
     \label{fig:schema}
 \end{figure}
 
-\section{Popis modulů}
-\label{sec:moduly}
+
 \subsection{Lexikální analyzátor}
 \label{sub:scanner}
+\clearpage
+\clearpage
+\begingroup
 
+\setlength{\paperwidth}{297mm}
+\setlength{\paperheight}{420mm}
+\pdfpagewidth=\paperwidth
+\pdfpageheight=\paperheight
+
+\includepdf[
+    pages=1,
+    width=287mm,
+    height=410mm,
+    keepaspectratio,
+    pagecommand={
+        \thispagestyle{empty}
+        \AddToShipoutPictureFG*{
+            \AtPageLowerLeft{
+                \put(0,28){
+                    \makebox[\paperwidth][c]{\thepage}
+                }
+            }
+        }
+    }
+]{iFJ.drawio (2).pdf}
+
+\clearpage
+\endgroup
+
+\pdfpagewidth=\paperwidth
+\pdfpageheight=\paperheight
 \subsection{Syntaktický analyzátor}
 \label{sub:parser}
 
