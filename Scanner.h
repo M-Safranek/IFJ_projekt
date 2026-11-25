@@ -1,6 +1,10 @@
-/*
- * Header file for the Scanner for the IFJ26 language.
- * Author: Daniel Vrba
+/**
+ * @file Scanner.h
+ * @brief Lexical analyzer header for the IFJ26 language.
+ * @author Daniel Vrba
+ *
+ * @details Defines the scanner structure, token types,
+ * finite automaton states and functions used for lexical analysis.
  */
 
 #ifndef SCANNER_H
@@ -8,39 +12,68 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define MAX_INDENT_LEVELS 1024
 
+/**
+ * @brief Dynamically allocated buffer that holds the current attr as its being
+ * read
+ */
 typedef struct {
   char *data;
   unsigned long attr_length;
   unsigned long capacity;
 } attr;
 
+/**
+ * @brief Scanner struct that represents the state the scanner is in
+ *
+ */
 typedef struct {
-  FILE *file;
+  FILE *file; /**< input file(gets set to stdin in main for this project)*/
 
-  attr current_attr;
+  attr current_attr; /**< holds the current_attr, is altered while reading the
+                        input stream */
 
-  int line_number;
+  int line_number; /**< holds the line count in the input stream*/
 
-  bool has_newline;
-  int block_comment_depth;
-  bool after_block_comment_check_flag;
-  bool count_indent_flag;
-  int paren_depth;
-  int is_running;
-  bool comment_at_line_start;
-  bool last_token_was_eol;
+  bool has_newline; /**< used in the comment states to represent whether a
+                       comment is multiline or oneline*/
+  int block_comment_depth; /**< represents block_comment_depth when in a
+                              multiline comment*/
 
-  int pending_dedents;
+  bool count_indent_flag; /**< states, whether to count indent on the next token
+                             call or not, set in start when reading a newline*/
 
-  long unsigned int indent_stack[MAX_INDENT_LEVELS];
-  unsigned int indent_top;
+  int paren_depth; /**< count the paren depth in ()*/
+
+  int is_running; /**< used as while loop condition in get_next_token()  while
+                     (scanner->is_running). is set to false in create_token*/
+
+  bool comment_at_line_start; /**< remembers whether a multiline comment started
+a line or not is later used to decide whether to emit a newline or not */
+
+  bool last_token_was_eol; /**< remembers whether the last token was a newline
+                              or not, used to detect files without a trailing
+                              newline */
+
+  int pending_dedents; /**< remembers the amount of dedents that are needed to
+                          emit(used at EOF) */
+
+  long unsigned int indent_stack[MAX_INDENT_LEVELS]; /**< indent stack*/
+  unsigned int indent_top;                           /**< top used index*/
 } Scanner;
 
+/**
+ * @brief Types of tokens recognized by the lexical analyzer.
+ *
+ * @details Includes keywords, literals, operators, punctuation,
+ * identifiers and indentation-related tokens.
+ */
 typedef enum {
   // keywords
   T_DEF,
@@ -98,6 +131,10 @@ typedef enum {
   T_EOF
 } TokenType;
 
+/**
+ * @brief The states of the lexical analyzer.
+ *
+ */
 typedef enum {
   START,
 
@@ -166,23 +203,67 @@ typedef enum {
 
 } State;
 
-#include <stdint.h>
-
+/**
+ * @brief union that represents a token's value
+ *
+ */
 typedef union {
   int32_t int_value;
   double double_value;
   char *string_value;
 } TokenValue;
 
+/**
+ * @brief token struct
+ *
+ */
 typedef struct {
   TokenType type;
   int line;
   TokenValue attr;
 } Token;
 
+/**
+ * @brief Initializes the lexical analyzer.
+ *
+ * @param source Input source file to be analyzed.
+ * @return Initialized scanner structure.
+ */
 Scanner scanner_init(FILE *source);
+
+/**
+ * @brief Destroys the lexical analyzer state(mainly
+ * free(scanner->current_attr.data);)
+ *
+ * @param s A pointer to the scanner
+ *
+ */
 void scanner_destroy(Scanner *s);
+
+/**
+ * @brief returns the next token from the input stream
+ *
+ * @param s a pointer to the scanner state
+ * @return The next token
+ */
 Token get_next_token(Scanner *s);
+
+/**
+ * @brief creates a token and sets is_running to false to stop the main while
+ * loop in get_next_token()
+ *
+ * @param new_type  the token type
+ * @param current_token  a pointer to the current_token a pointer to the
+ * current_token(in get_next_token())
+ * @param scanner a pointer the scanner state
+ */
 void create_token(TokenType new_type, Token *current_token, Scanner *scanner);
+
+/**
+ * @brief destroys a token if needed ( free(token->attr.string_value);
+    token->attr.string_value = NULL;)
+ *
+ * @param token A pointer to the token
+ */
 void token_destroy(Token *token);
 #endif

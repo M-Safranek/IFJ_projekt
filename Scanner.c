@@ -1,7 +1,7 @@
-/*
- * Scanner for the IFJ26 language.
- * Reads source code and returns lexical tokens.
- * Author: Daniel Vrba
+/**
+ * @file Scanner.c
+ * @brief Lexical analyzer implementation for the IFJ26 language.
+ * @author Daniel Vrba
  */
 
 #include "Scanner.h"
@@ -28,7 +28,6 @@ Scanner scanner_init(FILE *source) {
 
   scanner.has_newline = false;
   scanner.block_comment_depth = 0;
-  scanner.after_block_comment_check_flag = false;
   scanner.count_indent_flag = true;
   scanner.comment_at_line_start = false;
   scanner.last_token_was_eol = true;
@@ -191,11 +190,6 @@ Token get_next_token(Scanner *scanner) {
         scanner->current_attr.capacity = new_capacity;
       }
       scanner->current_attr.data[scanner->current_attr.attr_length++] = (char)c;
-    }
-
-    if (scanner->after_block_comment_check_flag) {
-      state = ML_COMMENT_END_CHECK;
-      scanner->after_block_comment_check_flag = false;
     }
 
     if (scanner->count_indent_flag) {
@@ -744,10 +738,14 @@ Token get_next_token(Scanner *scanner) {
       if (c == EOF) {
         state = START;
       } else if (c == '\n') {
-        forget_char(c, scanner); // START emits the EOL, bumps line_number, sets
-                                 // count_indent_flag
-        state = START;
+        if (scanner->comment_at_line_start) {
+          create_token(T_EOL, &current_token, scanner);
+        } else {
+          forget_char(c, scanner); // START emits the EOL, bumps line_number,
+                                   // sets count_indent_flag
 
+          state = START;
+        }
       }
 
       else if (isspace((unsigned char)c)) {
@@ -1040,44 +1038,3 @@ void forget_char(char c, Scanner *scanner) {
   ungetc(c, scanner->file);
   scanner->current_attr.attr_length -= 1;
 }
-
-/*
-int main(void) {
-  FILE *test_file = fopen("id_test", "r");
-
-  if (test_file == NULL) {
-    return -1;
-  }
-
-  Scanner scanner = scanner_init(test_file);
-  if (scanner.current_attr.data == NULL) {
-    fprintf(stderr, "scanner: out of memory\n");
-    fclose(test_file);
-    return 99;
-  }
-
-  Token i = get_next_token(&scanner);
-  while (i.type != T_EOF) {
-
-    if (i.type == T_IDENTIFIER || i.type == T_STRING) {
-      printf("type=%d, attr=[%s] line: %d\n", i.type, i.attr.string_value,
-             i.line);
-    } else if (i.type == T_INT) {
-      printf("type=%d, attr=[%d] line: %d\n", i.type, i.attr.int_value, i.line);
-    } else if (i.type == T_DOUBLE) {
-      printf("type=%d, attr=[%f] line: %d\n", i.type, i.attr.double_value,
-             i.line);
-    } else {
-      printf("type=%d, line: %d\n", i.type, i.line);
-    }
-
-    token_destroy(&i);
-    i = get_next_token(&scanner);
-  }
-  printf("type=%d\n", i.type);
-
-  scanner_destroy(&scanner);
-  fclose(test_file);
-  return 0;
-}
-*/
