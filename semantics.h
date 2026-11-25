@@ -37,8 +37,19 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func);
  */
 bool func_has_return(Statement *stmt);
 
+/**
+ * @brief Adds all function definitions from code to symbol table.
+ */
 void register_functions(symtable_stack *stack, Func *analyzed_code);
+
+/**
+ * @brief Analyzes the contents of previously registered functions.
+ */
 void analyze_functions(symtable_stack *stack, Func *analyzed_code);
+
+/**
+ * @brief Edits the AST table to be suitable for code generation.
+ */
 Func *build_table(Func *analyzed_code);
 
 #endif // SEMANTICS_ANALYZER
