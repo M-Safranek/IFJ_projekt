@@ -1,3 +1,13 @@
+/**
+ * @file semantics.c
+ * @brief Semantic analyser for the IFJ26 language
+ * @details Semantic validation, type checking, scope names for variables in the AST.
+ * @author Václav Tomaník, xtomanv00
+ * @author Vojtěch Daniel Eliáš, xeliasv00
+ * @author Daniel Vrba
+ * @author Martin Šafránek
+ */
+
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
@@ -406,7 +416,7 @@ void analyze_body(symtable_stack *stack, Statement *func_body, Func *func)
     }
     return;
 }
-// checks if function has return
+
 bool func_has_return(Statement *stmt)
 {
     if (!stmt)
@@ -551,9 +561,9 @@ void analyze_functions(symtable_stack *stack, Func *analyzed_code)
     }
 }
 
-Func *build_table(Func* analyzed_code)
+Func *build_table(Func *analyzed_code)
 {
-    //Func *analyzed_code = parse_program(); // AST from parser
+    // Func *analyzed_code = parse_program(); // AST from parser
     if (analyzed_code == NULL)
     {
         exit(3); // Empty code with no @main
@@ -565,7 +575,7 @@ Func *build_table(Func* analyzed_code)
     register_functions(stack, analyzed_code);
     analyze_functions(stack, analyzed_code);
 
-    //delete_tree(stack->top_symbol);
+    // delete_tree(stack->top_symbol);
     sym_delete_stack(stack);
 
     return analyzed_code;
