@@ -1,8 +1,8 @@
-/*
- * Parser for the IFJ26 language.
- * Checks syntax of the code from tokens given by Scanner.c
- * and makes an AST tree
- * Author: Martin Šafránek
+/**
+ * @file parser.c
+ * @brief Parser for the IFJ26 language.
+ * Checks syntax of the code from tokens given by Scanner.c and makes an AST tree
+ * @author Martin Šafránek, xsafram00
  */
 
 #define _POSIX_C_SOURCE 200809L // For strdup
