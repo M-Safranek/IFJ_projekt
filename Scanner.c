@@ -31,7 +31,7 @@ Scanner scanner_init(FILE *source) {
   scanner.after_block_comment_check_flag = false;
   scanner.count_indent_flag = true;
   scanner.comment_at_line_start = false;
-  scanner.last_token_was_eol = false;
+  scanner.last_token_was_eol = true;
 
   scanner.paren_depth = 0;
   scanner.pending_dedents = 0;
@@ -262,6 +262,7 @@ Token get_next_token(Scanner *scanner) {
         create_token(T_AT, &current_token, scanner);
       else if (c == '\n') {
         scanner->line_number += 1;
+        scanner->current_attr.attr_length = 0;
         if (scanner->paren_depth == 0)
           create_token(T_EOL, &current_token, scanner);
         scanner->count_indent_flag = true;
@@ -491,7 +492,7 @@ Token get_next_token(Scanner *scanner) {
         scanner->current_attr.attr_length = 1;
       }
 
-      else if (c >= 0 && c <= 127) {
+      else if (c >= 0 && c <= 127 && c != '\n') {
         state = STRING;
         scanner->current_attr.data[0] = scanner->current_attr.data[1];
         scanner->current_attr.attr_length = 1;
