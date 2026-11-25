@@ -31,6 +31,7 @@ Scanner scanner_init(FILE *source) {
   scanner.after_block_comment_check_flag = false;
   scanner.count_indent_flag = true;
   scanner.comment_at_line_start = false;
+  scanner.last_token_was_eol = false;
 
   scanner.paren_depth = 0;
   scanner.pending_dedents = 0;
@@ -265,7 +266,11 @@ Token get_next_token(Scanner *scanner) {
           create_token(T_EOL, &current_token, scanner);
         scanner->count_indent_flag = true;
       } else if (c == EOF) {
-        if (scanner->indent_top > 0) {
+        if (!scanner->last_token_was_eol) {
+          create_token(T_EOL, &current_token, scanner);
+        }
+
+        else if (scanner->indent_top > 0) {
           scanner->pending_dedents = scanner->indent_top - 1;
           scanner->indent_top = 0;
           create_token(T_DEDENT, &current_token, scanner);
@@ -498,8 +503,10 @@ Token get_next_token(Scanner *scanner) {
       break;
 
     case DOUBLE_DOUBLE_QUOTE:
-      if (c == '"')
+      if (c == '"') {
         state = MULTILINE_STRING;
+        scanner->current_attr.attr_length = 0;
+      }
 
       else {
         scanner->current_attr.attr_length = 0;
@@ -592,8 +599,10 @@ Token get_next_token(Scanner *scanner) {
       break;
 
     case MULTILINE_STRING_END_FINAL:
-      if (c == '"')
+      if (c == '"') {
+        scanner->current_attr.attr_length -= 3;
         create_token(T_STRING, &current_token, scanner);
+      }
 
       else if (c >= 0 && c <= 127) {
 
@@ -660,13 +669,9 @@ Token get_next_token(Scanner *scanner) {
        * ========================== */
 
     case L_COMMENT:
-      if (c == '\n') {
+      if (c == '\n' || c == EOF) {
         forget_char(c, scanner);
         state = START;
-      }
-
-      else if (c == EOF) {
-        create_token(T_EOF, &current_token, scanner);
       }
       break;
 
@@ -736,7 +741,7 @@ Token get_next_token(Scanner *scanner) {
 
     case ML_COMMENT_END_CHECK:
       if (c == EOF) {
-        create_token(T_EOF, &current_token, scanner);
+        state = START;
       } else if (c == '\n') {
         forget_char(c, scanner); // START emits the EOL, bumps line_number, sets
                                  // count_indent_flag
@@ -888,6 +893,11 @@ Token get_next_token(Scanner *scanner) {
         state = ML_COMMENT;
       }
 
+      else if (c == '/') {
+        scanner->current_attr.attr_length--;
+        state = L_START_ML_COMMENT_SLASH;
+      }
+
       else {
         // Both the previous slash and this character are comment content.
         scanner->current_attr.attr_length -= 2;
@@ -1003,7 +1013,6 @@ void create_token(TokenType new_type, Token *current_token, Scanner *scanner) {
       current_token->type = T_ERROR;
       break;
     }
-
     strcpy(current_token->attr.string_value, scanner->current_attr.data);
     break;
   }
@@ -1012,6 +1021,11 @@ void create_token(TokenType new_type, Token *current_token, Scanner *scanner) {
     // Keywords, punctuation, EOF, INDENT, etc.
     // Don't need a dynamically allocated value.
     break;
+  }
+  if (new_type == T_EOL) {
+    scanner->last_token_was_eol = true;
+  } else if (new_type != T_DEDENT) {
+    scanner->last_token_was_eol = false;
   }
 
   scanner->is_running = 0;

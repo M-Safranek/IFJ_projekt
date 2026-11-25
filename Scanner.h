@@ -33,6 +33,7 @@ typedef struct {
   int paren_depth;
   int is_running;
   bool comment_at_line_start;
+  bool last_token_was_eol;
 
   int pending_dedents;
 
