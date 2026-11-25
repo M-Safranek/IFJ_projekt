@@ -1,8 +1,9 @@
-/*
-* Code generator for the IF26 language
-* Traversis the AST and generates the final IFJcode26
-* Author Vojtěch Daniel Eliáš
-*/
+/**
+ * @file codegen.c
+ * @brief Code generator for the IF26 language
+ * @details Traversis the AST and generates the final IFJcode26
+ * @author Vojtěch Daniel Eliáš, xeliasv00
+ */
 #include <stdio.h>
 #include "codegen.h"
 #include <stdbool.h>
@@ -13,173 +14,195 @@ int lbl_counter = 0;
 Func *program_root = NULL;
 static DataType cur_return_type;
 
-void print_error(int error_code, char *msg) {
-    fprintf(stderr, "Error %d: %s\n ", error_code, msg);
-    exit(error_code);
-}
-
-// Convert integer on top of data stack to a float
-void codegen_int_to_double(DataType from, DataType to) {
-    if(from == D_INT && to == D_DOUBLE) {
+void codegen_int_to_double(DataType from, DataType to)
+{
+    if (from == D_INT && to == D_DOUBLE)
+    {
         printf("INT2FLOATS\n");
     }
 }
 
-// Predeclare variables in while cycle
-void codegen_predeclare_while_var(Statement *stmt) {
-    for(Statement *curr_stmt = stmt; curr_stmt != NULL; curr_stmt = curr_stmt->next) {
-        if(curr_stmt->kind == S_VAR_DEF) {
+void codegen_predeclare_while_var(Statement *stmt)
+{
+    for (Statement *curr_stmt = stmt; curr_stmt != NULL; curr_stmt = curr_stmt->next)
+    {
+        if (curr_stmt->kind == S_VAR_DEF)
+        {
             printf("DEFVAR LF@%s\n", curr_stmt->name);
-        } else if(curr_stmt->kind == S_IF) {
+        }
+        else if (curr_stmt->kind == S_IF)
+        {
             codegen_predeclare_while_var(curr_stmt->body);
             codegen_predeclare_while_var(curr_stmt->else_body);
-        } else if(curr_stmt->kind == S_WHILE) {
+        }
+        else if (curr_stmt->kind == S_WHILE)
+        {
             codegen_predeclare_while_var(curr_stmt->body);
         }
     }
 }
 
-// Pushes a string literal to top of data stack with correct escaped special characters
-void codegen_print_string_literal(const char *str) {
+void codegen_print_string_literal(const char *str)
+{
     printf("PUSHS string@");
-    for(int idx = 0; str[idx] != '\0'; idx++) {
+    for (int idx = 0; str[idx] != '\0'; idx++)
+    {
         unsigned char c = (unsigned char)str[idx];
-        if(c <= 32 || c == '#'  || c == '\\') {
+        if (c <= 32 || c == '#' || c == '\\')
+        {
             printf("\\%03d", c);
-        } else {
+        }
+        else
+        {
             printf("%c", c);
         }
     }
     printf("\n");
 }
 
-// Concat two strings on top of data stack
-void codegen_print_concat(void) {
+void codegen_print_concat(void)
+{
     printf("POPS GF@concat2\n");
     printf("POPS GF@concat1\n");
     printf("CONCAT GF@concat_subStr_result GF@concat1 GF@concat2\n");
     printf("PUSHS GF@concat_subStr_result\n");
 }
 
-// Generates code for binary operations
-void codegen_print_binary(Expression *expr) {
+void codegen_print_binary(Expression *expr)
+{
     DataType lt = expr->left->type;
     DataType rt = expr->right->type;
     bool is_double = false;
-    if(lt == D_DOUBLE || rt == D_DOUBLE){
+    if (lt == D_DOUBLE || rt == D_DOUBLE)
+    {
         is_double = true;
     }
     codegen_print_expr(expr->left);
-    if(is_double) {
+    if (is_double)
+    {
         codegen_int_to_double(lt, D_DOUBLE);
     }
     codegen_print_expr(expr->right);
-    if(is_double) {
+    if (is_double)
+    {
         codegen_int_to_double(rt, D_DOUBLE);
     }
-    switch(expr->op) {
+    switch (expr->op)
+    {
 
-        case O_PLUS:
-            if(lt == D_STRING && rt == D_STRING) {
-                codegen_print_concat();    
-            } else {
-                printf("ADDS\n");
-            }
-            break;
+    case O_PLUS:
+        if (lt == D_STRING && rt == D_STRING)
+        {
+            codegen_print_concat();
+        }
+        else
+        {
+            printf("ADDS\n");
+        }
+        break;
 
-        case O_MINUS:
-            printf("SUBS\n");
-            break;
+    case O_MINUS:
+        printf("SUBS\n");
+        break;
 
-        case O_MULTIPLY:
-            printf("MULS\n");
-            break;
-        
-        case O_DIVIDE:
-            if(is_double) {
-                printf("DIVS\n");
-            } else {
-                printf("IDIVS\n");
-            }
-            break;
+    case O_MULTIPLY:
+        printf("MULS\n");
+        break;
 
-        case O_LESS:
-            printf("LTS\n");
-            break;
+    case O_DIVIDE:
+        if (is_double)
+        {
+            printf("DIVS\n");
+        }
+        else
+        {
+            printf("IDIVS\n");
+        }
+        break;
 
-        case O_LESS_EQUAL:
-            printf("GTS\nNOTS\n");
-            break;
+    case O_LESS:
+        printf("LTS\n");
+        break;
 
-        case O_GREATER:
-            printf("GTS\n");
-            break;
+    case O_LESS_EQUAL:
+        printf("GTS\nNOTS\n");
+        break;
 
-        case O_GREATER_EQUAL:
-            printf("LTS\nNOTS\n");
-            break;
+    case O_GREATER:
+        printf("GTS\n");
+        break;
 
-        case O_EQUAL:
-            printf("EQS\n");
-            break;
+    case O_GREATER_EQUAL:
+        printf("LTS\nNOTS\n");
+        break;
 
-        case O_EQUAL_EQUAL:
-            printf("EQS\n");
-            break;
-        case O_NOT_EQUAL:
-            printf("EQS\nNOTS\n");
-            break;
-        default:
-            break;
+    case O_EQUAL:
+        printf("EQS\n");
+        break;
+
+    case O_EQUAL_EQUAL:
+        printf("EQS\n");
+        break;
+    case O_NOT_EQUAL:
+        printf("EQS\nNOTS\n");
+        break;
+    default:
+        break;
     }
 }
 
-// Pushes function call arguments onto the data stack
-void codegen_push_param(Func *f, Expression *arg) {
+void codegen_push_param(Func *f, Expression *arg)
+{
     int idx = 0;
-    for(Expression *curr = arg; curr != NULL; curr = curr->next) {
+    for (Expression *curr = arg; curr != NULL; curr = curr->next)
+    {
         codegen_print_expr(curr);
-        if(f != NULL && idx < f->param_count) {
+        if (f != NULL && idx < f->param_count)
+        {
             codegen_int_to_double(curr->type, f->param_types[idx]);
         }
         idx++;
     }
 }
 
-// Pops arguments from the data stack in reverse order onto the TF
-void codegen_pop_param(Func *f, int argc) {
-    for(int i = argc - 1; i >= 0; i--) {
+void codegen_pop_param(Func *f, int argc)
+{
+    for (int i = argc - 1; i >= 0; i--)
+    {
         printf("DEFVAR TF@%s\n", f->param_names[i]);
         printf("POPS TF@%s\n", f->param_names[i]);
     }
 }
 
-// Searches the AST tree for user define function by name
-Func *codegen_find_func(const char *name) {
-    for(Func *curr_f = program_root; curr_f != NULL; curr_f = curr_f->next) {
-        if(strcmp(curr_f->func_name, name) == 0) {
+Func *codegen_find_func(const char *name)
+{
+    for (Func *curr_f = program_root; curr_f != NULL; curr_f = curr_f->next)
+    {
+        if (strcmp(curr_f->func_name, name) == 0)
+        {
             return curr_f;
         }
     }
     return NULL;
-} 
+}
 
-// Evaluates if the given function is builtin
-bool codegen_is_builtin(const char *func_name) {
+bool codegen_is_builtin(const char *func_name)
+{
     static const char *names[] = {
         "print", "readInt", "readDouble", "readLine", "strLength",
-        "ord", "chr", "toInt", "toStr", "subStr", NULL
-    };
-    for(int idx = 0; names[idx] != NULL; idx++) {
-        if(strcmp(func_name, names[idx]) == 0) {
+        "ord", "chr", "toInt", "toStr", "subStr", NULL};
+    for (int idx = 0; names[idx] != NULL; idx++)
+    {
+        if (strcmp(func_name, names[idx]) == 0)
+        {
             return true;
-        } 
+        }
     }
     return false;
 }
 
-// Implementation of builtin functions IFJ26
-void codegen_print_builtin(void) {
+void codegen_print_builtin(void)
+{
     // print
     printf("LABEL $builtin_print\n");
     printf("PUSHFRAME\n");
@@ -256,14 +279,14 @@ void codegen_print_builtin(void) {
     printf("POPFRAME\n");
     printf("RETURN\n");
 
-    //toInt
+    // toInt
     printf("LABEL $builtin_toInt\n");
     printf("PUSHFRAME\n");
     printf("FLOAT2INT GF@%%retval LF@arg1\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
 
-    //strLength
+    // strLength
     printf("LABEL $builtin_strLength\n");
     printf("PUSHFRAME\n");
     printf("STRLEN GF@%%retval LF@arg1\n");
@@ -334,27 +357,31 @@ void codegen_print_builtin(void) {
     printf("RETURN\n");
 }
 
-// Generates code for bultin and user defined function calls
-void codegen_print_call(Expression *expr) {
+void codegen_print_call(Expression *expr)
+{
 
-    if(codegen_is_builtin(expr->name)) {
+    if (codegen_is_builtin(expr->name))
+    {
         int argc = 0;
-        for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+        for (Expression *arg = expr->args; arg != NULL; arg = arg->next)
+        {
             argc++;
         }
-        
-        for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+
+        for (Expression *arg = expr->args; arg != NULL; arg = arg->next)
+        {
             codegen_print_expr(arg);
-            if(strcmp(expr->name, "toInt") == 0 && arg->type == D_INT) {
-                codegen_int_to_double(D_INT,D_DOUBLE);
+            if (strcmp(expr->name, "toInt") == 0 && arg->type == D_INT)
+            {
+                codegen_int_to_double(D_INT, D_DOUBLE);
             }
         }
-        
+
         printf("CREATEFRAME\n");
-        for(int idx = argc; idx >= 1; idx--) {
+        for (int idx = argc; idx >= 1; idx--)
+        {
             printf("DEFVAR TF@arg%d\n", idx);
             printf("POPS TF@arg%d\n", idx);
-
         }
         printf("CALL $builtin_%s\n", expr->name);
         printf("PUSHS GF@%%retval\n");
@@ -362,185 +389,211 @@ void codegen_print_call(Expression *expr) {
     }
 
     Func *f = codegen_find_func(expr->name);
-    if(f == NULL) {
-        print_error(3, "calling undefined function");
-    }
 
     int argc = 0;
-    for(Expression *arg = expr->args; arg != NULL; arg = arg->next) {
+    for (Expression *arg = expr->args; arg != NULL; arg = arg->next)
+    {
         argc++;
     }
-
-    if(argc != f->param_count) {
-        print_error(5, "wrong number of arguments when calling the function");
-    }
-
     codegen_push_param(f, expr->args);
 
     printf("CREATEFRAME\n");
     codegen_pop_param(f, argc);
 
     printf("CALL $F_%s\n", f->func_name);
-    if(f->return_type == D_UNIT) {
+    if (f->return_type == D_UNIT)
+    {
         printf("PUSHS nil@nil\n");
-    } else {
+    }
+    else
+    {
         printf("PUSHS GF@%%retval\n");
     }
 }
-// Post-order traversal of an expression node and pushes onto data stack
-void codegen_print_expr(Expression *expr) {
-    if(!expr) return;
-    switch (expr->kind) {
 
-        case E_INT:
-            printf("PUSHS int@%d\n",expr->int_val);
-            break;
+void codegen_print_expr(Expression *expr)
+{
+    if (!expr)
+        return;
+    switch (expr->kind)
+    {
 
-        case E_DOUBLE:
-            printf("PUSHS float@%a\n",expr->double_val);
-            break;
+    case E_INT:
+        printf("PUSHS int@%d\n", expr->int_val);
+        break;
 
-        case E_STRING:
-            codegen_print_string_literal(expr->string_val);
-            break;
-        case E_UNIT:
-            printf("PUSHS nil@nil\n");
-            break;
-        case E_VAR:
-            printf("PUSHS LF@%s\n",expr->name);
-            break;
+    case E_DOUBLE:
+        printf("PUSHS float@%a\n", expr->double_val);
+        break;
 
-        case E_BINARY:
-            codegen_print_binary(expr);
-            break;
+    case E_STRING:
+        codegen_print_string_literal(expr->string_val);
+        break;
 
-        case E_CALL:
-            codegen_print_call(expr);
-            break;
+    case E_UNIT:
+        printf("PUSHS nil@nil\n");
+        break;
 
-        case E_UNARY:
-            if(expr->op == O_MINUS) {
-                if(expr->left->type == D_DOUBLE) {
-                    printf("PUSHS float@0x0p+0\n");
-                } else {
-                    printf("PUSHS int@0\n");
-                }
-                codegen_print_expr(expr->left);
-                printf("SUBS\n");
-            } else {
-                codegen_print_expr(expr->left);
+    case E_VAR:
+        printf("PUSHS LF@%s\n", expr->name);
+        break;
+
+    case E_BINARY:
+        codegen_print_binary(expr);
+        break;
+
+    case E_CALL:
+        codegen_print_call(expr);
+        break;
+
+    case E_UNARY:
+        if (expr->op == O_MINUS)
+        {
+            if (expr->left->type == D_DOUBLE)
+            {
+                printf("PUSHS float@0x0p+0\n");
             }
-            break;
+            else
+            {
+                printf("PUSHS int@0\n");
+            }
+            codegen_print_expr(expr->left);
+            printf("SUBS\n");
+        }
+        else
+        {
+            codegen_print_expr(expr->left);
+        }
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 }
 
-// Generate sequence of statetemets within one block
-void codegen_print_body(Statement *stmt, bool is_tail, bool in_while) {
-    for(Statement *curr = stmt; curr != NULL; curr = curr->next){
+void codegen_print_body(Statement *stmt, bool is_tail, bool in_while)
+{
+    for (Statement *curr = stmt; curr != NULL; curr = curr->next)
+    {
         codegen_print_stmt(curr, is_tail && curr->next == NULL, in_while);
     }
 }
-// Generates code for one statement
-void codegen_print_stmt(Statement *stmt, bool is_tail, bool in_while) {
-    if(!stmt) return;
 
-    switch(stmt->kind) {
-        case S_VAR_DEF:
-            codegen_print_expr(stmt->expr);
-            codegen_int_to_double(stmt->expr->type, stmt->type);
-            if(in_while == false) {
-               printf("DEFVAR LF@%s\n", stmt->name); 
-            }
-            printf("POPS LF@%s\n", stmt->name);
-            break;  
+void codegen_print_stmt(Statement *stmt, bool is_tail, bool in_while)
+{
+    if (!stmt)
+        return;
 
-        case S_ASSIGN:
-            codegen_print_expr(stmt->expr);
-            codegen_int_to_double(stmt->expr->type, stmt->type);
-            printf("POPS LF@%s\n", stmt->name);
-            break;
-        
-        case S_RETURN:
-            if(stmt->expr) {
-                codegen_print_expr(stmt->expr);
-                codegen_int_to_double(stmt->expr->type, cur_return_type);
-                if(cur_return_type != D_UNIT) {
-                    printf("POPS GF@%%retval\n");
-                } else {
-                    printf("CLEARS\n");
-                }
-            } else if(cur_return_type == D_UNIT) {
-                printf("PUSHS nil@nil\nPOPS GF@%%retval\n");
-            }
-            printf("POPFRAME\n");
-            printf("RETURN\n");
-            break;
+    switch (stmt->kind)
+    {
+    case S_VAR_DEF:
+        codegen_print_expr(stmt->expr);
+        codegen_int_to_double(stmt->expr->type, stmt->type);
+        if (in_while == false)
+        {
+            printf("DEFVAR LF@%s\n", stmt->name);
+        }
+        printf("POPS LF@%s\n", stmt->name);
+        break;
 
-        case S_EXPR:
+    case S_ASSIGN:
+        codegen_print_expr(stmt->expr);
+        codegen_int_to_double(stmt->expr->type, stmt->type);
+        printf("POPS LF@%s\n", stmt->name);
+        break;
+
+    case S_RETURN:
+        if (stmt->expr)
+        {
             codegen_print_expr(stmt->expr);
-            if(is_tail && cur_return_type != D_UNIT) {
-                codegen_int_to_double(stmt->expr->type, cur_return_type);
+            codegen_int_to_double(stmt->expr->type, cur_return_type);
+            if (cur_return_type != D_UNIT)
+            {
                 printf("POPS GF@%%retval\n");
-            } else {
+            }
+            else
+            {
                 printf("CLEARS\n");
             }
-            break;
-
-        case S_IF: {
-            int lbl_else = lbl_counter++;
-            int lbl_end = lbl_counter++;
-            codegen_print_expr(stmt->expr);
-            printf("PUSHS bool@false\n");
-            printf("JUMPIFEQS $L_%d\n", lbl_else);
-            codegen_print_body(stmt->body, is_tail, in_while);
-            printf("JUMP $L_%d\n", lbl_end);
-            printf("LABEL $L_%d\n", lbl_else);
-            codegen_print_body(stmt->else_body, is_tail, in_while);
-            printf("LABEL $L_%d\n", lbl_end);
-            break;
         }
-
-        case S_WHILE: {
-            int lbl_start = lbl_counter++;
-            int lbl_end = lbl_counter++;
-            if(in_while == false) {
-                 codegen_predeclare_while_var(stmt->body);
-            }
-            printf("LABEL $L_%d\n", lbl_start);
-            codegen_print_expr(stmt->expr);
-            printf("PUSHS bool@false\n");
-            printf("JUMPIFEQS $L_%d\n", lbl_end);
-            codegen_print_body(stmt->body, false, true);
-            printf("JUMP $L_%d\n", lbl_start);
-            printf("LABEL $L_%d\n", lbl_end);
-            break;
+        else if (cur_return_type == D_UNIT)
+        {
+            printf("PUSHS nil@nil\nPOPS GF@%%retval\n");
         }
-        default:
-            break;
+        printf("POPFRAME\n");
+        printf("RETURN\n");
+        break;
+
+    case S_EXPR:
+        codegen_print_expr(stmt->expr);
+        if (is_tail && cur_return_type != D_UNIT)
+        {
+            codegen_int_to_double(stmt->expr->type, cur_return_type);
+            printf("POPS GF@%%retval\n");
+        }
+        else
+        {
+            printf("CLEARS\n");
+        }
+        break;
+
+    case S_IF:
+    {
+        int lbl_else = lbl_counter++;
+        int lbl_end = lbl_counter++;
+        codegen_print_expr(stmt->expr);
+        printf("PUSHS bool@false\n");
+        printf("JUMPIFEQS $L_%d\n", lbl_else);
+        codegen_print_body(stmt->body, is_tail, in_while);
+        printf("JUMP $L_%d\n", lbl_end);
+        printf("LABEL $L_%d\n", lbl_else);
+        codegen_print_body(stmt->else_body, is_tail, in_while);
+        printf("LABEL $L_%d\n", lbl_end);
+        break;
+    }
+
+    case S_WHILE:
+    {
+        int lbl_start = lbl_counter++;
+        int lbl_end = lbl_counter++;
+        if (in_while == false)
+        {
+            codegen_predeclare_while_var(stmt->body);
+        }
+        printf("LABEL $L_%d\n", lbl_start);
+        codegen_print_expr(stmt->expr);
+        printf("PUSHS bool@false\n");
+        printf("JUMPIFEQS $L_%d\n", lbl_end);
+        codegen_print_body(stmt->body, false, true);
+        printf("JUMP $L_%d\n", lbl_start);
+        printf("LABEL $L_%d\n", lbl_end);
+        break;
+    }
+    default:
+        break;
     }
 }
 
-// Generates label, frame, body and return of a function
-void codegen_print_func(Func *f) {
+void codegen_print_func(Func *f)
+{
     cur_return_type = f->return_type;
     printf("LABEL $F_%s\n", f->func_name);
     printf("PUSHFRAME\n");
-    
+
     codegen_print_body(f->body, true, false);
     printf("POPFRAME\n");
     printf("RETURN\n");
 }
 
-// Entry point for the codegen
-void codegen_print(Func *ast_root) {
+void codegen_print(Func *ast_root)
+{
     program_root = ast_root;
     Func *main_f = NULL;
-    for(Func *f = ast_root; f != NULL; f = f->next) {
-        if(f->is_main) {
-            main_f =f;
+    for (Func *f = ast_root; f != NULL; f = f->next)
+    {
+        if (f->is_main)
+        {
+            main_f = f;
             break;
         }
     }
@@ -554,8 +607,9 @@ void codegen_print(Func *ast_root) {
     printf("JUMP $main\n");
 
     codegen_print_builtin();
-    
-    for(Func *f = ast_root; f != NULL; f = f->next) {
+
+    for (Func *f = ast_root; f != NULL; f = f->next)
+    {
         codegen_print_func(f);
     }
 
@@ -563,7 +617,5 @@ void codegen_print(Func *ast_root) {
     printf("CREATEFRAME\n");
     printf("CALL $F_%s\n", main_f->func_name);
 
-    printf("EXIT int@0\n");    
+    printf("EXIT int@0\n");
 }
-
-
