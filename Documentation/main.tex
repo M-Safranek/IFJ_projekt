@@ -124,23 +124,38 @@ Styl formátování jsme vybrali clang-format s~výchozím nastavením.
 
 \subsection{Tabulka symbolů}
 \label{sub:symtable}
-Tabulka symbolů, skládající se z dvojice \texttt{symtable.c} a \texttt{symtable.h}, obsahuje názvy, typy a jiné důležité informace o proměnných a funkcích v IFJ26 programu. Tyto informace uchovává v podobě AVL stromu pro použití během sémantické analýzy.
+Tabulka symbolů, skládající se z dvojice \texttt{symtable.c} a \texttt{symtable.h}, obsahuje názvy, typy a~jiné důležité informace o~proměnných a~funkcích v~IFJ26 programu. Tyto informace uchovává v podobě AVL stromu pro použití během sémantické analýzy.
 
 \subsection{Stack tabulek symbolů}
 \label{sub:symtablestack}
-Stack (\texttt{symtable\_stack.c} a \texttt{symtable\_stack.h}) hlídá scope programu, který překladač analyzuje a uchovává pro každý scope novou tabulku symbolů aby např. proměnné byly v každém scopu správně definované.
+Stack (\texttt{symtable\_stack.c} a \texttt{symtable\_stack.h}) hlídá scope programu, který překladač analyzuje a~uchovává pro každý scope novou tabulku symbolů aby např. proměnné byly v~každém scopu správně definované.
 
 \subsection{Generátor kódu}
 \label{sub:codegen}
 
 \subsection{Hlavní program}
 \label{sub:compiler}
-\texttt{Compiler.c} postupně volá funkce ze syntaktického analyzátoru, sémantického analyzátoru a generátoru kódu a uchovává mezivýsledky aby mohl IFJ26 program být úspěšně přeložen.
+\texttt{Compiler.c} postupně volá funkce ze syntaktického analyzátoru, sémantického analyzátoru a~generátoru kódu a~uchovává mezivýsledky aby mohl IFJ26 program být úspěšně přeložen.
 
 \section{Citace}
 \label{sec:citace}
 
 \section{Využití umělé inteligence}
 \label{sec:ai}
+Používání AI jsme si povolili pouze pro:
+Vytváření testů, dovysvětlování potřebné látky, pomoc při debugování jako je třeba vysvětlení chyby, řešení otázek k zadání.\\
+Vyjádření jednotlivých členů týmu k jejich používání AI:
+\begin{itemize}
+    \item \textbf{Martin Šafránek}\\
+    Já jsem používal Claude Sonnet 5.5 na medium Effort.\\
+    Obrovská většina používání byla pro debugování, když jsem nemohl najít chybu a~nebo když jsem nechápal proč ta chyba nastává. Většinou ale chybu AI nenašel a~hlásil, že je chyba tam, kde není. Také jsem si občas kontroloval pomocí AI jestli jsem správně pochopil část zadání a~jestli je moje řešení v~souladu se zadáním.
+
+    \item \textbf{Daniel Vrba}\\
+
+    \item \textbf{Václav Tomaník}\\
+
+    \item \textbf{Vojtěch Daniel Eliáš}\\
+    
+\end{itemize}
 
 \end{document}
