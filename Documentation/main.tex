@@ -1,6 +1,4 @@
 \documentclass[a4paper, 12pt]{article}
-\usepackage{pdfpages}
-\usepackage{eso-pic}
 \usepackage[text={18cm, 24.2cm}, left=1.8cm, top=1.8cm]{geometry}
 \usepackage{times}
 \usepackage[czech]{babel}
@@ -8,6 +6,7 @@
 \usepackage{graphics}
 \usepackage{enumitem}
 \usepackage{listings}
+\usepackage{float}
 
 \lstset{
     basicstyle=\ttfamily\small,
@@ -83,50 +82,27 @@ Každý si sám průběžně testoval svůj kód unit testy. Jakmile nějaké č
 \label{sub:formatovani}
 Styl formátování jsme vybrali clang-format s~výchozím nastavením.
 
-
-\section{Diagramy}
-\label{sec:diagramy}
-\begin{figure}[h]
+\section{Moduly}
+\label{sec:moduly}
+\subsection{Architektura překladače}
+\label{sub:architektura}
+\begin{figure}[H]
     \centering
-    \scalebox{0.6}{\includegraphics{diagram.png}}
+    \scalebox{0.5}{\includegraphics{diagram.png}}
     \caption{Blokové schéma architektury překladače}
     \label{fig:schema}
 \end{figure}
 
-
 \subsection{Lexikální analyzátor}
 \label{sub:scanner}
-\clearpage
-\clearpage
-\begingroup
+\begin{figure}[H]
+    \centering
+    \scalebox{0.52}{\includegraphics{Documentation/iFJ.drawio (2).pdf}}
+    \caption{Diagram automatu lexikálního analyzátoru}
+    \label{fig:lexautomat}
+\end{figure}
+S
 
-\setlength{\paperwidth}{297mm}
-\setlength{\paperheight}{420mm}
-\pdfpagewidth=\paperwidth
-\pdfpageheight=\paperheight
-
-\includepdf[
-    pages=1,
-    width=287mm,
-    height=410mm,
-    keepaspectratio,
-    pagecommand={
-        \thispagestyle{empty}
-        \AddToShipoutPictureFG*{
-            \AtPageLowerLeft{
-                \put(0,28){
-                    \makebox[\paperwidth][c]{\thepage}
-                }
-            }
-        }
-    }
-]{iFJ.drawio (2).pdf}
-
-\clearpage
-\endgroup
-
-\pdfpagewidth=\paperwidth
-\pdfpageheight=\paperheight
 \subsection{Syntaktický analyzátor}
 \label{sub:parser}
 \textbf{LL gramatika a tabulky pro syntaktickou analýzu:}\\
@@ -213,74 +189,26 @@ Styl formátování jsme vybrali clang-format s~výchozím nastavením.
     <expression> and <expr_rest> does precedence analyzator
     also does <call_args>
 \end{lstlisting}
-\clearpage
-\begingroup
-
-\setlength{\paperwidth}{297mm}
-\setlength{\paperheight}{210mm}
-\pdfpagewidth=\paperwidth
-\pdfpageheight=\paperheight
-
-\includepdf[
-    pages=1,
-    width=277mm,
-    height=190mm,
-    keepaspectratio,
-    pagecommand={
-        \thispagestyle{empty}
-        \AddToShipoutPictureFG*{
-            \AtPageLowerLeft{
-                \put(0,10){
-                    \makebox[\paperwidth][c]{\thepage}
-                }
-            }
-        }
-    }
-]{LL tabulka1.pdf}
-
-\endgroup
-\clearpage
-
-\begin{figure}[!h]
+\begin{figure}[H]
+    \centering
+    \rotatebox{-90}{\scalebox{0.8}{\includegraphics{Documentation/LL tabulka1.pdf}}}
+    \label{fig:LLtabulka1}
+\end{figure}
+\begin{figure}[H]
     \centering
     \scalebox{0.9}{\includegraphics{Documentation/LL tabulka2.png}}
     \label{fig:LLtabulka2}
 \end{figure}
-
-\clearpage
-\begingroup
-
-\setlength{\paperwidth}{410mm}
-\setlength{\paperheight}{287mm}
-\pdfpagewidth=\paperwidth
-\pdfpageheight=\paperheight
-
-\includepdf[
-    pages=1,
-    width=410mm,
-    height=287mm,
-    keepaspectratio,
-    pagecommand={
-        \thispagestyle{empty}
-        \AddToShipoutPictureFG*{
-            \AtPageLowerLeft{
-                \put(0,10){
-                    \makebox[\paperwidth][c]{\thepage}
-                }
-            }
-        }
-    }
-]{LL tabulka3.pdf}
-
-\endgroup
-\clearpage
-
-\begin{figure}[!h]
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{\includegraphics{Documentation/LL tabulka3.pdf}}
+    \label{fig:LLtabulka3}
+\end{figure}
+\begin{figure}[H]
     \centering
     \scalebox{0.35}{\includegraphics{Documentation/precedencni.png}}
     \label{fig:precedencni}
 \end{figure}
-
 Syntaktický analyzátor (\texttt{parser.c} a~\texttt{parser.h}) pomocí postupného kontrolování tokenů od~lexikálního analyzátoru zkontroluje syntaxi programu. Syntaxi kontroluje metodou rekurzivního sestupu založeného na~LL~gramatice a~všechny výrazy kontroluje pomocí precedennční syntaktické analýzy. Ve~funkcích pro rekurzivní sestup je zároveň vytvářen AST strom aby se nemuselo dělat více průchodů programem. Výsledný AST strom se dále používá a~upravuje v~sémantice.
 
 \subsection{Sémantícký analyzátor}
@@ -310,16 +238,13 @@ Používání AI jsme si povolili pouze pro:
 Vytváření testů, dovysvětlování potřebné látky, pomoc při debugování jako je třeba vysvětlení chyby, řešení otázek k zadání.\\
 Vyjádření jednotlivých členů týmu k jejich používání AI:
 \begin{itemize}
-    \item \textbf{Martin Šafránek}\\
-    Já jsem používal Claude Sonnet 5.5 na medium Effort.\\
-    Obrovská většina používání byla pro debugování, když jsem nemohl najít chybu a~nebo když jsem nechápal proč ta chyba nastává. Většinou ale chybu AI nenašel a~hlásil, že je chyba tam, kde není. Také jsem si občas kontroloval pomocí AI jestli jsem správně pochopil část zadání a~jestli je moje řešení v~souladu se zadáním.
-
-    \item \textbf{Daniel Vrba}\\
-
-    \item \textbf{Václav Tomaník}\\
-
-    \item \textbf{Vojtěch Daniel Eliáš}\\
-    
+    \item \textbf{Martin Šafránek} \\
+        Já jsem používal Claude Sonnet 5.5 na medium Effort.\\
+        Obrovská většina používání byla pro debugování, když jsem nemohl najít chybu a~nebo když jsem nechápal proč ta chyba nastává. Většinou ale chybu AI nenašel a~hlásil, že je chyba tam, kde není. Také jsem si občas kontroloval pomocí AI jestli jsem správně pochopil část zadání a~jestli je moje řešení v~souladu se zadáním.
+    \item \textbf{Daniel Vrba} \\
+    \item \textbf{Václav Tomaník} \\
+        AI jsem nepoužíval.
+    \item \textbf{Vojtěch Daniel Eliáš} \\
 \end{itemize}
 
 \end{document}
