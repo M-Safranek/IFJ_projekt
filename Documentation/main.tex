@@ -7,6 +7,17 @@
 \usepackage{hyperref}
 \usepackage{graphics}
 \usepackage{enumitem}
+\usepackage{listings}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    frame=single,
+    numbers=none
+}
+
 
 \newcommand{\uvoz}[1]{\quotedblbase #1\textquotedblleft}
 
@@ -118,17 +129,170 @@ Styl formátování jsme vybrali clang-format s~výchozím nastavením.
 \pdfpageheight=\paperheight
 \subsection{Syntaktický analyzátor}
 \label{sub:parser}
+\textbf{LL gramatika a tabulky pro syntaktickou analýzu:}\\
+\begin{lstlisting}
+    1. <program> ::= <prologue> NL <func_list> EOF
+    
+    2. <prologue> ::= IMPORT ID . *
+    
+    3. <func_list> ::= <func_def> <func_list>
+    4. <func_list> ::= e
+    
+    5. <func_def> ::= <annot> DEF ID (<params>) <n_type> = <func_body>
+    
+    6. <annot> ::= AT ID <annot_n>
+    7. <annot> ::= e
+    8. <annot_n> ::= NL
+    9. <annot_n> ::= e
+    
+    10. <params> ::= e 
+    11. <params> ::= ID : <type> <params_n>
+    12. <params_n> ::= e
+    13. <params_n> ::= , ID : <type> <params_n>
+    
+    14. <func_body> ::= <expression> NL
+    15. <func_body> ::= NL <block>
+    
+    16. <n_type> ::= e
+    17. <n_type> ::= : <type>
+    18. <type> ::= int
+    19. <type> ::= unit
+    20. <type> ::= double
+    21. <type> ::= string
+    
+    22. <block> ::= INDENT <statement> DEDENT
+    
+    23. <statement> ::= <statement_line> <statement_n>
+    24. <statement_n> ::= <statement_line> <statement_n>
+    25. <statement_n> ::= e
+    26. <statement_line> ::= <if_statement>
+    27. <statement_line> ::= <while_statement>
+    28. <statement_line> ::= <simple_statement> NL
+    
+    29. <simple_statement> ::= <simple_s> <simple_n>
+    30. <simple_n> ::= ; <simple_s> <simple_n>
+    31. <simple_n> ::= e
+    32. <simple_s> ::= <var_def>
+    33. <simple_s> ::= <return_statement>
+    34. <simple_s> ::= id <simple_id>
+    35. <simple_s> ::= <expression_noid>
+    36. <simple_id> ::= = <expression>
+    37. <simple_id> ::= <expr_rest>
+    
+    38. <if_statement> ::= IF <condition> THEN NL <block> ELSE NL <block>
+    39. <while_statement> ::= WHILE <condition> DO NL <block>
+    40. <condition> ::= <expression>
+    
+    41. <return_statement> ::= RETURN <return_val>
+    42. <return_val> ::= <expression>
+    43. <return_val> ::= e
+    
+    44. <arguments> ::= e
+    45. <arguments> ::= <term> <arguments_n>
+    46. <arguments_n> ::= e
+    47. <arguments_n> ::= , <arguments_nn>
+    48. <arguments_nn> ::= <term> <arguments_n>
+    
+    49. <term> ::= ID
+    50. <term> ::= int_lit
+    51. <term> ::= double_lit
+    52. <term> ::= string_lit
+    53. <term> ::= ()
+    54. <term> ::= - <num_lit>
+    
+    55. <num_lit> ::= int_lit
+    56. <num_lit> ::= double_lit
+    
+    57. <var_def> ::= <vax> ID <n_type> = <expression>
+    58. <vax> ::= VAL 
+    59. <vax> ::= VAR
+    
+    60. <call_args> ::= ( <arguments> )
+    
+    // So I know what is FIRST and FOLLOW
+    <expression> and <expr_rest> does precedence analyzator
+    also does <call_args>
+\end{lstlisting}
+\clearpage
+\begingroup
+
+\setlength{\paperwidth}{297mm}
+\setlength{\paperheight}{210mm}
+\pdfpagewidth=\paperwidth
+\pdfpageheight=\paperheight
+
+\includepdf[
+    pages=1,
+    width=277mm,
+    height=190mm,
+    keepaspectratio,
+    pagecommand={
+        \thispagestyle{empty}
+        \AddToShipoutPictureFG*{
+            \AtPageLowerLeft{
+                \put(0,10){
+                    \makebox[\paperwidth][c]{\thepage}
+                }
+            }
+        }
+    }
+]{LL tabulka1.pdf}
+
+\endgroup
+\clearpage
+
+\begin{figure}[!h]
+    \centering
+    \scalebox{0.9}{\includegraphics{Documentation/LL tabulka2.png}}
+    \label{fig:LLtabulka2}
+\end{figure}
+
+\clearpage
+\begingroup
+
+\setlength{\paperwidth}{410mm}
+\setlength{\paperheight}{287mm}
+\pdfpagewidth=\paperwidth
+\pdfpageheight=\paperheight
+
+\includepdf[
+    pages=1,
+    width=410mm,
+    height=287mm,
+    keepaspectratio,
+    pagecommand={
+        \thispagestyle{empty}
+        \AddToShipoutPictureFG*{
+            \AtPageLowerLeft{
+                \put(0,10){
+                    \makebox[\paperwidth][c]{\thepage}
+                }
+            }
+        }
+    }
+]{LL tabulka3.pdf}
+
+\endgroup
+\clearpage
+
+\begin{figure}[!h]
+    \centering
+    \scalebox{0.35}{\includegraphics{Documentation/precedencni.png}}
+    \label{fig:precedencni}
+\end{figure}
+
+Syntaktický analyzátor (\texttt{parser.c} a~\texttt{parser.h}) pomocí postupného kontrolování tokenů od~lexikálního analyzátoru zkontroluje syntaxi programu. Syntaxi kontroluje metodou rekurzivního sestupu založeného na~LL~gramatice a~všechny výrazy kontroluje pomocí precedennční syntaktické analýzy. Ve~funkcích pro rekurzivní sestup je zároveň vytvářen AST strom aby se nemuselo dělat více průchodů programem. Výsledný AST strom se dále používá a~upravuje v~sémantice.
 
 \subsection{Sémantícký analyzátor}
 \label{sub:semantics}
 
 \subsection{Tabulka symbolů}
 \label{sub:symtable}
-Tabulka symbolů, skládající se z dvojice \texttt{symtable.c} a \texttt{symtable.h}, obsahuje názvy, typy a~jiné důležité informace o~proměnných a~funkcích v~IFJ26 programu. Tyto informace uchovává v podobě AVL stromu pro použití během sémantické analýzy.
+Tabulka symbolů, skládající se z~dvojice \texttt{symtable.c} a~\texttt{symtable.h}, obsahuje názvy, typy a~jiné důležité informace o~proměnných a~funkcích v~IFJ26 programu. Tyto informace uchovává v podobě AVL stromu pro použití během sémantické analýzy.
 
 \subsection{Stack tabulek symbolů}
 \label{sub:symtablestack}
-Stack (\texttt{symtable\_stack.c} a \texttt{symtable\_stack.h}) hlídá scope programu, který překladač analyzuje a~uchovává pro každý scope novou tabulku symbolů aby např. proměnné byly v~každém scopu správně definované.
+Stack (\texttt{symtable\_stack.c} a~\texttt{symtable\_stack.h}) hlídá scope programu, který překladač analyzuje a~uchovává pro každý scope novou tabulku symbolů aby např. proměnné byly v~každém scopu správně definované.
 
 \subsection{Generátor kódu}
 \label{sub:codegen}
