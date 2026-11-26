@@ -4,8 +4,8 @@
  * @details Semantic validation, type checking, scope names for variables in the AST.
  * @author Václav Tomaník, xtomanv00
  * @author Vojtěch Daniel Eliáš, xeliasv00
- * @author Daniel Vrba
- * @author Martin Šafránek
+ * @author Daniel Vrba, xvrbada00
+ * @author Martin Šafránek, xsafram00
  */
 
 #define _POSIX_C_SOURCE 200809L
